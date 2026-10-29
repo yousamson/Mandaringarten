@@ -138,6 +138,8 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/LearningProgress" }
         "401": { description: Authentication required }
+        "403": { description: Membership required }
+        "503": { description: Saved progress is temporarily unavailable }
     put:
       operationId: updateLearningProgress
       tags: [learning]
@@ -149,13 +151,14 @@ paths:
             schema: { $ref: "#/components/schemas/LearningProgressInput" }
       responses:
         "200":
-          description: Saved selected stage
+          description: Saved stage selection or monotonically merged legacy progress
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LearningProgress" }
         "400": { description: Invalid input }
         "401": { description: Authentication required }
         "403": { description: Membership and legal consent required }
+        "503": { description: Saved progress is temporarily unavailable }
   /learning/round:
     post:
       operationId: recordLearningRound
@@ -175,7 +178,8 @@ paths:
         "400": { description: Invalid round }
         "401": { description: Authentication required }
         "403": { description: Membership and legal consent required }
-        "409": { description: Selected stage has changed }
+        "409": { description: Round identifier was already used with different answers }
+        "503": { description: Saved progress is temporarily unavailable }
   /legal/consent:
     get:
       operationId: getLegalConsent
@@ -407,7 +411,11 @@ components:
       required: [selectedStage]
       properties:
         selectedStage: { type: integer, minimum: 1, maximum: 4 }
-        legacyXpTotal: { type: integer, minimum: 0, maximum: 400 }
+        legacyXpTotal:
+          type: integer
+          minimum: 0
+          maximum: 400
+          description: Browser-only curriculum snapshot. Repeated and higher snapshots merge without adding the same XP twice; never includes server-awarded rounds.
     LearningRoundInput:
       type: object
       required: [stage, mode, roundId, correctCount]

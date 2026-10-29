@@ -109,7 +109,7 @@ export const updateLearningProgressBodyLegacyXpTotalMax = 400;
 
 export const UpdateLearningProgressBody = zod.object({
   "selectedStage": zod.int().min(1).max(updateLearningProgressBodySelectedStageMax),
-  "legacyXpTotal": zod.int().min(updateLearningProgressBodyLegacyXpTotalMin).max(updateLearningProgressBodyLegacyXpTotalMax).optional()
+  "legacyXpTotal": zod.int().min(updateLearningProgressBodyLegacyXpTotalMin).max(updateLearningProgressBodyLegacyXpTotalMax).optional().describe('Browser-only curriculum snapshot. Repeated and higher snapshots merge without adding the same XP twice; never includes server-awarded rounds.')
 })
 
 export const updateLearningProgressResponseSelectedStageMax = 4;

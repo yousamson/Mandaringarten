@@ -42,7 +42,7 @@ export function useSupportConversation(threadId: string | null, uid: string | nu
   });
 }
 
-const PROGRESS_PREFIXES = ['mg-curriculum-progress:', 'mg-playground-legacy-migrated:'];
+const PROGRESS_PREFIXES = ['mg-curriculum-progress:', 'mg-playground-legacy-migrated:', 'mg-pending-round:'];
 
 /** Removes user-specific learning data left in this browser. */
 export function clearUserLocalData(uid: string | null) {
@@ -50,7 +50,7 @@ export function clearUserLocalData(uid: string | null) {
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i += 1) {
       const k = localStorage.key(i);
-      if (k && PROGRESS_PREFIXES.some((p) => k.startsWith(p) && (!uid || k === `${p}${uid}`))) keys.push(k);
+      if (k && PROGRESS_PREFIXES.some((p) => k.startsWith(p) && (!uid || k === `${p}${uid}` || (p === 'mg-pending-round:' && k.startsWith(`${p}${uid}:`))))) keys.push(k);
     }
     keys.forEach((k) => localStorage.removeItem(k));
   } catch { /* storage unavailable */ }

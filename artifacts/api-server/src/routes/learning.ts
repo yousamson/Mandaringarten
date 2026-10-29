@@ -1,12 +1,13 @@
 import { Router, type IRouter, type ErrorRequestHandler } from "express";
 import { getAuth } from "@clerk/express";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, learningProgressTable, learningRoundsTable, legalConsentsTable } from "@workspace/db";
 import { AcceptLegalConsentBody, RecordLearningRoundBody, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
 import { hasCurrentConsent, POLICY_VERSION } from "../legal";
 import { hasPremiumMembership } from "./billing";
 import { withAccountWrite } from "../account-lifecycle";
 import { isAdministrator } from "../admin";
+import { mergeLegacyProgress } from "../learning-progress";
 
 const router: IRouter = Router();
 router.use(["/learning", "/legal"], (req, res, next) => {
@@ -76,10 +77,16 @@ router.put("/learning/progress", async (req, res) => {
     const [current] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
     let xpByStage = [...current.xpByStage];
-    const migrate = parsed.data.legacyXpTotal !== undefined && !current.legacyImported;
+    const migrate = parsed.data.legacyXpTotal !== undefined;
     if (migrate) {
-      xpByStage = xpByStage.map((xp, index) =>
-        Math.max(xp, Math.min(100, Math.max(0, parsed.data.legacyXpTotal! - index * 100))));
+      const rounds = await tx.select({
+        stage: learningRoundsTable.stage,
+        xp: sql<number>`coalesce(sum(${learningRoundsTable.correctCount}) * 5, 0)`.mapWith(Number),
+      }).from(learningRoundsTable).where(eq(learningRoundsTable.clerkUserId, userId))
+        .groupBy(learningRoundsTable.stage);
+      const earned = [0, 0, 0, 0];
+      for (const round of rounds) earned[round.stage - 1] = round.xp;
+      xpByStage = mergeLegacyProgress(xpByStage, parsed.data.legacyXpTotal!, earned);
     }
     const [updated] = await tx.update(learningProgressTable).set({
       // Importing older browser XP must not overwrite a newer parent selection.
@@ -104,8 +111,11 @@ router.post("/learning/round", async (req, res) => {
     const [existing] = await tx.select().from(learningRoundsTable).where(and(
       eq(learningRoundsTable.clerkUserId, userId), eq(learningRoundsTable.roundId, parsed.data.roundId),
     )).limit(1);
-    if (existing) return current;
-    if (current.selectedStage !== parsed.data.stage) return null;
+    if (existing) {
+      return existing.stage === parsed.data.stage && existing.mode === parsed.data.mode &&
+        existing.correctCount === parsed.data.correctCount ? current : null;
+    }
+    // Save to the stage actually played, even if another device changed the parent selection.
     await tx.insert(learningRoundsTable).values({ clerkUserId: userId, ...parsed.data });
     const xpByStage = [...current.xpByStage];
     xpByStage[parsed.data.stage - 1] += parsed.data.correctCount * 5;
@@ -113,7 +123,7 @@ router.post("/learning/round", async (req, res) => {
       .where(eq(learningProgressTable.clerkUserId, userId)).returning();
     return updated;
   });
-  if (!saved) { res.status(409).json({ error: "Selected stage changed. Reload the learning playground before playing." }); return; }
+  if (!saved) { res.status(409).json({ error: "This round identifier was already used for a different result." }); return; }
   res.json(output(saved));
 });
 

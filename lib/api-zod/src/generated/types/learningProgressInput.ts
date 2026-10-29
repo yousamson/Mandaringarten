@@ -13,6 +13,7 @@ export interface LearningProgressInput {
      */
   selectedStage: number;
   /**
+     * Browser-only curriculum snapshot. Repeated and higher snapshots merge without adding the same XP twice; never includes server-awarded rounds.
      * @minimum 0
      * @maximum 400
      */

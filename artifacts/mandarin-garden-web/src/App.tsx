@@ -16,7 +16,7 @@ import MessagesPage from '@/pages/messages';
 import { StagePicker } from '@/components/playground/stage-picker';
 import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
-import { useLearningProgress, useLegacyProgressMigration, useMembership, useSelectStage, XP_COMPLETE } from '@/hooks/use-learning';
+import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useSelectStage, XP_COMPLETE } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
 import DisclaimerPage from '@/pages/disclaimer';
@@ -109,7 +109,7 @@ function Garden() {
   const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
   const shellClass = `garden-app theme-${preferences.theme}`;
   const close = () => setMenuOpen(false);
-  const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><MemberGate l={l}><LegacySync />{node}</MemberGate></AccountConsentBoundary>;
+  const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><MemberGate l={l}><LegacySync l={l} />{node}</MemberGate></AccountConsentBoundary>;
   const access = useAccountAccess();
 
   return (
@@ -170,12 +170,17 @@ function Garden() {
   );
 }
 
-/** Imports earlier browser-only XP once, for members whose account consent is recorded. */
-function LegacySync() {
+/** Recover account-owned browser progress only after membership and consent checks. */
+function LegacySync({ l }: { l: Language }) {
   const m = useMembership();
   const progress = useLearningProgress(m.uid, m.premium);
-  useLegacyProgressMigration(m.uid, progress.progress, m.premium);
-  return null;
+  const legacy = useLegacyProgressMigration(m.uid, progress.progress, m.premium);
+  const rounds = usePendingRoundSync(m.uid, m.premium);
+  if (!legacy.error && !rounds.error && !rounds.pending) return null;
+  return <div className="page-shell"><div className="alert" role="status" data-testid="status-progress-sync">
+    {tr(l, 'Some progress is still stored in this browser. Keep it here until account sync finishes.', '部分進度仍儲存在此瀏覽器。請保留，直至帳戶同步完成。', '部分进度仍保存在此浏览器。请保留，直至账户同步完成。')}
+    <button className="text-next" onClick={() => { legacy.retry(); rounds.retry(); }} data-testid="button-retry-progress-sync">{tr(l, 'Sync now', '立即同步', '立即同步')}</button>
+  </div></div>;
 }
 
 
