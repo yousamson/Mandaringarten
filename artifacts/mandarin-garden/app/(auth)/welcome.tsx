@@ -49,15 +49,15 @@ export default function WelcomeScreen() {
         return;
       }
 
-      if (signUp?.status === 'missing_requirements') {
-        router.replace('/(auth)/sign-up?continueOAuth=1');
-        return;
-      }
-
       if (
         authSessionResult?.type === 'cancel' ||
         authSessionResult?.type === 'dismiss'
       ) {
+        return;
+      }
+
+      if (signUp?.status === 'missing_requirements') {
+        router.replace('/(auth)/sign-up?continueOAuth=1');
         return;
       }
 
