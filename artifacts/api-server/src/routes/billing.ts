@@ -8,7 +8,8 @@ import {
   GetBillingStatusResponse,
   GetBillingSubscriptionResponse,
 } from "@workspace/api-zod";
-import { billingCustomersTable, db } from "@workspace/db";
+import { billingCustomersTable, checkoutConsentsTable, db } from "@workspace/db";
+import { hasCurrentConsent, POLICY_VERSION } from "../legal";
 import { eq } from "drizzle-orm";
 import {
   Router,
@@ -21,6 +22,7 @@ import {
   type StripePrice,
   type StripeSubscription,
 } from "../stripeClient";
+import { cancellationAtPeriodEnd } from "../subscription-state";
 
 const PREMIUM_LOOKUP_KEY = "mandarin_garden_premium_monthly";
 const PREMIUM_AMOUNT = 999;
@@ -213,6 +215,13 @@ function periodEnd(subscription: StripeSubscription | undefined): number | null 
   );
 }
 
+export async function hasPremiumMembership(userId: string): Promise<boolean> {
+  const customer = await getCustomer(userId);
+  if (!customer) return false;
+  const subscriptions = await listSubscriptions(customer.stripeCustomerId);
+  return subscriptions.some((item) => item.status === "active" || item.status === "trialing");
+}
+
 router.get("/billing/plan", async (req, res): Promise<void> => {
   try {
     const price = await getPremiumPrice();
@@ -264,7 +273,7 @@ router.get("/billing/status", async (req, res): Promise<void> => {
         isPremium: entitled !== undefined,
         subscriptionStatus: latest?.status ?? "none",
         currentPeriodEnd: end ? new Date(end * 1000).toISOString() : null,
-        cancelAtPeriodEnd: latest?.cancel_at_period_end ?? false,
+        cancelAtPeriodEnd: cancellationAtPeriodEnd(latest, end),
       }),
     );
   } catch (error) {
@@ -324,7 +333,11 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
 
   const parsedBody = CreateBillingCheckoutBody.safeParse(req.body);
   if (!parsedBody.success) {
-    res.status(400).json({ error: "A valid checkout return URL is required." });
+    res.status(400).json({ error: "Valid return URLs and explicit privacy, disclaimer and non-refund acknowledgments are required." });
+    return;
+  }
+  if (!await hasCurrentConsent(userId)) {
+    res.status(403).json({ error: "Accept the current privacy policy and legal disclaimer for your account first." });
     return;
   }
 
@@ -349,9 +362,15 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Manage the existing subscription in the billing portal." });
       return;
     }
+    const [consent] = await db.insert(checkoutConsentsTable).values({
+      clerkUserId: userId, policyVersion: POLICY_VERSION,
+      privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true,
+    }).returning();
 
     const openSessions = await stripeRequest<{
       data: Array<{
+        id: string;
+        metadata?: Record<string, string>;
         client_reference_id?: string | null;
         mode: string;
         status: string;
@@ -363,14 +382,27 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
         limit: "20",
       }).toString()}`,
     );
-    const openSession = openSessions.data.find(
+    const userSessions = openSessions.data.filter(
       (session) =>
         session.client_reference_id === userId &&
         session.mode === "subscription" &&
         session.status === "open" &&
         session.url,
     );
+    // Converted sessions retain their original presentment currency. Retire
+    // earlier sessions instead of reusing a localized price after this fix.
+    for (const session of userSessions) {
+      if (session.metadata?.currencyPolicy !== "usd-only-v1" || session.metadata?.policyVersion !== POLICY_VERSION) {
+        await stripeRequest(`/v1/checkout/sessions/${session.id}/expire`, {
+          method: "POST", form: new URLSearchParams(),
+        });
+      }
+    }
+    const openSession = userSessions.find((session) =>
+      session.metadata?.currencyPolicy === "usd-only-v1" && session.metadata?.policyVersion === POLICY_VERSION);
     if (openSession?.url) {
+      await db.update(checkoutConsentsTable).set({ stripeSessionId: openSession.id })
+        .where(eq(checkoutConsentsTable.id, consent.id));
       res.json(CreateBillingCheckoutResponse.parse({ url: openSession.url }));
       return;
     }
@@ -384,23 +416,29 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       "line_items[0][quantity]": "1",
       "metadata[clerkUserId]": userId,
       "metadata[plan]": "premium_monthly",
+      "metadata[policyVersion]": POLICY_VERSION,
+      "metadata[currencyPolicy]": "usd-only-v1",
+      "adaptive_pricing[enabled]": "false",
+      "custom_text[submit][message]": "Monthly subscription fees are non-refundable except where applicable law requires otherwise. Cancel future renewals in the billing portal.",
       "subscription_data[metadata][clerkUserId]": userId,
       "subscription_data[metadata][plan]": "premium_monthly",
       success_url: returnUrls.successUrl,
       cancel_url: returnUrls.cancelUrl,
     });
-    const session = await stripeRequest<{ url: string | null }>(
+    const session = await stripeRequest<{ id: string; url: string | null }>(
       "/v1/checkout/sessions",
       {
         method: "POST",
         form,
-        idempotencyKey: `mandarin-garden-checkout-${account.stripeCustomerId}-${Math.floor(
+        idempotencyKey: `mandarin-garden-checkout-usd-only-${POLICY_VERSION}-${account.stripeCustomerId}-${Math.floor(
           Date.now() / 1_800_000,
         )}`,
       },
     );
 
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+    await db.update(checkoutConsentsTable).set({ stripeSessionId: session.id })
+      .where(eq(checkoutConsentsTable.id, consent.id));
     res.json(CreateBillingCheckoutResponse.parse({ url: session.url }));
   } catch (error) {
     req.log.error({ err: error }, "Could not create a checkout session");

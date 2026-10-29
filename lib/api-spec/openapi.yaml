@@ -126,6 +126,85 @@ paths:
           description: Authentication required
         "404":
           description: No billing account exists
+  /learning/progress:
+    get:
+      operationId: getLearningProgress
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Account learning progress
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningProgress" }
+        "401": { description: Authentication required }
+    put:
+      operationId: updateLearningProgress
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LearningProgressInput" }
+      responses:
+        "200":
+          description: Saved selected stage
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningProgress" }
+        "400": { description: Invalid input }
+        "401": { description: Authentication required }
+        "403": { description: Membership and legal consent required }
+  /learning/round:
+    post:
+      operationId: recordLearningRound
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LearningRoundInput" }
+      responses:
+        "200":
+          description: Idempotently saved stage XP
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningProgress" }
+        "400": { description: Invalid round }
+        "401": { description: Authentication required }
+        "403": { description: Membership and legal consent required }
+        "409": { description: Selected stage has changed }
+  /legal/consent:
+    get:
+      operationId: getLegalConsent
+      tags: [legal]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Current version account consent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegalConsentStatus" }
+        "401": { description: Authentication required }
+    post:
+      operationId: acceptLegalConsent
+      tags: [legal]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LegalConsentInput" }
+      responses:
+        "200":
+          description: Recorded policy acceptance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegalConsentStatus" }
+        "400": { description: Every acknowledgment is required }
+        "401": { description: Authentication required }
 components:
   securitySchemes:
     bearerAuth:
@@ -183,20 +262,28 @@ components:
     BillingReturnUrlRequest:
       type: object
       properties:
+        privacyAccepted: { type: boolean, enum: [true] }
+        disclaimerAccepted: { type: boolean, enum: [true] }
+        noRefundAccepted: { type: boolean, enum: [true] }
+        policyVersion: { type: string, enum: ["2026-10-29"] }
         returnUrl:
           type: string
           format: uri
-      required: [returnUrl]
+      required: [returnUrl, privacyAccepted, disclaimerAccepted, noRefundAccepted, policyVersion]
     CheckoutInput:
       type: object
       properties:
+        privacyAccepted: { type: boolean, enum: [true] }
+        disclaimerAccepted: { type: boolean, enum: [true] }
+        noRefundAccepted: { type: boolean, enum: [true] }
+        policyVersion: { type: string, enum: ["2026-10-29"] }
         successUrl:
           type: string
           format: uri
         cancelUrl:
           type: string
           format: uri
-      required: [successUrl, cancelUrl]
+      required: [successUrl, cancelUrl, privacyAccepted, disclaimerAccepted, noRefundAccepted, policyVersion]
     BillingRedirectResponse:
       type: object
       properties:
@@ -225,3 +312,41 @@ components:
           type: string
           format: uri
       required: [url]
+    LearningProgress:
+      type: object
+      required: [selectedStage, xpByStage]
+      properties:
+        selectedStage: { type: integer, minimum: 1, maximum: 4 }
+        xpByStage:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items: { type: integer, minimum: 0 }
+    LearningProgressInput:
+      type: object
+      required: [selectedStage]
+      properties:
+        selectedStage: { type: integer, minimum: 1, maximum: 4 }
+        legacyXpTotal: { type: integer, minimum: 0, maximum: 400 }
+    LearningRoundInput:
+      type: object
+      required: [stage, mode, roundId, correctCount]
+      properties:
+        stage: { type: integer, minimum: 1, maximum: 4 }
+        mode: { type: string, enum: [match, pinyin, listen, word-order, sentence-order] }
+        roundId: { type: string, minLength: 8, maxLength: 100 }
+        correctCount: { type: integer, minimum: 0, maximum: 5 }
+    LegalConsentStatus:
+      type: object
+      required: [accepted, policyVersion]
+      properties:
+        accepted: { type: boolean }
+        policyVersion: { type: string }
+    LegalConsentInput:
+      type: object
+      required: [privacyAccepted, disclaimerAccepted, adultConfirmed, policyVersion]
+      properties:
+        privacyAccepted: { type: boolean, enum: [true] }
+        disclaimerAccepted: { type: boolean, enum: [true] }
+        adultConfirmed: { type: boolean, enum: [true] }
+        policyVersion: { type: string, enum: ["2026-10-29"] }

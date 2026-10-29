@@ -1,16 +1,28 @@
-import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { useRef } from 'react';
-import CurriculumPage from '@/pages/curriculum';
-import { ClerkProvider, Show, SignInButton, SignUpButton, useClerk, useUser } from '@clerk/react';
+import { ClerkProvider, Show, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { useCreateBillingCheckout, useCreateBillingPortal, useGetBillingPlan, useGetBillingStatus, getGetBillingStatusQueryKey } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Leaf, LockKeyhole, LogOut, Menu, MessageCircle, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Leaf, LogOut, Menu, MessageCircle, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { AccountConsentBoundary } from '@/components/legal/account-consent-boundary';
+import { clearAuthConsent } from '@/hooks/use-consent';
+import { ConsentCheck, DisclaimerAgreement, DocLink, PrivacyAgreement, disclaimerName, privacyName } from '@/components/legal/consent-check';
+import { StagePicker } from '@/components/playground/stage-picker';
+import { StagePathCards } from '@/components/stage-path-cards';
+import { StagePathPlayer } from '@/components/stage-path-player';
+import { useLearningProgress, useLegacyProgressMigration, useMembership, useSelectStage, XP_COMPLETE } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
+import AuthPage from '@/pages/auth';
+import DisclaimerPage from '@/pages/disclaimer';
+import PlaygroundPage from '@/pages/playground';
+import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
 import { billingCopy } from '@/lib/billing-copy';
+import { LEGAL_VERSION } from '@/lib/legal-config';
+import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
+import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(
@@ -57,12 +69,12 @@ function App() {
       <Garden />
     </QueryClientProvider>
   );
-  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl}>{content}</ClerkProvider>;
+  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} signInUrl="/sign-in" signUpUrl="/register">{content}</ClerkProvider>;
 }
 
 function SignOutControl({ label, className }: { label: string; className: string }) {
   const { signOut } = useClerk();
-  return <button type="button" className={className} aria-label={label} title={label} onClick={() => void signOut({ redirectUrl: '/' })}><LogOut size={15} /></button>;
+  return <button type="button" className={className} aria-label={label} title={label} onClick={() => { clearAuthConsent(); void signOut({ redirectUrl: '/' }); }}><LogOut size={15} /></button>;
 }
 
 export const tagline: Record<Language, string> = {
@@ -86,12 +98,16 @@ function useUserScopedCache() {
 function Garden() {
   const preferences = usePreferences();
   useUserScopedCache();
-  const t = copy[preferences.language];
-  const [path, setPath] = useLocation();
+  const l = preferences.language;
+  const t = copy[l];
+  const [path] = useLocation();
   const [category, setCategory] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
-  const filterLessons = useMemo(() => category === 'all' ? lessons : lessons.filter((lesson) => lesson.category === category), [category]);
+  const freeLessons = useMemo(() => lessons.filter((lesson) => !lesson.premium), []);
+  const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
   const shellClass = `garden-app theme-${preferences.theme}`;
+  const close = () => setMenuOpen(false);
+  const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><LegacySync />{node}</AccountConsentBoundary>;
 
   return (
     <div className={shellClass}>
@@ -99,41 +115,60 @@ function Garden() {
         <header className="topbar">
           <Link href="/" className="brand" data-testid="link-home">
             <span className="brand-mark"><Sprout size={23} strokeWidth={1.9} /></span>
-            <span className="brand-text"><span>漢語樂園 Mandarin Garden</span><small className="brand-tagline">{tagline[preferences.language]}</small></span>
+            <span className="brand-text"><span>漢語樂園 Mandarin Garden</span><small className="brand-tagline">{tagline[l]}</small></span>
           </Link>
           <nav className={`nav-links ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
-            <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>{t.navHome}</Link>
-            <a className={`nav-link ${path === '/#lessons' ? 'active' : ''}`} href="/#lessons" onClick={() => setMenuOpen(false)}>{t.navWords}</a>
-            <Link href="/curriculum" className={`nav-link ${path === '/curriculum' ? 'active' : ''}`} onClick={() => setMenuOpen(false)} data-testid="link-curriculum">{preferences.language === 'en' ? 'Curriculum' : preferences.language === 'zh-Hant' ? '學習課程' : '学习课程'}</Link>
-            <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>{t.navParent}</Link>
+            <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={close}>{t.navHome}</Link>
+            <a className="nav-link" href="/#lessons" onClick={close}>{t.navWords}</a>
+            <Link href="/playground" className={`nav-link ${path === '/playground' || path === '/curriculum' ? 'active' : ''}`} onClick={close} data-testid="link-playground">{playgroundName[l]}</Link>
+            <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={close}>{t.navParent}</Link>
           </nav>
           <div className="top-actions">
-            <select className="language-select" aria-label="Interface language" value={preferences.language} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} data-testid="select-language">
+            <select className="language-select" aria-label="Interface language" value={l} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} data-testid="select-language">
               {languages.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
             </select>
             <Link href="/parent" className="parent-link"><Leaf size={15} /> <span>{t.navParent}</span></Link>
-            <div className="auth-slot"><Show when="signed-in"><SignOutControl label={signOutLabels[preferences.language]} className="avatar-button" /></Show><Show when="signed-out"><SignInButton mode="modal"><button className="avatar-button" aria-label={t.signIn} data-testid="button-sign-in"><ArrowRight size={16} /></button></SignInButton></Show></div>
+            <div className="auth-slot"><Show when="signed-in"><SignOutControl label={signOutLabels[l]} className="avatar-button" /></Show><Show when="signed-out"><Link href="/sign-in" className="avatar-button" aria-label={t.signIn} title={t.signIn} data-testid="button-sign-in"><ArrowRight size={16} /></Link></Show></div>
             <button className="mobile-menu" onClick={() => setMenuOpen((value) => !value)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} data-testid="button-menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
           </div>
         </header>
       </div>
       <ErrorBoundary resetKey={path}>
         <Switch>
-          <Route path="/">
-            <HomePage language={preferences.language} t={t} age={preferences.age} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />
-          </Route>
-          <Route path="/lesson/:lessonId"><LessonPage language={preferences.language} t={t} /></Route>
-          <Route path="/curriculum"><CurriculumPage language={preferences.language} age={preferences.age} /></Route>
-          <Route path="/parent"><ParentPage preferences={preferences} t={t} /></Route>
+          <Route path="/privacy"><PrivacyPage language={l} /></Route>
+          <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
+          <Route path="/sign-in"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
+          <Route path="/register"><AuthPage key="register" mode="register" language={l} /></Route>
+          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
+          <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
+          <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
+          <Route path="/curriculum">{guarded(<PlaygroundPage language={l} />)}</Route>
+          <Route path="/parent">{guarded(<ParentPage preferences={preferences} t={t} />)}</Route>
           <Route component={NotFound} />
         </Switch>
       </ErrorBoundary>
       <div className="page-shell">
-        <footer className="footer"><span>© 漢語樂園 Mandarin Garden</span><span>{tagline.en} · 讓每天學習漢語更輕鬆 · 让每天学习汉语更轻松</span></footer>
+        <footer className="footer">
+          <span>© 漢語樂園 Mandarin Garden</span>
+          <nav className="footer-legal" aria-label="Legal">
+            <Link href="/privacy" data-testid="link-footer-privacy">{privacyName(l)}</Link>
+            <Link href="/disclaimer" data-testid="link-footer-disclaimer">{disclaimerName(l)}</Link>
+          </nav>
+          <span>{tagline.en} · 讓每天學習漢語更輕鬆 · 让每天学习汉语更轻松</span>
+        </footer>
       </div>
     </div>
   );
 }
+
+/** Imports earlier browser-only XP once, for members whose account consent is recorded. */
+function LegacySync() {
+  const m = useMembership();
+  const progress = useLearningProgress(m.uid, m.premium);
+  useLegacyProgressMigration(m.uid, progress.progress, m.premium);
+  return null;
+}
+
 
 type Copy = typeof copy.en;
 function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
@@ -166,12 +201,13 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
           <span className="status-pill">{t.minutes}</span>
         </div>
         <div className="filter-row" role="group" aria-label="Filter lessons">
-          {categories.map((item) => <button key={item} className={`filter-chip ${category === item ? 'selected' : ''}`} onClick={() => setCategory(item)} data-testid={`filter-${item}`}>{categoryNames[language][item]}</button>)}
+          {categories.filter((item) => item === 'all' || lessons.some((lesson) => !lesson.premium && lesson.category === item)).map((item) => <button key={item} className={`filter-chip ${category === item ? 'selected' : ''}`} onClick={() => setCategory(item)} data-testid={`filter-${item}`}>{categoryNames[language][item]}</button>)}
         </div>
         <div className="lesson-grid">
           {lessonsToShow.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} language={language} t={t} />)}
         </div>
       </section>
+      <StagePathCards l={language} />
       <PracticeSection language={language} age={age} />
       <section className="progress-band">
         <div>
@@ -187,11 +223,12 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
             </div>
           ))}
         </div>
-        <Link href="/curriculum" className="progress-link">{language === 'en' ? 'Open your learning path' : language === 'zh-Hant' ? '開啟學習進度' : '开启学习进度'} <ChevronRight size={14} /></Link>
+        <Link href="/playground" className="progress-link">{tr(language, 'Open the Learning playground', '開啟學習樂園', '开启学习乐园')} <ChevronRight size={14} /></Link>
       </section>
     </main>
   );
 }
+
 
 function PracticeSection({ language, age }: { language: Language; age: string }) {
   const vocabulary = lessons.filter((lesson) => !lesson.premium).flatMap((lesson) => lesson.words);
@@ -252,128 +289,165 @@ function PracticeSection({ language, age }: { language: Language; age: string })
 function LessonCard({ lesson, language, t }: { lesson: GardenLesson; language: Language; t: Copy }) {
   const Icon = icons[lesson.icon as keyof typeof icons] || BookOpen;
   return (
-    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': lesson.premium ? '#f1e9da' : '#e9f0e2' } as CSSProperties} data-testid={`card-lesson-${lesson.id}`}>
-      <div className="lesson-top"><span className="lesson-icon"><Icon size={20} strokeWidth={1.7} /></span><span className="premium-label">{lesson.premium ? <><LockKeyhole size={11} /> {t.premium}</> : t.free}</span></div>
+    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': '#e9f0e2' } as CSSProperties} data-testid={`card-lesson-${lesson.id}`}>
+      <div className="lesson-top"><span className="lesson-icon"><Icon size={20} strokeWidth={1.7} /></span><span className="premium-label">{t.free}</span></div>
       <h3 className="lesson-title">{lesson.title[language]}</h3>
       <p className="lesson-description">{lesson.subtitle[language]}</p>
-      <div className="lesson-bottom"><span>{lesson.words.length} {t.learn}</span><strong>{lesson.premium ? t.locked : t.start} <ArrowRight size={12} /></strong></div>
+      <div className="lesson-bottom"><span>{lesson.words.length} {t.learn}</span><strong>{t.start} <ArrowRight size={12} /></strong></div>
     </Link>
   );
 }
 
-function speak(text: string, language: Language) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = language === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
-  utterance.rate = 0.78;
-  window.speechSynthesis.speak(utterance);
-}
-
 function LessonPage({ language, t }: { language: Language; t: Copy }) {
   const { lessonId } = useParams<{ lessonId: string }>();
+  const pathMatch = /^stage-path-(\d+)$/.exec(lessonId ?? '');
+  if (pathMatch) return <StagePathPlayer packIndex={Number(pathMatch[1])} l={language} />;
+  const lesson = lessons.find((item) => item.id === lessonId);
+  if (!lesson) return <main className="page-shell not-found"><h1>{tr(language, 'That path is not here.', '找不到這條小徑。', '找不到这条小径。')}</h1><Link href="/" className="button-primary">{t.back}</Link></main>;
+  if (lesson.premium) {
+    return (
+      <main className="page-shell"><div className="lesson-page">
+        <Link href="/" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
+        <div className="lesson-player locked-panel" style={{ marginTop: 18 }}>
+          <div className="complete-mark"><Sprout size={27} /></div>
+          <h1 className="locked-title">{tr(language, 'This lesson has moved into the Learning playground', '這堂課已移到學習樂園', '这堂课已移到学习乐园')}</h1>
+          <p className="section-sub">{tr(language, 'Member word paths now come from the stage you choose for your child.', '會員詞語小徑現在依您為孩子選擇的階段而定。', '会员词语小径现在依您为孩子选择的阶段而定。')}</p>
+          <Link href="/playground" className="button-primary" data-testid="link-moved-playground">{playgroundName[language]} <ArrowRight size={16} /></Link>
+        </div>
+      </div></main>
+    );
+  }
+  return <FreeLesson key={lesson.id} lesson={lesson} language={language} t={t} />;
+}
+
+function FreeLesson({ lesson, language, t }: { lesson: GardenLesson; language: Language; t: Copy }) {
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(false);
-  const lesson = lessons.find((item) => item.id === lessonId);
-  const userState = useUser();
-  const isSignedIn = userState.isSignedIn ?? false;
-  const billing = useGetBillingStatus({ query: { enabled: isSignedIn, queryKey: [...getGetBillingStatusQueryKey(), userState.user?.id], retry: false } });
-  useEffect(() => { setIndex(0); setDone(false); }, [lessonId]);
-  if (!lesson) return <main className="page-shell not-found"><h1>That path is not here.</h1><Link href="/" className="button-primary">{t.back}</Link></main>;
-  const locked = lesson.premium && (!isSignedIn || billing.data?.isPremium !== true);
+  const script = scriptFor(language);
+  useEffect(() => () => stopSpeech(), []);
   const word = lesson.words[index];
-  const next = () => {
-    if (index < lesson.words.length - 1) setIndex((value) => value + 1);
-    else setDone(true);
-  };
+  const next = () => { if (index < lesson.words.length - 1) setIndex((value) => value + 1); else setDone(true); };
   return (
     <main className="page-shell">
       <div className="lesson-page">
-        <Link href="/" className="button-secondary" style={{ minHeight: 40, padding: '0 13px', fontSize: 12 }}><ArrowLeft size={14} /> {t.back}</Link>
-        {locked ? (
-          <div className="lesson-player" style={{ marginTop: 18, textAlign: 'center' }}>
-            <div className="complete-mark"><LockKeyhole size={27} /></div>
-            <div className="eyebrow" style={{ justifyContent: 'center' }}>{lesson.title[language]}</div>
-            <h1 className="section-head" style={{ justifyContent: 'center', fontFamily: 'var(--app-font-serif)', color: '#314b3a' }}>{t.locked}</h1>
-            <p className="section-sub">{lesson.subtitle[language]}</p>
-            <Link href="/parent" className="button-primary">{t.join} <ArrowRight size={16} /></Link>
-          </div>
-        ) : (
-          <div className="lesson-player" style={{ marginTop: 18 }}>
-            <div className="player-head"><span>{lesson.title[language]} · {done ? lesson.words.length : index + 1} / {lesson.words.length}</span><Link href="/" className="icon-button" aria-label={t.back}><X size={17} /></Link></div>
-            <div className="player-progress"><span style={{ width: `${done ? 100 : ((index + 1) / lesson.words.length) * 100}%` }} /></div>
-            {done ? (
-              <div className="complete-panel">
-                <div className="complete-mark"><Check size={32} /></div>
-                <h2>{t.complete}</h2><p className="section-sub">{t.completeHint}</p>
-                <div className="button-row" style={{ justifyContent: 'center', marginTop: 22 }}>
-                  <button className="button-secondary" onClick={() => { setIndex(0); setDone(false); }}><RotateCcw size={15} /> {t.minutes}</button>
-                  <Link href="/" className="button-primary">{t.return} <ArrowRight size={15} /></Link>
-                </div>
+        <Link href="/" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
+        <div className="lesson-player" style={{ marginTop: 18 }}>
+          <div className="player-head"><span>{lesson.title[language]} · {done ? lesson.words.length : index + 1} / {lesson.words.length}</span><Link href="/" className="icon-button" aria-label={t.back}><X size={17} /></Link></div>
+          <div className="player-progress"><span style={{ width: `${done ? 100 : ((index + 1) / lesson.words.length) * 100}%` }} /></div>
+          {done ? (
+            <div className="complete-panel">
+              <div className="complete-mark"><Check size={32} /></div>
+              <h2>{t.complete}</h2><p className="section-sub">{t.completeHint}</p>
+              <div className="button-row" style={{ justifyContent: 'center', marginTop: 22 }}>
+                <button className="button-secondary" onClick={() => { setIndex(0); setDone(false); }}><RotateCcw size={15} /> {t.minutes}</button>
+                <Link href="/" className="button-primary">{t.return} <ArrowRight size={15} /></Link>
               </div>
-            ) : (
-              <>
-                <div className="word-card">
-                  <div className="word-meaning">{word.meaning[language]}</div>
-                  <div className="word-hanzi">{language === 'zh-Hans' ? word.simplified : word.hanzi}</div>
-                  <div className="word-pinyin">{word.pinyin}</div>
-                  <button className="audio-button" onClick={() => speak(language === 'zh-Hans' ? word.simplified : word.hanzi, language)} data-testid="button-listen"><Volume2 size={15} /> {t.listen}</button>
-                </div>
-                <div className="sentence-box">
-                  <div className="sentence-label">{t.sentence}</div>
-                  <div className="sentence-hanzi">{language === 'zh-Hans' ? word.sentenceSimplified : word.sentence}</div>
-                  <div className="sentence-pinyin">{word.sentencePinyin}</div>
-                  <button className="audio-button" style={{ margin: '12px 0 0', padding: '8px 12px' }} onClick={() => speak(language === 'zh-Hans' ? word.sentenceSimplified : word.sentence, language)}><Play size={12} /> {t.listen}</button>
-                </div>
-                <div className="player-actions">
-                  <span className="section-sub" style={{ margin: 0 }}>{t.word} {index + 1} / {lesson.words.length}</span>
-                  <button className="button-primary" onClick={next} data-testid="button-next-word">{index === lesson.words.length - 1 ? t.finish : t.next} <ArrowRight size={15} /></button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+            </div>
+          ) : (
+            <>
+              <div className="word-card">
+                <div className="word-meaning">{word.meaning[language]}</div>
+                <div className="word-hanzi">{script === 'simp' ? word.simplified : word.hanzi}</div>
+                <div className="word-pinyin">{word.pinyin}</div>
+                <button className="audio-button" onClick={() => speakMandarin(script === 'simp' ? word.simplified : word.hanzi, script)} data-testid="button-listen"><Volume2 size={15} /> {t.listen}</button>
+              </div>
+              <div className="sentence-box">
+                <div className="sentence-label">{t.sentence}</div>
+                <div className="sentence-hanzi">{script === 'simp' ? word.sentenceSimplified : word.sentence}</div>
+                <div className="sentence-pinyin">{word.sentencePinyin}</div>
+                <button className="audio-button" style={{ margin: '12px 0 0', padding: '8px 12px' }} onClick={() => speakMandarin(script === 'simp' ? word.sentenceSimplified : word.sentence, script)}><Play size={12} /> {t.listen}</button>
+              </div>
+              <div className="player-actions">
+                <span className="section-sub" style={{ margin: 0 }}>{t.word} {index + 1} / {lesson.words.length}</span>
+                <button className="button-primary" onClick={next} data-testid="button-next-word">{index === lesson.words.length - 1 ? t.finish : t.next} <ArrowRight size={15} /></button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </main>
   );
 }
 
+function ParentStagePanel({ l }: { l: Language }) {
+  const m = useMembership();
+  const progress = useLearningProgress(m.uid, m.isSignedIn);
+  const stageSelect = useSelectStage(m.uid);
+  const [selectError, setSelectError] = useState(false);
+  if (!m.isSignedIn) return null;
+  const p = progress.progress;
+  return (
+    <section className="panel" data-testid="panel-stage">
+      <h2>{playgroundName[l]}</h2>
+      <p className="panel-desc">{m.premium
+        ? tr(l, `Pick any stage, in any order. ${XP_COMPLETE} XP completes a stage; XP keeps growing after that.`, `任選一個階段，不必依序。累積 ${XP_COMPLETE} XP 即完成，之後仍會繼續累積。`, `任选一个阶段，不必依序。累积 ${XP_COMPLETE} XP 即完成，之后仍会继续累积。`)
+        : tr(l, 'Saved progress is shown below. Family membership lets you choose stages and keep playing.', '以下是已儲存的進度。加入家庭會員即可選擇階段並繼續練習。', '以下是已保存的进度。加入家庭会员即可选择阶段并继续练习。')}</p>
+      {m.checking || progress.isLoading ? <div className="stage-picker">{[1, 2, 3, 4].map((i) => <div key={i} className="skeleton-block" style={{ height: 120 }} />)}</div>
+        : progress.isError || !p ? <div className="alert" role="alert"><p>{tr(l, 'We could not load learning progress.', '無法載入學習進度。', '无法加载学习进度。')}</p><button className="button-secondary" onClick={() => void progress.refetch()} data-testid="button-retry-parent-progress">{tr(l, 'Try again', '再試一次', '再试一次')}</button></div>
+        : (
+          <>
+            <div className="stage-summary">
+              <div><span>{tr(l, 'Selected stage', '目前階段', '当前阶段')}</span><strong data-testid="text-selected-stage">{stageLabel(l, p.selectedStage)} · {pick(l, stageNames[p.selectedStage - 1])}</strong></div>
+              <div><span>{tr(l, 'Total XP', '總經驗值', '总经验值')}</span><strong data-testid="text-total-xp">{p.totalXp}</strong></div>
+              <div><span>{tr(l, 'Stages complete', '已完成階段', '已完成阶段')}</span><strong data-testid="text-stages-complete">{p.xpByStage.filter((x) => x >= XP_COMPLETE).length} / 4</strong></div>
+            </div>
+            <StagePicker progress={p} l={l} onSelect={m.premium ? (s) => { if (s === p.selectedStage) return; setSelectError(false); stageSelect.select(s, { onError: () => setSelectError(true) }); } : undefined} pendingStage={stageSelect.pendingStage} disabled={!m.premium || stageSelect.isPending} />
+            {selectError ? <div className="alert" role="alert">{tr(l, 'The stage could not be changed. Please try again.', '未能切換階段，請再試一次。', '未能切换阶段，请再试一次。')}</div> : null}
+            {m.premium ? <Link href="/playground" className="button-secondary" style={{ marginTop: 14 }} data-testid="link-parent-playground">{tr(l, 'Open the playground', '前往學習樂園', '前往学习乐园')} <ArrowRight size={14} /></Link> : null}
+          </>
+        )}
+    </section>
+  );
+}
+
 function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePreferences>; t: Copy }) {
+  const l = preferences.language;
   const { isSignedIn, user } = useUser();
-  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: [...getGetBillingStatusQueryKey(), user?.id], retry: false } });
+  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: [...getGetBillingStatusQueryKey(), user?.id ?? null], retry: false } });
   const plan = useGetBillingPlan({ query: { retry: false, staleTime: 300_000 } });
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  // Checkout acknowledgements: always start unticked, never persisted.
+  const [privacyOk, setPrivacyOk] = useState(false);
+  const [disclaimerOk, setDisclaimerOk] = useState(false);
+  const [noRefundOk, setNoRefundOk] = useState(false);
   const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
   const active = status.data?.isPremium ?? false;
-  const hasSubscription = ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(status.data?.subscriptionStatus ?? "");
+  const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'].includes(status.data?.subscriptionStatus ?? '');
   const checking = Boolean(isSignedIn && status.isLoading);
+  const statusReady = Boolean(isSignedIn && status.data && !status.isError);
   const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && status.isError);
-  const priceLabel = plan.data?.priceLabel ?? billingCopy[preferences.language].priceUnavailable;
+  const allAccepted = privacyOk && disclaimerOk && noRefundOk;
+  const canCheckout = statusReady && Boolean(plan.data) && !plan.isError && allAccepted && !busy;
+  const priceLabel = plan.data?.priceLabel ?? billingCopy[l].priceUnavailable;
   const checkoutNotice =
-    checkoutResult === 'cancelled'
-      ? billingCopy[preferences.language].checkoutCancelled
-      : checkoutResult === 'success'
-        ? active
-          ? billingCopy[preferences.language].checkoutSuccess
-          : isSignedIn && status.isLoading
-            ? t.loading
-            : billingCopy[preferences.language].checkoutPending
+    checkoutResult === 'cancelled' ? billingCopy[l].checkoutCancelled
+      : checkoutResult === 'success' ? (active ? billingCopy[l].checkoutSuccess : isSignedIn && status.isLoading ? t.loading : billingCopy[l].checkoutPending)
         : '';
+  const refetchStatus = useRef(status.refetch);
+  refetchStatus.current = status.refetch;
 
   useEffect(() => {
-    if (checkoutResult === 'success' && isSignedIn) void status.refetch();
+    if (checkoutResult === 'success' && isSignedIn) void refetchStatus.current();
   }, [checkoutResult, isSignedIn]);
+
+  const isForbidden = (err: unknown) => typeof err === 'object' && err !== null && (err as { status?: number }).status === 403;
 
   const initiateCheckout = () => {
     setError('');
-    if (!isSignedIn || !plan.data) return;
+    if (!isSignedIn || !plan.data || !allAccepted) return;
     setWorking(true);
     checkout.mutate(
-      { data: { successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/parent?checkout=cancelled` } },
-      { onSuccess: (result) => { window.location.assign(result.url); }, onError: () => { setError(t.checkoutError); setWorking(false); } },
+      { data: { privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true, policyVersion: LEGAL_VERSION, successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/parent?checkout=cancelled` } },
+      {
+        onSuccess: (result) => { window.location.assign(result.url); },
+        onError: (err) => {
+          setError(isForbidden(err) ? tr(l, 'Your account agreements need to be confirmed first. Please reload the page to review them.', '請先確認帳戶同意事項，重新載入頁面即可查看。', '请先确认账户同意事项，重新加载页面即可查看。') : t.checkoutError);
+          setWorking(false);
+        },
+      },
     );
   };
   const openPortal = () => {
@@ -381,10 +455,10 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
     setWorking(true);
     portal.mutate(
       { data: { returnUrl: `${window.location.origin}/parent` } },
-      { onSuccess: (result) => { window.location.assign(result.url); }, onError: () => { setError(t.portalError); setWorking(false); } },
+      { onSuccess: (result) => { window.location.assign(result.url); }, onError: (err) => { setError(isForbidden(err) ? tr(l, 'Your account agreements need to be confirmed first.', '請先確認帳戶同意事項。', '请先确认账户同意事项。') : t.portalError); setWorking(false); } },
     );
   };
-  const date = status.data?.currentPeriodEnd ? new Intl.DateTimeFormat(preferences.language, { dateStyle: 'long' }).format(new Date(status.data.currentPeriodEnd)) : '';
+  const date = status.data?.currentPeriodEnd ? new Intl.DateTimeFormat(l, { dateStyle: 'long' }).format(new Date(status.data.currentPeriodEnd)) : '';
   return (
     <main className="page-shell">
       <section className="page-title">
@@ -393,14 +467,15 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
       </section>
       <div className="parent-grid">
         <div>
+          <ParentStagePanel l={l} />
           <section className="panel">
             <h2>{t.interface}</h2><p className="panel-desc">{t.interfaceHint}</p>
-            <div className="setting-row"><div><div className="setting-name">{t.interface}</div><div className="setting-detail">{preferences.language === 'en' ? 'English' : preferences.language === 'zh-Hant' ? '繁體中文' : '简体中文'}</div></div>
-              <select className="select-control" value={preferences.language} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} aria-label={t.interface} data-testid="parent-language">
+            <div className="setting-row"><div><div className="setting-name">{t.interface}</div><div className="setting-detail">{languages.find((x) => x.value === l)?.label}</div></div>
+              <select className="select-control" value={l} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} aria-label={t.interface} data-testid="parent-language">
                 {languages.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
               </select>
             </div>
-            <div className="setting-row"><div><div className="setting-name">{t.age}</div><div className="setting-detail">{t.ageHint}</div></div>
+            <div className="setting-row"><div><div className="setting-name">{tr(l, 'Child’s age', '孩子年齡', '孩子年龄')}</div><div className="setting-detail">{tr(l, 'Used for the free reading card. Stages are chosen above.', '用於免費閱讀卡片，學習階段請在上方選擇。', '用于免费阅读卡片，学习阶段请在上方选择。')}</div></div>
               <select className="select-control" value={preferences.age} onChange={(event) => preferences.saveAge(event.target.value)} aria-label={t.age} data-testid="parent-age">
                 {['2-4', '3-5', '6-8', '9-12'].map((item, index) => <option key={item} value={item}>{t.levelAges[index]}</option>)}
               </select>
@@ -412,11 +487,11 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
           <section className="panel">
             <h2>{t.account}</h2>
             <Show when="signed-in">
-              <div className="setting-row"><div><div className="setting-name">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</div><div className="setting-detail">{user?.primaryEmailAddress?.emailAddress}</div></div><SignOutControl label={signOutLabels[preferences.language]} className="button-secondary" /></div>
+              <div className="setting-row"><div><div className="setting-name">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</div><div className="setting-detail">{user?.primaryEmailAddress?.emailAddress}</div></div><SignOutControl label={signOutLabels[l]} className="button-secondary" /></div>
             </Show>
             <Show when="signed-out">
               <p className="panel-desc">{t.signedOut}</p>
-              <div className="button-row"><SignInButton mode="modal"><button className="button-secondary">{t.signIn}</button></SignInButton><SignUpButton mode="modal"><button className="button-primary">{t.signUp}</button></SignUpButton></div>
+              <div className="button-row"><Link href="/sign-in" className="button-secondary" data-testid="link-parent-sign-in">{t.signIn}</Link><Link href="/register" className="button-primary" data-testid="link-parent-register">{t.signUp}</Link></div>
             </Show>
           </section>
         </div>
@@ -424,21 +499,31 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
           <section className="panel membership-card">
             <h2><Leaf size={18} /> {t.membership}</h2>
             <p className="panel-desc">{checking ? t.loading : status.isError && isSignedIn ? t.failed : active ? t.premiumActive : t.freePlan}</p>
-            {status.isLoading && isSignedIn ? <div className="setting-row"><span className="panel-desc">{t.loading}</span><span className="status-pill">•••</span></div> : null}
-            {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => status.refetch()}>{t.retry}</button></div> : null}
-            {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{active ? t.premiumActive : t.freePlan}</span></div> : null}
+            {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()}>{t.retry}</button></div> : null}
+            {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
             <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div>
-            {plan.isError ? <div className="alert"><p>{billingCopy[preferences.language].priceUnavailable}</p><button className="button-secondary" onClick={() => plan.refetch()}>{t.retry}</button></div> : null}
+            {plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
             {checkoutNotice ? <div className="membership-note" role="status">{checkoutNotice}{checkoutResult === 'success' && !active ? <button className="button-secondary" onClick={() => void status.refetch()}>{t.retry}</button> : null}</div> : null}
             <ul className="benefit-list">{t.benefits.map((benefit) => <li key={benefit}><Check size={15} />{benefit}</li>)}</ul>
             {error ? <div className="alert" role="alert">{error}</div> : null}
             <Show when="signed-in">
               {hasSubscription
                 ? <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={openPortal} disabled={busy} data-testid="button-manage-subscription">{busy ? t.loading : t.manage} <ArrowRight size={15} /></button>
-                : <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={busy || !plan.data || plan.isError} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>}
+                : (
+                  <>
+                    <div className="consent-list compact" data-testid="checkout-consent">
+                      <ConsentCheck checked={privacyOk} onChange={setPrivacyOk} testId="check-checkout-privacy"><PrivacyAgreement l={l} /></ConsentCheck>
+                      <ConsentCheck checked={disclaimerOk} onChange={setDisclaimerOk} testId="check-checkout-disclaimer"><DisclaimerAgreement l={l} /></ConsentCheck>
+                      <ConsentCheck checked={noRefundOk} onChange={setNoRefundOk} testId="check-checkout-norefund">
+                        {tr(l, 'I understand membership renews monthly until cancelled, cancellation takes effect at the end of the paid period, and payments are non-refundable except where mandatory law requires a refund or I was charged in error (see the ', '我了解會員每月自動續訂直至取消，取消於已付費期間結束時生效，且費用恕不退還；但強制性法律規定須退款或錯誤收費者除外（詳見', '我了解会员每月自动续订直至取消，取消于已付费期间结束时生效，且费用恕不退还；但强制性法律规定须退款或错误收费者除外（详见')}<DocLink to="/disclaimer">{disclaimerName(l)}</DocLink>{tr(l, ').', '）。', '）。')}
+                      </ConsentCheck>
+                    </div>
+                    <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>
+                  </>
+                )}
             </Show>
             <Show when="signed-out">
-              <SignInButton mode="modal"><button className="button-primary" data-testid="button-sign-in-to-upgrade">{t.signIn} · {t.upgrade} <ArrowRight size={15} /></button></SignInButton>
+              <Link href="/sign-in" className="button-primary" data-testid="button-sign-in-to-upgrade">{t.signIn} · {t.upgrade} <ArrowRight size={15} /></Link>
             </Show>
             <p className="membership-note">{t.paymentNote}</p>
           </section>
@@ -447,5 +532,6 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
     </main>
   );
 }
+
 
 export default App;

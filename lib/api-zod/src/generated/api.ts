@@ -54,8 +54,16 @@ export const GetBillingSubscriptionResponse = zod.object({
  * @summary Create a premium subscription checkout session
  */
 export const CreateBillingCheckoutBody = zod.union([zod.object({
+  "privacyAccepted": zod.literal(true),
+  "disclaimerAccepted": zod.literal(true),
+  "noRefundAccepted": zod.literal(true),
+  "policyVersion": zod.enum(['2026-10-29']),
   "returnUrl": zod.url()
 }),zod.object({
+  "privacyAccepted": zod.literal(true),
+  "disclaimerAccepted": zod.literal(true),
+  "noRefundAccepted": zod.literal(true),
+  "policyVersion": zod.enum(['2026-10-29']),
   "successUrl": zod.url(),
   "cancelUrl": zod.url()
 })])
@@ -74,6 +82,99 @@ export const CreateBillingPortalBody = zod.object({
 
 export const CreateBillingPortalResponse = zod.object({
   "url": zod.url()
+})
+
+
+export const getLearningProgressResponseSelectedStageMax = 4;
+
+export const getLearningProgressResponseXpByStageItemMin = 0;
+
+export const getLearningProgressResponseXpByStageMin = 4;
+export const getLearningProgressResponseXpByStageMax = 4;
+
+
+
+export const GetLearningProgressResponse = zod.object({
+  "selectedStage": zod.int().min(1).max(getLearningProgressResponseSelectedStageMax),
+  "xpByStage": zod.array(zod.int().min(getLearningProgressResponseXpByStageItemMin)).min(getLearningProgressResponseXpByStageMin).max(getLearningProgressResponseXpByStageMax)
+})
+
+
+export const updateLearningProgressBodySelectedStageMax = 4;
+
+export const updateLearningProgressBodyLegacyXpTotalMin = 0;
+export const updateLearningProgressBodyLegacyXpTotalMax = 400;
+
+
+
+export const UpdateLearningProgressBody = zod.object({
+  "selectedStage": zod.int().min(1).max(updateLearningProgressBodySelectedStageMax),
+  "legacyXpTotal": zod.int().min(updateLearningProgressBodyLegacyXpTotalMin).max(updateLearningProgressBodyLegacyXpTotalMax).optional()
+})
+
+export const updateLearningProgressResponseSelectedStageMax = 4;
+
+export const updateLearningProgressResponseXpByStageItemMin = 0;
+
+export const updateLearningProgressResponseXpByStageMin = 4;
+export const updateLearningProgressResponseXpByStageMax = 4;
+
+
+
+export const UpdateLearningProgressResponse = zod.object({
+  "selectedStage": zod.int().min(1).max(updateLearningProgressResponseSelectedStageMax),
+  "xpByStage": zod.array(zod.int().min(updateLearningProgressResponseXpByStageItemMin)).min(updateLearningProgressResponseXpByStageMin).max(updateLearningProgressResponseXpByStageMax)
+})
+
+
+export const recordLearningRoundBodyStageMax = 4;
+
+export const recordLearningRoundBodyRoundIdMin = 8;
+export const recordLearningRoundBodyRoundIdMax = 100;
+
+export const recordLearningRoundBodyCorrectCountMin = 0;
+export const recordLearningRoundBodyCorrectCountMax = 5;
+
+
+
+export const RecordLearningRoundBody = zod.object({
+  "stage": zod.int().min(1).max(recordLearningRoundBodyStageMax),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "roundId": zod.string().min(recordLearningRoundBodyRoundIdMin).max(recordLearningRoundBodyRoundIdMax),
+  "correctCount": zod.int().min(recordLearningRoundBodyCorrectCountMin).max(recordLearningRoundBodyCorrectCountMax)
+})
+
+export const recordLearningRoundResponseSelectedStageMax = 4;
+
+export const recordLearningRoundResponseXpByStageItemMin = 0;
+
+export const recordLearningRoundResponseXpByStageMin = 4;
+export const recordLearningRoundResponseXpByStageMax = 4;
+
+
+
+export const RecordLearningRoundResponse = zod.object({
+  "selectedStage": zod.int().min(1).max(recordLearningRoundResponseSelectedStageMax),
+  "xpByStage": zod.array(zod.int().min(recordLearningRoundResponseXpByStageItemMin)).min(recordLearningRoundResponseXpByStageMin).max(recordLearningRoundResponseXpByStageMax)
+})
+
+
+export const GetLegalConsentResponse = zod.object({
+  "accepted": zod.boolean(),
+  "policyVersion": zod.string()
+})
+
+
+export const AcceptLegalConsentBody = zod.object({
+  "privacyAccepted": zod.literal(true),
+  "disclaimerAccepted": zod.literal(true),
+  "adultConfirmed": zod.literal(true),
+  "policyVersion": zod.enum(['2026-10-29'])
+})
+
+export const AcceptLegalConsentResponse = zod.object({
+  "accepted": zod.boolean(),
+  "policyVersion": zod.string()
 })
 
 

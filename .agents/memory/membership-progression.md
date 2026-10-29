@@ -1,10 +1,10 @@
 ---
 name: Membership progression
-description: Product rule for monthly premium access and age-level progression.
+description: Paid parent stage choice and per-stage completion XP.
 ---
 
-Premium monthly membership includes all four learning levels, but every learner starts at Level 1 and advances only after meeting the level requirement. Do not charge a separate fee to unlock an individual level. Keep the existing free lessons and games unchanged.
+Premium monthly membership includes all four stages. Paid parents may freely select any stage; XP must not lock stages. Each stage has its own XP total, and reaching 100 XP marks that stage complete and encourages trying a higher stage. Preserve all XP and the selected stage when signing out and back in. Keep the existing free content unchanged, and never charge per-stage unlock fees.
 
-**Why:** the user explicitly chose monthly access to all levels with sequential progression and cancelled per-level unlock payments.
+**Why:** the user replaced the earlier sequential-unlock rule with free parent selection, per-stage completion encouragement, and persistent account progress.
 
-**How to apply:** gate premium curriculum by subscription and earned progress; changing the age recommendation must not skip the learning path.
+**How to apply:** gate paid learning content by subscription, not earned XP. Use account-owned saved progress for stage selection and completion; call the product surface 學習樂園, not 學習課程.

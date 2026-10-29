@@ -33,11 +33,33 @@ export interface BillingSubscriptionResponse {
   currentPeriodEnd: number | null;
 }
 
+export type BillingReturnUrlRequestPolicyVersion = typeof BillingReturnUrlRequestPolicyVersion[keyof typeof BillingReturnUrlRequestPolicyVersion];
+
+
+export const BillingReturnUrlRequestPolicyVersion = {
+  '2026-10-29': '2026-10-29',
+} as const;
+
 export interface BillingReturnUrlRequest {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
+  noRefundAccepted: true;
+  policyVersion: BillingReturnUrlRequestPolicyVersion;
   returnUrl: string;
 }
 
+export type CheckoutInputPolicyVersion = typeof CheckoutInputPolicyVersion[keyof typeof CheckoutInputPolicyVersion];
+
+
+export const CheckoutInputPolicyVersion = {
+  '2026-10-29': '2026-10-29',
+} as const;
+
 export interface CheckoutInput {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
+  noRefundAccepted: true;
+  policyVersion: CheckoutInputPolicyVersion;
   successUrl: string;
   cancelUrl: string;
 }
@@ -58,5 +80,81 @@ export interface PortalInput {
 
 export interface PortalResult {
   url: string;
+}
+
+export interface LearningProgress {
+  /**
+     * @minimum 1
+     * @maximum 4
+     */
+  selectedStage: number;
+  /**
+     * @minItems 4
+     * @maxItems 4
+     * @items.minimum 0
+     */
+  xpByStage: number[];
+}
+
+export interface LearningProgressInput {
+  /**
+     * @minimum 1
+     * @maximum 4
+     */
+  selectedStage: number;
+  /**
+     * @minimum 0
+     * @maximum 400
+     */
+  legacyXpTotal?: number;
+}
+
+export type LearningRoundInputMode = typeof LearningRoundInputMode[keyof typeof LearningRoundInputMode];
+
+
+export const LearningRoundInputMode = {
+  match: 'match',
+  pinyin: 'pinyin',
+  listen: 'listen',
+  'word-order': 'word-order',
+  'sentence-order': 'sentence-order',
+} as const;
+
+export interface LearningRoundInput {
+  /**
+     * @minimum 1
+     * @maximum 4
+     */
+  stage: number;
+  mode: LearningRoundInputMode;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  roundId: string;
+  /**
+     * @minimum 0
+     * @maximum 5
+     */
+  correctCount: number;
+}
+
+export interface LegalConsentStatus {
+  accepted: boolean;
+  policyVersion: string;
+}
+
+export type LegalConsentInputPolicyVersion = typeof LegalConsentInputPolicyVersion[keyof typeof LegalConsentInputPolicyVersion];
+
+
+export const LegalConsentInputPolicyVersion = {
+  '2026-10-29': '2026-10-29',
+} as const;
+
+export interface LegalConsentInput {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
+  adultConfirmed: true;
+  policyVersion: LegalConsentInputPolicyVersion;
 }
 

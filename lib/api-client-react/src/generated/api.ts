@@ -31,6 +31,11 @@ import type {
   BillingStatus,
   BillingSubscriptionResponse,
   HealthStatus,
+  LearningProgress,
+  LearningProgressInput,
+  LearningRoundInput,
+  LegalConsentInput,
+  LegalConsentStatus,
   PortalInput
 } from './api.schemas';
 
@@ -640,5 +645,441 @@ export const useCreateBillingPortal = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreateBillingPortalMutationOptions(options), queryClient);
+    }
+
+export const getGetLearningProgressUrl = () => {
+
+
+
+
+  return `/api/learning/progress`
+}
+
+export const getLearningProgress = async ( options?: Parameters<typeof customFetch>[1]): Promise<LearningProgress> => {
+
+  return customFetch<LearningProgress>(getGetLearningProgressUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLearningProgressQueryKey = () => {
+    return [
+    `/api/learning/progress`
+    ] as const;
+    }
+
+
+export const getGetLearningProgressQueryOptions = <TData = Awaited<ReturnType<typeof getLearningProgress>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLearningProgressQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLearningProgress>>> = ({ signal }) => getLearningProgress({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetLearningProgressQueryResult = NonNullable<Awaited<ReturnType<typeof getLearningProgress>>>
+export type GetLearningProgressQueryError = ErrorType<void>
+
+
+export function useGetLearningProgress<TData = Awaited<ReturnType<typeof getLearningProgress>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLearningProgress>>,
+          TError,
+          Awaited<ReturnType<typeof getLearningProgress>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLearningProgress<TData = Awaited<ReturnType<typeof getLearningProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLearningProgress>>,
+          TError,
+          Awaited<ReturnType<typeof getLearningProgress>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLearningProgress<TData = Awaited<ReturnType<typeof getLearningProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetLearningProgress<TData = Awaited<ReturnType<typeof getLearningProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLearningProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetLearningProgressQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateLearningProgressUrl = () => {
+
+
+
+
+  return `/api/learning/progress`
+}
+
+export const updateLearningProgress = async (learningProgressInput: LearningProgressInput, options?: Parameters<typeof customFetch>[1]): Promise<LearningProgress> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LearningProgress>(getUpdateLearningProgressUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(learningProgressInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateLearningProgressMutationKey = () => ['updateLearningProgress'] as const;
+
+export const getUpdateLearningProgressMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLearningProgress>>, TError,UpdateLearningProgressMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLearningProgress>>, TError,UpdateLearningProgressMutationVariables, TContext> => {
+
+const mutationKey = getUpdateLearningProgressMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLearningProgress>>, UpdateLearningProgressMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateLearningProgress(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLearningProgressMutationResult = NonNullable<Awaited<ReturnType<typeof updateLearningProgress>>>
+    export type UpdateLearningProgressMutationBody = BodyType<LearningProgressInput>
+    export type UpdateLearningProgressMutationError = ErrorType<void>
+    export type UpdateLearningProgressMutationVariables = {data: BodyType<LearningProgressInput>}
+
+    export const useUpdateLearningProgress = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLearningProgress>>, TError,UpdateLearningProgressMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateLearningProgress>>,
+        TError,
+        UpdateLearningProgressMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateLearningProgressMutationOptions(options), queryClient);
+    }
+
+export const getRecordLearningRoundUrl = () => {
+
+
+
+
+  return `/api/learning/round`
+}
+
+export const recordLearningRound = async (learningRoundInput: LearningRoundInput, options?: Parameters<typeof customFetch>[1]): Promise<LearningProgress> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LearningProgress>(getRecordLearningRoundUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(learningRoundInput)
+  }
+);}
+
+
+
+
+
+export const getRecordLearningRoundMutationKey = () => ['recordLearningRound'] as const;
+
+export const getRecordLearningRoundMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordLearningRound>>, TError,RecordLearningRoundMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordLearningRound>>, TError,RecordLearningRoundMutationVariables, TContext> => {
+
+const mutationKey = getRecordLearningRoundMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordLearningRound>>, RecordLearningRoundMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordLearningRound(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordLearningRoundMutationResult = NonNullable<Awaited<ReturnType<typeof recordLearningRound>>>
+    export type RecordLearningRoundMutationBody = BodyType<LearningRoundInput>
+    export type RecordLearningRoundMutationError = ErrorType<void>
+    export type RecordLearningRoundMutationVariables = {data: BodyType<LearningRoundInput>}
+
+    export const useRecordLearningRound = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordLearningRound>>, TError,RecordLearningRoundMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordLearningRound>>,
+        TError,
+        RecordLearningRoundMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordLearningRoundMutationOptions(options), queryClient);
+    }
+
+export const getGetLegalConsentUrl = () => {
+
+
+
+
+  return `/api/legal/consent`
+}
+
+export const getLegalConsent = async ( options?: Parameters<typeof customFetch>[1]): Promise<LegalConsentStatus> => {
+
+  return customFetch<LegalConsentStatus>(getGetLegalConsentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLegalConsentQueryKey = () => {
+    return [
+    `/api/legal/consent`
+    ] as const;
+    }
+
+
+export const getGetLegalConsentQueryOptions = <TData = Awaited<ReturnType<typeof getLegalConsent>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLegalConsentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLegalConsent>>> = ({ signal }) => getLegalConsent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetLegalConsentQueryResult = NonNullable<Awaited<ReturnType<typeof getLegalConsent>>>
+export type GetLegalConsentQueryError = ErrorType<void>
+
+
+export function useGetLegalConsent<TData = Awaited<ReturnType<typeof getLegalConsent>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLegalConsent>>,
+          TError,
+          Awaited<ReturnType<typeof getLegalConsent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLegalConsent<TData = Awaited<ReturnType<typeof getLegalConsent>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLegalConsent>>,
+          TError,
+          Awaited<ReturnType<typeof getLegalConsent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLegalConsent<TData = Awaited<ReturnType<typeof getLegalConsent>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetLegalConsent<TData = Awaited<ReturnType<typeof getLegalConsent>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLegalConsent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetLegalConsentQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAcceptLegalConsentUrl = () => {
+
+
+
+
+  return `/api/legal/consent`
+}
+
+export const acceptLegalConsent = async (legalConsentInput: LegalConsentInput, options?: Parameters<typeof customFetch>[1]): Promise<LegalConsentStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LegalConsentStatus>(getAcceptLegalConsentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(legalConsentInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptLegalConsentMutationKey = () => ['acceptLegalConsent'] as const;
+
+export const getAcceptLegalConsentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,AcceptLegalConsentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,AcceptLegalConsentMutationVariables, TContext> => {
+
+const mutationKey = getAcceptLegalConsentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptLegalConsent>>, AcceptLegalConsentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptLegalConsent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptLegalConsentMutationResult = NonNullable<Awaited<ReturnType<typeof acceptLegalConsent>>>
+    export type AcceptLegalConsentMutationBody = BodyType<LegalConsentInput>
+    export type AcceptLegalConsentMutationError = ErrorType<void>
+    export type AcceptLegalConsentMutationVariables = {data: BodyType<LegalConsentInput>}
+
+    export const useAcceptLegalConsent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,AcceptLegalConsentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acceptLegalConsent>>,
+        TError,
+        AcceptLegalConsentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptLegalConsentMutationOptions(options), queryClient);
     }
 

@@ -19,3 +19,4 @@
 
 export * from "./billing-customers";
 export * from "./billingAccounts";
+export * from "./learning";

@@ -5,8 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckoutInputPolicyVersion } from './checkoutInputPolicyVersion';
 
 export interface CheckoutInput {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
+  noRefundAccepted: true;
+  policyVersion: CheckoutInputPolicyVersion;
   successUrl: string;
   cancelUrl: string;
 }

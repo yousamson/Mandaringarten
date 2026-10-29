@@ -5,7 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { BillingReturnUrlRequestPolicyVersion } from './billingReturnUrlRequestPolicyVersion';
 
 export interface BillingReturnUrlRequest {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
+  noRefundAccepted: true;
+  policyVersion: BillingReturnUrlRequestPolicyVersion;
   returnUrl: string;
 }
