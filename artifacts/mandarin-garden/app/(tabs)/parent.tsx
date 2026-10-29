@@ -15,9 +15,14 @@ import { useLearning } from '@/context/LearningContext';
 import { ageBandNote, ageBands } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
+import { useLanguage } from '@/context/LanguageContext';
+import { languageOptions, translate } from '@/lib/i18n';
 
 export default function ParentScreen() {
   const colors = useColors();
+  const { language, setLanguage } = useLanguage();
+  const t = (key: string, values?: Record<string, string | number>) =>
+    translate(language, key, values);
   const learning = useLearning();
   const subscription = useSubscription();
   const [confirmPurchase, setConfirmPurchase] = useState(false);
@@ -26,17 +31,15 @@ export default function ParentScreen() {
   const packageToPurchase = subscription.packageToPurchase;
   const purchase = async () => {
     if (!packageToPurchase) {
-      setNotice('目前沒有可用的月費方案，請稍後重試。');
+      setNotice(t('parent.purchaseUnavailable'));
       return;
     }
     try {
       await subscription.purchase(packageToPurchase);
       setConfirmPurchase(false);
-      setNotice('訂閱完成，高級課程已解鎖。');
+      setNotice(t('parent.purchaseComplete'));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '購買未完成，請稍後重試。';
-      setNotice(message);
+      setNotice(t('parent.purchaseFailed'));
       setConfirmPurchase(false);
     }
   };
@@ -48,11 +51,11 @@ export default function ParentScreen() {
       const restored = info.entitlements.active.premium !== undefined;
       setNotice(
         restored
-          ? '已恢復高級會員權益。'
-          : '沒有找到可恢復的高級會員訂閱。',
+          ? t('parent.restoreFound')
+          : t('parent.restoreNotFound'),
       );
     } catch {
-      setNotice('恢復購買失敗，請稍後重試。');
+      setNotice(t('parent.restoreFailed'));
     }
   };
 
@@ -60,8 +63,7 @@ export default function ParentScreen() {
     100,
     (learning.xp / Math.max(1, learning.nextLevelXp)) * 100,
   );
-  const levelNames = ['小芽學徒', '詞語探險家', '短句小能手', '漢語小讀者'];
-  const levelName = levelNames[(learning.level - 1) % levelNames.length];
+  const levelName = t(`level.name${((learning.level - 1) % 4) + 1}`);
 
   return (
     <Screen>
@@ -71,16 +73,55 @@ export default function ParentScreen() {
         showsVerticalScrollIndicator={false}
       >
         <PageTitle
-          eyebrow="家長專區"
-          title="一起看見進步"
-          subtitle="調整學習年齡，查看進度，管理會員方案。"
+          eyebrow={t('parent.eyebrow')}
+          title={t('parent.title')}
+          subtitle={t('parent.subtitle')}
         />
+
+        <View style={styles.sectionHead}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {t('parent.languageSection')}
+          </Text>
+          <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
+            {t('parent.languageHint')}
+          </Text>
+        </View>
+        <View style={styles.languageRow}>
+          {languageOptions.map((option) => {
+            const active = language === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                testID={`language-${option.value}`}
+                onPress={() => {
+                  void setLanguage(option.value).then((saved) => {
+                    if (!saved) setNotice(t('parent.languageSaveError'));
+                  });
+                }}
+                style={[
+                  styles.languageOption,
+                  {
+                    backgroundColor: active ? colors.secondary : colors.card,
+                    borderColor: active ? colors.primary : colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.languageText, { color: colors.foreground }]}>
+                  {option.label}
+                </Text>
+                {active ? <Ionicons name="checkmark-circle" size={16} color={colors.primary} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Surface style={styles.progressCard}>
           <View style={styles.progressHeader}>
             <View>
               <Text style={[styles.cardEyebrow, { color: colors.primary }]}>
-                目前等級
+                {t('parent.currentLevel')}
               </Text>
               <Text style={[styles.levelTitle, { color: colors.foreground }]}>
                 {levelName}
@@ -97,37 +138,37 @@ export default function ParentScreen() {
           <ProgressBar value={progressPercent} />
           <View style={styles.progressFooter}>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {learning.xp} 點學習經驗
+              {t('parent.xp', { count: learning.xp })}
             </Text>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              下一級 {learning.nextLevelXp} 點
+              {t('parent.nextLevel', { count: learning.nextLevelXp })}
             </Text>
           </View>
           <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
             <Stat
               icon="flame-outline"
               value={`${learning.streak}`}
-              label="連續學習日"
+              label={t('parent.streak')}
             />
             <Stat
               icon="book-outline"
               value={`${learning.completedLessonIds.length}`}
-              label="完成課程"
+              label={t('parent.completedLessons')}
             />
             <Stat
               icon="checkmark-done-outline"
               value={`${learning.learnedWordIds.length}`}
-              label="學會詞語"
+              label={t('parent.learnedWords')}
             />
           </View>
         </Surface>
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            孩子的年齡
+            {t('parent.ageSection')}
           </Text>
           <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            課程會依年齡調整建議
+            {t('parent.ageHint')}
           </Text>
         </View>
         <View style={styles.ageGrid}>
@@ -154,7 +195,7 @@ export default function ParentScreen() {
                     { color: colors.foreground },
                   ]}
                 >
-                  {band.label}
+                  {t(band.labelKey)}
                 </Text>
                 <Text
                   style={[
@@ -162,7 +203,7 @@ export default function ParentScreen() {
                     { color: colors.mutedForeground },
                   ]}
                 >
-                  {band.note}
+                  {t(band.noteKey)}
                 </Text>
                 {active ? (
                   <Ionicons
@@ -179,10 +220,10 @@ export default function ParentScreen() {
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            會員方案
+            {t('parent.membership')}
           </Text>
           <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            {subscription.isPremium ? '高級會員已啟用' : '免費方案'}
+            {subscription.isPremium ? t('parent.premiumEnabled') : t('parent.freePlan')}
           </Text>
         </View>
         <Surface
@@ -209,12 +250,12 @@ export default function ParentScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.memberTitle, { color: colors.foreground }]}>
-                {subscription.isPremium ? '高級會員' : '免費會員'}
+                {subscription.isPremium ? t('parent.premiumMember') : t('parent.freeMember')}
               </Text>
               <Text style={[styles.memberSub, { color: colors.mutedForeground }]}>
                 {subscription.isPremium
-                  ? '所有年齡課程已解鎖'
-                  : '先從免費課程與遊戲開始'}
+                  ? t('parent.allCourses')
+                  : t('parent.freeStart')}
               </Text>
             </View>
             {subscription.isPremium ? (
@@ -227,13 +268,13 @@ export default function ParentScreen() {
           </View>
 
           <View style={styles.benefitList}>
-            <Benefit text="免費：打招呼、水果入門課" included />
+            <Benefit text={t('parent.benefitFree')} included />
             <Benefit
-              text="高級：完整生活詞彙與分齡課程"
+              text={t('parent.benefitPremiumCourses')}
               included={subscription.isPremium}
             />
             <Benefit
-              text="高級：所有小遊戲與學習路徑"
+              text={t('parent.benefitPremiumGames')}
               included={subscription.isPremium}
             />
           </View>
@@ -259,7 +300,7 @@ export default function ParentScreen() {
                         { color: colors.mutedForeground },
                       ]}
                     >
-                      / 月 · 由商店確認付款
+                      {t('parent.pricePeriod')}
                     </Text>
                   </>
                 ) : (
@@ -270,13 +311,13 @@ export default function ParentScreen() {
                     ]}
                   >
                     {subscription.configured
-                      ? '月費方案尚未在商店發布'
-                      : '訂閱商店設定完成後會在此顯示價格'}
+                      ? t('parent.planNotPublished')
+                      : t('parent.planSetupPending')}
                   </Text>
                 )}
               </View>
               <ActionButton
-                label={subscription.isPurchasing ? '處理中…' : '升級高級會員'}
+                label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
                 onPress={() => setConfirmPurchase(true)}
                 testID="upgrade-premium"
                 disabled={!packageToPurchase || subscription.isPurchasing}
@@ -297,10 +338,10 @@ export default function ParentScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                訂閱由 Apple App Store 或 Google Play 管理，續訂及取消請至商店設定。
+                {t('parent.subscriptionLegal')}
               </Text>
               <ActionButton
-                label="恢復購買"
+                label={t('parent.restore')}
                 onPress={restore}
                 tone="outline"
                 testID="restore-purchases"
@@ -310,7 +351,7 @@ export default function ParentScreen() {
             </>
           ) : (
             <ActionButton
-              label="恢復購買"
+              label={t('parent.restore')}
               onPress={restore}
               tone="outline"
               testID="restore-purchases"
@@ -338,14 +379,14 @@ export default function ParentScreen() {
                   { color: colors.destructive },
                 ]}
               >
-                方案載入失敗，點此重試
+                {t('parent.planLoadError')}
               </Text>
             </Pressable>
           ) : null}
         </Surface>
 
         <Text style={[styles.ageNoteFooter, { color: colors.mutedForeground }]}>
-          建議 {ageBandNote(learning.ageBand)}，每次短時間練習，讓孩子保持愉快。
+          {t('parent.ageRecommendation', { note: t(ageBandNote(learning.ageBand)) })}
         </Text>
       </ScrollView>
 
@@ -370,7 +411,7 @@ export default function ParentScreen() {
               />
             </View>
             <Text style={[styles.confirmTitle, { color: colors.foreground }]}>
-              確認訂閱高級會員？
+              {t('parent.confirmTitle')}
             </Text>
             <Text
               style={[
@@ -379,17 +420,20 @@ export default function ParentScreen() {
               ]}
             >
               {subscription.priceLabel
-                ? `每月 ${subscription.priceLabel}，付款會由${Platform.OS === 'ios' ? 'App Store' : Platform.OS === 'android' ? 'Google Play' : '商店'}處理。`
-                : '商店會在確認購買前顯示訂閱價格。'}
+                ? t('parent.confirmPrice', {
+                    price: subscription.priceLabel,
+                    store: Platform.OS === 'ios' ? t('store.apple') : Platform.OS === 'android' ? t('store.google') : t('store.other'),
+                  })
+                : t('parent.confirmStorePrice')}
             </Text>
             <ActionButton
-              label="確認並繼續"
+              label={t('parent.confirmAndContinue')}
               onPress={() => void purchase()}
               testID="confirm-subscription"
               loading={subscription.isPurchasing}
             />
             <ActionButton
-              label="稍後再說"
+              label={t('parent.later')}
               onPress={() => setConfirmPurchase(false)}
               tone="soft"
               testID="cancel-subscription"
@@ -516,6 +560,27 @@ const styles = StyleSheet.create({
   },
   sectionHelper: {
     fontSize: 11,
+  },
+  languageRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  languageOption: {
+    minHeight: 42,
+    flexGrow: 1,
+    flexBasis: '30%',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  languageText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   ageGrid: {
     flexDirection: 'row',

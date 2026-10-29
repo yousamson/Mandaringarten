@@ -7,37 +7,40 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { SymbolView } from 'expo-symbols';
+import { useLanguage } from '@/context/LanguageContext';
+import { translate } from '@/lib/i18n';
 
 // IMPORTANT: iOS 26 uses NativeTabs for native tabs with liquid glass support.
 // NativeTabs intentionally does NOT use custom design tokens — liquid glass
 // is a system-level appearance provided by iOS and cannot be overridden.
 // Custom brand colors are applied only on the ClassicTabLayout path (older iOS / Android / web).
 function NativeTabLayout() {
+  const { language } = useLanguage();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'house', selected: 'house.fill' }}
         />
-        <NativeTabs.Trigger.Label>首頁</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{translate(language, 'nav.home')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="lessons">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'character.book.closed', selected: 'character.book.closed.fill' }}
         />
-        <NativeTabs.Trigger.Label>詞語</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{translate(language, 'nav.lessons')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="games">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'gamecontroller', selected: 'gamecontroller.fill' }}
         />
-        <NativeTabs.Trigger.Label>遊戲</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{translate(language, 'nav.games')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="parent">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
         />
-        <NativeTabs.Trigger.Label>家長</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{translate(language, 'nav.parent')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -45,6 +48,7 @@ function NativeTabLayout() {
 
 function ClassicTabLayout() {
   const colors = useColors();
+  const { language } = useLanguage();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const isIOS = Platform.OS === 'ios';
@@ -84,7 +88,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '首頁',
+          title: translate(language, 'nav.home'),
           tabBarIcon: ({ color, focused }) =>
             isIOS ? (
               <SymbolView name="house" tintColor={color} size={24} />
@@ -100,7 +104,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="lessons"
         options={{
-          title: '詞語',
+          title: translate(language, 'nav.lessons'),
           tabBarIcon: ({ color, focused }) =>
             isIOS ? (
               <SymbolView name="character.book.closed" tintColor={color} size={22} />
@@ -116,7 +120,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="games"
         options={{
-          title: '遊戲',
+          title: translate(language, 'nav.games'),
           tabBarIcon: ({ color, focused }) =>
             isIOS ? (
               <SymbolView name="gamecontroller" tintColor={color} size={22} />
@@ -132,7 +136,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="parent"
         options={{
-          title: '家長',
+          title: translate(language, 'nav.parent'),
           tabBarIcon: ({ color, focused }) =>
             isIOS ? (
               <SymbolView name="person.crop.circle" tintColor={color} size={22} />

@@ -7,6 +7,8 @@ import { useLearning } from '@/context/LearningContext';
 import { allWords, lessons } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
+import { useLanguage } from '@/context/LanguageContext';
+import { localizedSentence, localizedWord, translate } from '@/lib/i18n';
 
 type GameMode = 'pinyin' | 'meaning';
 
@@ -14,6 +16,9 @@ const QUESTIONS_PER_ROUND = 5;
 
 export default function GamesScreen() {
   const colors = useColors();
+  const { language } = useLanguage();
+  const t = (key: string, values?: Record<string, string | number>) =>
+    translate(language, key, values);
   const { isPremium } = useSubscription();
   const { recordGame } = useLearning();
   const [mode, setMode] = useState<GameMode>('pinyin');
@@ -31,15 +36,18 @@ export default function GamesScreen() {
   );
 
   const question = playableWords[questionIndex % playableWords.length] ?? allWords[0];
-  const correctAnswer =
-    mode === 'pinyin' ? question.hanzi : question.meaning;
+  const answerFor = (word: (typeof allWords)[number]) =>
+    mode === 'pinyin'
+      ? localizedWord(word.id, word.hanzi, language)
+      : t(`meaning.${word.id}`);
+  const correctAnswer = answerFor(question);
   const options = useMemo(() => {
     const choices = new Set<string>([correctAnswer]);
     const distractors = playableWords.filter((word) => word.id !== question.id);
     const offset = questionIndex % Math.max(1, distractors.length);
     for (let index = 0; index < distractors.length && choices.size < 4; index += 1) {
       const word = distractors[(offset + index) % distractors.length];
-      choices.add(mode === 'pinyin' ? word.hanzi : word.meaning);
+      choices.add(answerFor(word));
     }
     return Array.from(choices).sort((a, b) => a.localeCompare(b));
   }, [playableWords, question.id, questionIndex, mode, correctAnswer]);
@@ -77,15 +85,15 @@ export default function GamesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <PageTitle
-          eyebrow="玩一玩"
-          title="小小漢語挑戰"
-          subtitle="答對就得星星，讀出聲音也能幫助記憶。"
+        eyebrow={t('games.eyebrow')}
+        title={t('games.title')}
+        subtitle={t('games.subtitle')}
         />
 
         <View style={styles.modeRow}>
           {([
-            ['pinyin', '拼音找漢字', 'text-outline'],
-            ['meaning', '漢字找意思', 'book-outline'],
+            ['pinyin', t('games.pinyinMode'), 'text-outline'],
+            ['meaning', t('games.meaningMode'), 'book-outline'],
           ] as const).map(([value, label, icon]) => {
             const active = mode === value;
             return (
@@ -138,15 +146,15 @@ export default function GamesScreen() {
               />
             </View>
             <Text style={[styles.resultTitle, { color: colors.foreground }]}>
-              {score >= 3 ? '太棒了！' : '練習完成！'}
+              {score >= 3 ? t('games.great') : t('games.finished')}
             </Text>
             <Text
               style={[styles.resultCopy, { color: colors.mutedForeground }]}
             >
-              你答對 {score} / {QUESTIONS_PER_ROUND} 題
+              {t('games.roundScore', { score, total: QUESTIONS_PER_ROUND })}
             </Text>
             <ActionButton
-              label="再玩一輪"
+              label={t('games.playAgain')}
               onPress={restartRound}
               testID="restart-game"
               icon={
@@ -164,7 +172,7 @@ export default function GamesScreen() {
               <Text
                 style={[styles.questionLabel, { color: colors.mutedForeground }]}
               >
-                第 {questionIndex + 1} 題 · 共 {QUESTIONS_PER_ROUND} 題
+                {t('games.questionCount', { current: questionIndex + 1, total: QUESTIONS_PER_ROUND })}
               </Text>
               <View style={[styles.scoreChip, { backgroundColor: colors.secondary }]}>
                 <Ionicons name="star" size={14} color={colors.primary} />
@@ -174,16 +182,16 @@ export default function GamesScreen() {
               </View>
             </View>
             <Text style={[styles.prompt, { color: colors.foreground }]}>
-              {mode === 'pinyin' ? question.pinyin : question.hanzi}
+              {mode === 'pinyin' ? question.pinyin : localizedWord(question.id, question.hanzi, language)}
             </Text>
             {mode === 'meaning' ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="播放國語發音"
+                accessibilityLabel={t('games.playPronunciation')}
                 testID="game-speak-question"
                 onPress={() => {
                   Speech.stop();
-                  Speech.speak(question.hanzi, {
+                  Speech.speak(localizedWord(question.id, question.hanzi, language), {
                     language: 'zh-CN',
                     rate: 0.78,
                   });
@@ -196,14 +204,14 @@ export default function GamesScreen() {
                   color={colors.primary}
                 />
                 <Text style={[styles.listenText, { color: colors.primary }]}>
-                  聽發音
+                  {t('games.listen')}
                 </Text>
               </Pressable>
             ) : null}
             <Text
               style={[styles.promptHint, { color: colors.mutedForeground }]}
             >
-              {mode === 'pinyin' ? '選出正確的漢字' : '選出詞語的英文意思'}
+              {mode === 'pinyin' ? t('games.chooseCharacter') : t('games.chooseMeaning')}
             </Text>
             <View style={styles.options}>
               {options.map((option) => {
@@ -268,10 +276,10 @@ export default function GamesScreen() {
                 ]}
               >
                 <Text style={[styles.feedbackTitle, { color: colors.foreground }]}>
-                  {isCorrect ? '答對了！' : `正確答案：${correctAnswer}`}
+                  {isCorrect ? t('games.correct') : t('games.correctAnswer', { answer: correctAnswer })}
                 </Text>
                 <Text style={[styles.feedbackCopy, { color: colors.mutedForeground }]}>
-                  {question.sentence}
+                  {localizedSentence(question.id, question.sentence, language)}
                 </Text>
               </View>
             ) : null}
@@ -279,8 +287,8 @@ export default function GamesScreen() {
               <ActionButton
                 label={
                   questionIndex + 1 === QUESTIONS_PER_ROUND
-                    ? '看本輪成績'
-                    : '下一題'
+                    ? t('games.seeScore')
+                    : t('games.next')
                 }
                 onPress={nextQuestion}
                 testID="next-question"
@@ -304,10 +312,10 @@ export default function GamesScreen() {
           />
           <View style={{ flex: 1 }}>
             <Text style={[styles.tipTitle, { color: colors.foreground }]}>
-              小提示
+              {t('games.tipTitle')}
             </Text>
             <Text style={[styles.tipCopy, { color: colors.mutedForeground }]}>
-              拼音上方的符號代表聲調，跟著音檔多聽幾次就會更熟悉。
+              {t('games.tipCopy')}
             </Text>
           </View>
         </Surface>

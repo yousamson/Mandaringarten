@@ -21,11 +21,11 @@ export type Lesson = {
   words: Word[];
 };
 
-export const ageBands: { value: AgeBand; label: string; note: string }[] = [
-  { value: '0-2', label: '0–2 歲', note: '親子共讀' },
-  { value: '3-5', label: '3–5 歲', note: '聽說啟蒙' },
-  { value: '6-8', label: '6–8 歲', note: '詞語短句' },
-  { value: '9-12', label: '9–12 歲', note: '閱讀表達' },
+export const ageBands: { value: AgeBand; labelKey: string; noteKey: string }[] = [
+  { value: '0-2', labelKey: 'age.0-2.label', noteKey: 'age.0-2.note' },
+  { value: '3-5', labelKey: 'age.3-5.label', noteKey: 'age.3-5.note' },
+  { value: '6-8', labelKey: 'age.6-8.label', noteKey: 'age.6-8.note' },
+  { value: '9-12', labelKey: 'age.9-12.label', noteKey: 'age.9-12.note' },
 ];
 
 export const lessons: Lesson[] = [
@@ -33,7 +33,7 @@ export const lessons: Lesson[] = [
     id: 'greetings',
     title: '打招呼',
     subtitle: '認識新朋友',
-    category: '日常生活',
+    category: 'daily',
     icon: 'chatbubble-ellipses-outline',
     premium: false,
     words: [
@@ -83,7 +83,7 @@ export const lessons: Lesson[] = [
     id: 'fruit',
     title: '好吃水果',
     subtitle: '看看顏色和味道',
-    category: '吃喝',
+    category: 'food',
     icon: 'nutrition-outline',
     premium: false,
     words: [
@@ -133,7 +133,7 @@ export const lessons: Lesson[] = [
     id: 'animals',
     title: '可愛動物',
     subtitle: '牠們住在哪裡？',
-    category: '身邊世界',
+    category: 'world',
     icon: 'paw-outline',
     premium: true,
     words: [
@@ -183,7 +183,7 @@ export const lessons: Lesson[] = [
     id: 'family',
     title: '我的家人',
     subtitle: '介紹最親近的人',
-    category: '家人朋友',
+    category: 'family',
     icon: 'people-outline',
     premium: true,
     words: [
@@ -233,7 +233,7 @@ export const lessons: Lesson[] = [
     id: 'outside',
     title: '出門去看看',
     subtitle: '街上有什麼？',
-    category: '日常生活',
+    category: 'daily',
     icon: 'compass-outline',
     premium: true,
     words: [
@@ -284,5 +284,5 @@ export const lessons: Lesson[] = [
 export const allWords = lessons.flatMap((lesson) => lesson.words);
 
 export function ageBandNote(ageBand: AgeBand): string {
-  return ageBands.find((band) => band.value === ageBand)?.note ?? '聽說啟蒙';
+  return ageBands.find((band) => band.value === ageBand)?.noteKey ?? 'age.3-5.note';
 }

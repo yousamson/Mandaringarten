@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Stack } from 'expo-router';
 import { LearningProvider } from '@/context/LearningContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import {
   initializeRevenueCat,
   SubscriptionProvider,
@@ -29,13 +30,15 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <SubscriptionProvider>
-            <LearningProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </LearningProvider>
+            <LanguageProvider>
+              <LearningProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </LearningProvider>
+            </LanguageProvider>
           </SubscriptionProvider>
         </QueryClientProvider>
       </ErrorBoundary>

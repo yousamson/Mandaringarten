@@ -19,14 +19,19 @@ import { useLearning } from '@/context/LearningContext';
 import { ageBands, lessons } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
+import { useLanguage } from '@/context/LanguageContext';
+import { translate } from '@/lib/i18n';
 
 export default function HomeScreen() {
   const colors = useColors();
+  const { language } = useLanguage();
+  const t = (key: string, values?: Record<string, string | number>) =>
+    translate(language, key, values);
   const router = useRouter();
   const learning = useLearning();
   const { isPremium } = useSubscription();
   const ageLabel =
-    ageBands.find((band) => band.value === learning.ageBand)?.label ?? '3–5 歲';
+    ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.3-5.label';
   const progress = Math.min(
     100,
     (learning.xp / Math.max(1, learning.nextLevelXp)) * 100,
@@ -65,13 +70,13 @@ export default function HomeScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                每天一點點，漢語更親近
+                {t('home.brandTagline')}
               </Text>
             </View>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="家長中心"
+            accessibilityLabel={t('nav.parent')}
             testID="open-parent"
             onPress={() => router.push('/(tabs)/parent')}
             style={[
@@ -112,7 +117,7 @@ export default function HomeScreen() {
                   { color: colors.primaryForeground },
                 ]}
               >
-                今日學習 · 10 分鐘
+                {t('home.dailyTime')}
               </Text>
             </View>
             <Text
@@ -121,7 +126,7 @@ export default function HomeScreen() {
                 { color: colors.primaryForeground },
               ]}
             >
-              讓漢語每天{'\n'}多一點熟悉
+              {t('home.heroTitle')}
             </Text>
             <Text
               style={[
@@ -129,7 +134,7 @@ export default function HomeScreen() {
                 { color: colors.heroMuted },
               ]}
             >
-              從一句「你好」開始，慢慢走進中文世界。
+              {t('home.heroDescription')}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -144,7 +149,7 @@ export default function HomeScreen() {
               ]}
             >
               <Text style={[styles.heroButtonText, { color: colors.primary }]}>
-                開始今天的課
+                {t('home.startLesson')}
               </Text>
               <Ionicons name="arrow-forward" size={17} color={colors.primary} />
             </Pressable>
@@ -165,12 +170,12 @@ export default function HomeScreen() {
               <Text
                 style={[styles.progressEyebrow, { color: colors.primary }]}
               >
-                目前學習階段
+                {t('home.progressEyebrow')}
               </Text>
               <Text
                 style={[styles.progressTitle, { color: colors.foreground }]}
               >
-                第 {learning.level} 級 · 詞語探險家
+                {t('home.levelTitle', { level: learning.level })}
               </Text>
             </View>
             <View
@@ -185,10 +190,10 @@ export default function HomeScreen() {
           <ProgressBar value={progress} />
           <View style={styles.progressBottom}>
             <Text style={[styles.helper, { color: colors.mutedForeground }]}>
-              {learning.learnedWordIds.length} 個詞語已學會
+              {t('home.wordsLearned', { count: learning.learnedWordIds.length })}
             </Text>
             <Text style={[styles.helper, { color: colors.mutedForeground }]}>
-              連續 {learning.streak} 天
+              {t('home.streak', { count: learning.streak })}
             </Text>
           </View>
         </Surface>
@@ -196,7 +201,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              為你準備的課程
+              {t('home.courses')}
             </Text>
             <Text
               style={[
@@ -204,7 +209,7 @@ export default function HomeScreen() {
                 { color: colors.mutedForeground },
               ]}
             >
-              {ageLabel} · 輕鬆開始
+              {t('home.ageLine', { age: t(ageLabel) })}
             </Text>
           </View>
           <Pressable
@@ -214,7 +219,7 @@ export default function HomeScreen() {
             style={styles.moreButton}
           >
             <Text style={[styles.moreText, { color: colors.primary }]}>
-              全部
+              {t('common.all')}
             </Text>
             <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </Pressable>
@@ -239,11 +244,11 @@ export default function HomeScreen() {
             <View style={styles.nextCopy}>
               <Text style={[styles.nextLabel, { color: colors.primary }]}>
                 {learning.completedLessonIds.length === 0
-                  ? '第一堂課'
-                  : '繼續學習'}
+                  ? t('home.firstLesson')
+                  : t('home.continue')}
               </Text>
               <Text style={[styles.nextTitle, { color: colors.foreground }]}>
-                {nextLesson.title}
+                {t(`lesson.${nextLesson.id}.title`)}
               </Text>
               <Text
                 style={[
@@ -251,7 +256,7 @@ export default function HomeScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                {nextLesson.subtitle}
+                {t(`lesson.${nextLesson.id}.subtitle`)}
               </Text>
             </View>
             <View
@@ -269,7 +274,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              今天也可以玩
+              {t('home.playHeading')}
             </Text>
             <Text
               style={[
@@ -277,7 +282,7 @@ export default function HomeScreen() {
                 { color: colors.mutedForeground },
               ]}
             >
-              用小遊戲複習剛學過的詞語
+              {t('home.playDescription')}
             </Text>
           </View>
         </View>
@@ -298,7 +303,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.gameCopy}>
               <Text style={[styles.gameTitle, { color: colors.foreground }]}>
-                拼音配對挑戰
+                {t('home.gameTitle')}
               </Text>
               <Text
                 style={[
@@ -306,7 +311,7 @@ export default function HomeScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                五題一輪，答對就累積經驗
+                {t('home.gameDescription')}
               </Text>
             </View>
             <Ionicons

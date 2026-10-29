@@ -65,7 +65,7 @@ const messages: Record<AppLanguage, Record<string, string>> = {
     'games.playPronunciation': 'Play Mandarin pronunciation',
     'games.listen': 'Listen',
     'games.chooseCharacter': 'Choose the correct character',
-    'games.chooseMeaning': 'Choose the English meaning',
+    'games.chooseMeaning': 'Choose the meaning',
     'games.correct': 'Correct!',
     'games.correctAnswer': 'Correct answer: {answer}',
     'games.seeScore': 'See this round’s score',
@@ -217,7 +217,7 @@ const messages: Record<AppLanguage, Record<string, string>> = {
     'games.playPronunciation': '播放國語發音',
     'games.listen': '聽發音',
     'games.chooseCharacter': '選出正確的漢字',
-    'games.chooseMeaning': '選出詞語的英文意思',
+    'games.chooseMeaning': '選出詞語的意思',
     'games.correct': '答對了！',
     'games.correctAnswer': '正確答案：{answer}',
     'games.seeScore': '看本輪成績',
@@ -369,7 +369,7 @@ const messages: Record<AppLanguage, Record<string, string>> = {
     'games.playPronunciation': '播放普通话发音',
     'games.listen': '听发音',
     'games.chooseCharacter': '选出正确的汉字',
-    'games.chooseMeaning': '选出词语的英文意思',
+    'games.chooseMeaning': '选出词语的意思',
     'games.correct': '答对了！',
     'games.correctAnswer': '正确答案：{answer}',
     'games.seeScore': '查看本轮成绩',
@@ -485,4 +485,33 @@ export function localizedHanzi(
   language: AppLanguage,
 ): string {
   return language === 'zh-Hans' ? simplified : traditional;
+}
+
+const simplifiedWords: Record<string, string> = {
+  'ni-hao': '你好', 'zao-shang-hao': '早上好', 'xie-xie': '谢谢', 'zai-jian': '再见',
+  'ping-guo': '苹果', 'xiang-jiao': '香蕉', shui: '水', 'mi-fan': '米饭',
+  mao: '猫', gou: '狗', niao: '鸟', yu: '鱼', mama: '妈妈', baba: '爸爸',
+  'peng-you': '朋友', jia: '家', che: '车', 'gong-yuan': '公园', shu: '树',
+  'shu-bao': '书包',
+};
+
+const simplifiedSentences: Record<string, string> = {
+  'ni-hao': '你好，我叫小乐。', 'zao-shang-hao': '早上好，我们一起出门吧。',
+  'xie-xie': '谢谢你帮我。', 'zai-jian': '再见，明天见！',
+  'ping-guo': '我想吃一个苹果。', 'xiang-jiao': '香蕉是黄色的。',
+  shui: '请给我一杯水。', 'mi-fan': '我们一起吃米饭。',
+  mao: '小猫在窗边睡觉。', gou: '小狗喜欢散步。',
+  niao: '小鸟在树上唱歌。', yu: '鱼儿在水里游。',
+  mama: '妈妈陪我看书。', baba: '爸爸和我去公园。',
+  'peng-you': '我们是好朋友。', jia: '我喜欢我的家。',
+  che: '我们坐车去公园。', 'gong-yuan': '公园里有很多树。',
+  shu: '大树下很凉快。', 'shu-bao': '我把书放进书包。',
+};
+
+export function localizedWord(id: string, traditional: string, language: AppLanguage) {
+  return language === 'zh-Hans' ? simplifiedWords[id] ?? traditional : traditional;
+}
+
+export function localizedSentence(id: string, traditional: string, language: AppLanguage) {
+  return language === 'zh-Hans' ? simplifiedSentences[id] ?? traditional : traditional;
 }

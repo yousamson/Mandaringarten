@@ -15,23 +15,28 @@ import { useLearning } from '@/context/LearningContext';
 import { lessons, type Lesson, type Word } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
+import { useLanguage } from '@/context/LanguageContext';
+import { localizedSentence, localizedWord, translate } from '@/lib/i18n';
 
-const filters = ['全部', '日常生活', '吃喝', '家人朋友', '身邊世界'];
+const filters = ['all', 'daily', 'food', 'family', 'world'];
 
 export default function LessonsScreen() {
   const colors = useColors();
+  const { language } = useLanguage();
+  const t = (key: string, values?: Record<string, string | number>) =>
+    translate(language, key, values);
   const router = useRouter();
   const { completedLessonIds, learnedWordIds, markWordLearned, completeLesson } =
     useLearning();
   const { isPremium } = useSubscription();
-  const [filter, setFilter] = useState('全部');
+  const [filter, setFilter] = useState('all');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [wordIndex, setWordIndex] = useState(0);
 
   const visibleLessons = useMemo(
     () =>
       lessons.filter(
-        (lesson) => filter === '全部' || lesson.category === filter,
+        (lesson) => filter === 'all' || lesson.category === filter,
       ),
     [filter],
   );
@@ -48,7 +53,7 @@ export default function LessonsScreen() {
   const currentWord = activeLesson?.words[wordIndex];
   const playWord = (word: Word) => {
     Speech.stop();
-    Speech.speak(word.hanzi, { language: 'zh-CN', rate: 0.78 });
+    Speech.speak(localizedWord(word.id, word.hanzi, language), { language: 'zh-CN', rate: 0.78 });
   };
 
   const advanceWord = () => {
@@ -70,9 +75,9 @@ export default function LessonsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <PageTitle
-          eyebrow="詞語圖書館"
-          title="今天想學什麼？"
-          subtitle="從生活裡常見的詞語開始，一起聽、一起說。"
+          eyebrow={t('lessons.eyebrow')}
+          title={t('lessons.title')}
+          subtitle={t('lessons.subtitle')}
         />
         <ScrollView
           horizontal
@@ -106,7 +111,7 @@ export default function LessonsScreen() {
                     },
                   ]}
                 >
-                  {item}
+                  {t(`category.${item}`)}
                 </Text>
               </Pressable>
             );
@@ -154,7 +159,7 @@ export default function LessonsScreen() {
                           { color: colors.foreground },
                         ]}
                       >
-                        {lesson.title}
+                        {t(`lesson.${lesson.id}.title`)}
                       </Text>
                       {locked ? (
                         <Ionicons
@@ -177,8 +182,12 @@ export default function LessonsScreen() {
                       ]}
                     >
                       {locked
-                        ? '高級會員完整課程'
-                        : `${lesson.subtitle} · ${learned}/${lesson.words.length} 個詞語`}
+                        ? t('lessons.locked')
+                        : t('lessons.wordProgress', {
+                            subtitle: t(`lesson.${lesson.id}.subtitle`),
+                            learned,
+                            total: lesson.words.length,
+                          })}
                     </Text>
                     <View
                       style={[
@@ -226,11 +235,11 @@ export default function LessonsScreen() {
           >
             <View style={styles.sheetTop}>
               <Text style={[styles.sheetLabel, { color: colors.primary }]}>
-                {activeLesson?.title ?? '詞語練習'}
+                {activeLesson ? t(`lesson.${activeLesson.id}.title`) : t('lessons.sheetTitle')}
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="關閉課程"
+                accessibilityLabel={t('lessons.closeLesson')}
                 testID="close-word-sheet"
                 onPress={() => setActiveLesson(null)}
                 style={styles.closeButton}
@@ -254,7 +263,7 @@ export default function LessonsScreen() {
                     />
                   </View>
                   <Text style={[styles.hanzi, { color: colors.foreground }]}>
-                    {currentWord.hanzi}
+                    {localizedWord(currentWord.id, currentWord.hanzi, language)}
                   </Text>
                   <Text style={[styles.pinyin, { color: colors.primary }]}>
                     {currentWord.pinyin}
@@ -265,11 +274,11 @@ export default function LessonsScreen() {
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    {currentWord.meaning}
+                    {t(`meaning.${currentWord.id}`)}
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="播放國語發音"
+                    accessibilityLabel={t('lessons.playPronunciation')}
                     testID="play-pronunciation"
                     onPress={() => playWord(currentWord)}
                     style={[
@@ -288,7 +297,7 @@ export default function LessonsScreen() {
                         { color: colors.accentForeground },
                       ]}
                     >
-                      聽一聽
+                      {t('lessons.listen')}
                     </Text>
                   </Pressable>
                 </View>
@@ -299,12 +308,12 @@ export default function LessonsScreen() {
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    放進短句裡
+                    {t('lessons.sentenceLabel')}
                   </Text>
                   <Text
                     style={[styles.sentence, { color: colors.foreground }]}
                   >
-                    {currentWord.sentence}
+                    {localizedSentence(currentWord.id, currentWord.sentence, language)}
                   </Text>
                   <Text
                     style={[styles.sentencePinyin, { color: colors.primary }]}
@@ -313,10 +322,10 @@ export default function LessonsScreen() {
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="播放短句"
+                    accessibilityLabel={t('lessons.playSentence')}
                     onPress={() => {
                       Speech.stop();
-                      Speech.speak(currentWord.sentence, {
+                      Speech.speak(localizedSentence(currentWord.id, currentWord.sentence, language), {
                         language: 'zh-CN',
                         rate: 0.72,
                       });
@@ -336,13 +345,13 @@ export default function LessonsScreen() {
                     { color: colors.mutedForeground },
                   ]}
                 >
-                  {wordIndex + 1} / {activeLesson?.words.length ?? 0}
+                  {t('lessons.wordCount', { current: wordIndex + 1, total: activeLesson?.words.length ?? 0 })}
                 </Text>
                 <ActionButton
                   label={
                     wordIndex === (activeLesson?.words.length ?? 1) - 1
-                      ? '完成這堂課'
-                      : '學會了，下一個'
+                      ? t('lessons.finish')
+                      : t('lessons.nextWord')
                   }
                   onPress={advanceWord}
                   testID="next-word"
