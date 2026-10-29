@@ -7,6 +7,7 @@ export type StripePrice = {
   active: boolean;
   currency: string;
   unit_amount: number | null;
+  livemode: boolean;
   recurring?: { interval: string } | null;
 };
 
