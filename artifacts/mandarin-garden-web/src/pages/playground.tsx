@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, LockKeyhole, RotateCcw, Sparkles, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, LockKeyhole, RotateCcw, Sparkles, Trophy } from 'lucide-react';
 import { Link } from 'wouter';
 import { GameRound } from '@/components/playground/game-round';
 import { StagePicker } from '@/components/playground/stage-picker';
@@ -39,6 +39,48 @@ export default function PlaygroundPage({ language: l }: { language: Language }) 
           <div className="alert" role="alert"><p>{tr(l, 'We could not load learning progress.', '無法載入學習進度。', '无法加载学习进度。')}</p><button className="button-secondary" onClick={() => void progressQuery.refetch()} data-testid="button-retry-progress"><RotateCcw size={14} /> {tr(l, 'Try again', '再試一次', '再试一次')}</button></div>
         ) : (
           <PlaygroundBody uid={m.uid} progress={progressQuery.progress} l={l} />
+        )}
+    </main>
+  );
+}
+
+export function WordBankPage({ language: l }: { language: Language }) {
+  const m = useMembership();
+  const progressQuery = useLearningProgress(m.uid, m.premium);
+  const progress = progressQuery.progress;
+  const stage = progress?.selectedStage;
+
+  return (
+    <main className="page-shell">
+      <Link href="/playground" className="button-secondary back-chip" data-testid="link-back-playground">
+        <ArrowLeft size={14} /> {tr(l, 'Back to the playground', '返回學習樂園', '返回学习乐园')}
+      </Link>
+      <section className="page-title">
+        <div className="eyebrow">{playgroundName[l]}</div>
+        <h1>{tr(l, 'Stage word bank', '階段詞語庫', '阶段词语库')}</h1>
+        <p>{tr(l, 'Browse the 200 words for the stage selected by a parent.', '瀏覽家長所選階段的 200 個詞語。', '浏览家长所选阶段的 200 个词语。')}</p>
+      </section>
+      {m.checking ? <PlaygroundSkeleton />
+        : !m.premium || !m.uid ? <LockedPlayground l={l} signedIn={m.isSignedIn} />
+        : progressQuery.isLoading ? <PlaygroundSkeleton />
+        : progressQuery.isError || !stage ? (
+          <div className="alert" role="alert">
+            <p>{tr(l, 'We could not load the selected stage.', '無法載入所選階段。', '无法加载所选阶段。')}</p>
+            <button className="button-secondary" onClick={() => void progressQuery.refetch()} data-testid="button-retry-word-bank">
+              <RotateCcw size={14} /> {tr(l, 'Try again', '再試一次', '再试一次')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className={`stage-banner stage-tone-${stage}`}>
+              <div>
+                <div className="eyebrow">{stageLabel(l, stage)}</div>
+                <h2>{pick(l, stageNames[stage - 1])}</h2>
+              </div>
+              <BookOpen size={22} aria-hidden="true" />
+            </div>
+            <VocabBoard stage={stage} l={l} />
+          </>
         )}
     </main>
   );
@@ -99,7 +141,19 @@ function PlaygroundBody({ uid, progress, l }: { uid: string; progress: Normalize
         <GameRound key={`${stage}-${mode}-${l}`} stage={stage} mode={mode} l={l} uid={uid} />
         <StoryReader stage={stage} l={l} />
       </div>
-      <div style={{ paddingBottom: 60 }}><VocabBoard stage={stage} l={l} /></div>
+      <Link
+        href="/playground/words"
+        className="panel"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 60, textDecoration: 'none' }}
+        data-testid="link-stage-word-bank"
+      >
+        <div>
+          <div className="eyebrow">{tr(l, 'VOCABULARY', '詞語庫', '词语库')}</div>
+          <h2 style={{ margin: '5px 0' }}>{tr(l, 'Words for this stage', '本階段詞語', '本阶段词语')}</h2>
+          <p className="panel-desc" style={{ margin: 0 }}>{tr(l, 'Open the 200-word bank for this stage.', '點擊查看本階段的 200 個詞語。', '点击查看本阶段的 200 个词语。')}</p>
+        </div>
+        <span className="button-secondary">{tr(l, 'Open word bank', '開啟詞語庫', '打开词语库')} <ArrowRight size={14} /></span>
+      </Link>
     </>
   );
 }

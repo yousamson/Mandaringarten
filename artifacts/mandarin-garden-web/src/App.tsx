@@ -16,14 +16,17 @@ import MessagesPage from '@/pages/messages';
 import { StagePicker } from '@/components/playground/stage-picker';
 import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
-import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useSelectStage, XP_COMPLETE } from '@/hooks/use-learning';
+import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useRecordRound, useSelectStage, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
 import FreeReadingPage from '@/pages/free-reading';
 import DisclaimerPage from '@/pages/disclaimer';
-import PlaygroundPage from '@/pages/playground';
+import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
+import { newRoundId } from '@/lib/playground-games';
+import { questionAwardId } from '@/lib/progress-outbox';
+import type { LearningRoundInput } from '@workspace/api-client-react';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 import { ageStages, freeReadings, normalizeAgeStage } from '@/lib/age-stages';
@@ -154,6 +157,7 @@ function Garden() {
           <Route path="/account"><AccountPage language={l} /></Route>
           <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} onAgeChange={preferences.saveAge} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
           <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
+          <Route path="/playground/words">{guarded(<WordBankPage language={l} />)}</Route>
           <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
           <Route path="/curriculum">{guarded(<PlaygroundPage language={l} />)}</Route>
           <Route path="/parent">{guarded(<ParentPage preferences={preferences} t={t} />)}</Route>
@@ -265,23 +269,82 @@ function PracticeSection({ language, age, onAgeChange }: { language: Language; a
 }
 
 function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
+  const stage = ageStages.indexOf(normalizeAgeStage(age)) + 1;
   const stageWords = levels[ageStages.indexOf(normalizeAgeStage(age))].words.map((entry, index) => {
     const [hanzi, simplified, pinyin] = entry.split('|');
     return { id: `${age}-${index}`, hanzi, simplified, pinyin };
   });
+  const membership = useMembership();
+  const { replay } = useRecordRound(membership.uid);
   const [round, setRound] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  const [seed, setSeed] = useState(0);
+  const [pendingSaves, setPendingSaves] = useState(0);
+  const [savedAnswers, setSavedAnswers] = useState(0);
+  const [failedAnswers, setFailedAnswers] = useState<LearningRoundInput[]>([]);
+  const replayRef = useRef(replay);
+  replayRef.current = replay;
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const savingIds = useRef(new Set<string>());
+  const activeRoundId = useMemo(() => newRoundId(), [stage, seed]);
+  const activeRoundIdRef = useRef(activeRoundId);
+  activeRoundIdRef.current = activeRoundId;
+  const saveState = pendingSaves > 0 ? 'saving' : failedAnswers.length ? 'error' : savedAnswers > 0 ? 'saved' : 'idle';
   const current = stageWords[round];
   const finished = round >= stageWords.length;
   const choices = stageWords.map((_, index) => stageWords[(index + round) % stageWords.length]);
+  useEffect(() => {
+    setRound(0);
+    setPicked(null);
+    setScore(0);
+    setSavedAnswers(0);
+    setSeed((value) => value + 1);
+  }, [stage]);
+  const saveAnswer = (input: LearningRoundInput, ownerRoundId: string) => {
+    if (savingIds.current.has(input.roundId)) return;
+    savingIds.current.add(input.roundId);
+    setPendingSaves((count) => count + 1);
+    const request = saveQueue.current.then(async () => { await replayRef.current(input); });
+    saveQueue.current = request.then(() => undefined, () => undefined);
+    const finishSave = () => {
+      savingIds.current.delete(input.roundId);
+      setPendingSaves((count) => Math.max(0, count - 1));
+    };
+    void request.then(
+      () => {
+        if (activeRoundIdRef.current === ownerRoundId) setSavedAnswers((count) => count + 1);
+        setFailedAnswers((items) => items.filter((item) => item.roundId !== input.roundId));
+        finishSave();
+      },
+      () => {
+        if (activeRoundIdRef.current === ownerRoundId) {
+          setFailedAnswers((items) => items.some((item) => item.roundId === input.roundId) ? items : [...items, input]);
+        }
+        finishSave();
+      },
+    );
+  };
+  const retryFailedAnswers = () => {
+    for (const input of failedAnswers) saveAnswer(input, activeRoundIdRef.current);
+  };
   const select = (id: string) => {
     if (picked || !current) return;
     setPicked(id);
-    if (id === current.id) setScore((value) => value + 1);
+    if (id === current.id) {
+      setScore((value) => value + 1);
+      if (membership.premium && membership.uid) {
+        saveAnswer({
+          stage,
+          mode: 'pinyin',
+          roundId: questionAwardId(activeRoundId, round),
+          correctCount: 1,
+        }, activeRoundId);
+      }
+    }
   };
   const advance = () => { setRound((value) => value + 1); setPicked(null); };
-  const restart = () => { setRound(0); setPicked(null); setScore(0); };
+  const restart = () => { setRound(0); setPicked(null); setScore(0); setSavedAnswers(0); setSeed((value) => value + 1); };
   return (
     <section className="practice-card quiz-card home-pinyin-card" data-testid="home-pinyin-match">
         <div className="practice-heading"><span className="practice-icon"><Sparkles size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'PLAY & REMEMBER' : language === 'zh-Hant' ? '玩一玩，記得更牢' : '玩一玩，记得更牢'}</div><h2>{language === 'en' ? 'A tiny pinyin match' : language === 'zh-Hant' ? '拼音小配對' : '拼音小配对'}</h2></div></div>
@@ -292,7 +355,7 @@ function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; a
           </select>
         </label>
         {finished ? (
-          <div className="quiz-result"><div className="quiz-score">{score}<span> / {stageWords.length}</span></div><p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p><button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
+          <div className="quiz-result"><div className="quiz-score">{score}<span> / {stageWords.length}</span></div>{membership.premium ? <p className="round-xp">+{score * XP_PER_CORRECT} XP</p> : null}<p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p>{membership.premium && saveState === 'saving' ? <p role="status">{language === 'en' ? 'Saving XP…' : language === 'zh-Hant' ? '正在儲存 XP…' : '正在保存 XP…'}</p> : null}{membership.premium && saveState === 'saved' ? <p role="status">{language === 'en' ? 'XP saved to this stage.' : language === 'zh-Hant' ? 'XP 已儲存到此階段。' : 'XP 已保存到此阶段。'}</p> : null}{membership.premium && saveState === 'error' ? <p role="alert">{language === 'en' ? 'Some XP could not be saved.' : language === 'zh-Hant' ? '部分 XP 未能儲存。' : '部分 XP 未能保存。'} <button className="text-next" onClick={retryFailedAnswers}>{language === 'en' ? 'Retry' : language === 'zh-Hant' ? '重試' : '重试'}</button></p> : null}<button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
         ) : current ? (
           <>
             <div className="quiz-question">
@@ -303,7 +366,7 @@ function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; a
             <div className="quiz-options">
               {choices.map((choice) => <button key={choice.id} className={`quiz-option ${picked === choice.id ? choice.id === current.id ? 'correct' : 'incorrect' : ''} ${picked && choice.id === current.id ? 'correct' : ''}`} onClick={() => select(choice.id)} disabled={Boolean(picked)}>{language === 'zh-Hans' ? choice.simplified : choice.hanzi}</button>)}
             </div>
-            {picked ? <div className={`quiz-feedback ${picked === current.id ? 'good' : ''}`}>{picked === current.id ? (language === 'en' ? 'That’s the one.' : language === 'zh-Hant' ? '答對了！' : '答对了！') : (language === 'en' ? `This one is ${current.hanzi}.` : `答案是 ${language === 'zh-Hans' ? current.simplified : current.hanzi}。`)} <button className="text-next" onClick={advance}>{round === stageWords.length - 1 ? (language === 'en' ? 'See results' : language === 'zh-Hant' ? '看結果' : '看结果') : (language === 'en' ? 'Next word' : language === 'zh-Hant' ? '下一個詞語' : '下一个词语')} <ArrowRight size={13} /></button></div> : null}
+            {picked ? <div className={`quiz-feedback ${picked === current.id ? 'good' : ''}`}>{picked === current.id ? `${language === 'en' ? 'That’s the one.' : language === 'zh-Hant' ? '答對了！' : '答对了！'}${membership.premium ? ` +${XP_PER_CORRECT} XP` : ''}` : (language === 'en' ? `This one is ${current.hanzi}.` : `答案是 ${language === 'zh-Hans' ? current.simplified : current.hanzi}。`)}{membership.premium && saveState === 'saving' ? <span role="status"> · {language === 'en' ? 'Saving…' : language === 'zh-Hant' ? '儲存中…' : '保存中…'}</span> : null} <button className="text-next" onClick={advance}>{round === stageWords.length - 1 ? (language === 'en' ? 'See results' : language === 'zh-Hant' ? '看結果' : '看结果') : (language === 'en' ? 'Next word' : language === 'zh-Hant' ? '下一個詞語' : '下一个词语')} <ArrowRight size={13} /></button></div> : null}
           </>
         ) : null}
     </section>

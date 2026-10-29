@@ -9,7 +9,7 @@ import {
   recordLearningRound,
   useUpdateLearningProgress,
 } from '@workspace/api-client-react';
-import type { LearningRoundInput } from '@workspace/api-client-react';
+import type { LearningProgress, LearningRoundInput } from '@workspace/api-client-react';
 import { acknowledgeRound, OUTBOX_EVENT, pendingRounds, queueRound } from '@/lib/progress-outbox';
 import type { GameMode } from '@/lib/playground-copy';
 import { toStage, type StageNumber } from '@/lib/playground-content';
@@ -81,7 +81,10 @@ export function useRecordRound(uid: string | null) {
       const result = await recordLearningRound(data, { headers: { Authorization: `Bearer ${token}` } });
       try { acknowledgeRound(uid, data.roundId); } catch { /* replay is server-idempotent */ }
       if (currentUser.current === uid) {
-        client.setQueryData(progressQueryKey(uid), result);
+        client.setQueryData<LearningProgress>(progressQueryKey(uid), (current) => current ? {
+          selectedStage: current.selectedStage,
+          xpByStage: result.xpByStage.map((xp, index) => Math.max(xp, current.xpByStage[index] ?? 0)),
+        } : result);
         void client.invalidateQueries({ queryKey: progressQueryKey(uid) });
       }
       return result;
