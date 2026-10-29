@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useSSO } from '@clerk/expo';
@@ -17,25 +17,43 @@ export default function WelcomeScreen() {
   const { language, setLanguage } = useLanguage();
   const { startSSOFlow } = useSSO();
   const [error, setError] = useState('');
+  const [isSigningInWithGoogle, setIsSigningInWithGoogle] = useState(false);
   const t = (key: string) => translate(language, key);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
 
   const signInWithGoogle = async () => {
     setError('');
+    setIsSigningInWithGoogle(true);
     try {
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy: 'oauth_google',
-        redirectUrl: AuthSession.makeRedirectUri({ scheme: 'mandarin-garden' }),
+        redirectUrl:
+          Platform.OS === 'web'
+            ? AuthSession.makeRedirectUri()
+            : AuthSession.makeRedirectUri({ scheme: 'mandarin-garden' }),
       });
-      if (createdSessionId) {
-        await setActive!({
+      if (createdSessionId && setActive) {
+        await setActive({
           session: createdSessionId,
-          navigate: () => router.replace('/(tabs)'),
+          navigate: ({ session }) => {
+            if (session.currentTask) return;
+            router.replace('/(tabs)');
+          },
         });
       } else {
         setError(t('auth.googleSetup'));
       }
     } catch {
       setError(t('auth.googleError'));
+    } finally {
+      setIsSigningInWithGoogle(false);
     }
   };
 
@@ -102,6 +120,7 @@ export default function WelcomeScreen() {
             label={t('auth.google')}
             onPress={() => void signInWithGoogle()}
             tone="soft"
+            loading={isSigningInWithGoogle}
             testID="welcome-google"
           />
           {error ? (
