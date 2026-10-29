@@ -1,5 +1,5 @@
 kind = "mobile"
-previewPath = "/"
+previewPath = "/mobile/"
 title = "漢語樂園 Mandarin Garden"
 description = "漢語樂園 Mandarin Garden｜為 2–12 歲兒童設計的中英雙語漢語學習 App，涵蓋日常詞彙、拼音、短句、小遊戲與循序漸進的四級課程。 Mandarin Garden is a bilingual Mandarin learning app for children ages 2–12, with everyday vocabulary, pinyin, short sentences, games, and four progressive levels."
 version = "1.0.0"
@@ -9,7 +9,7 @@ router = "expo-domain"
 [[services]]
 name = "expo"
 ensurePreviewReachable = "/status"
-paths = [ "/" ]
+paths = [ "/mobile/" ]
 localPort = 25091
 
 [services.development]
@@ -21,4 +21,4 @@ run = [ "pnpm", "--filter", "@workspace/mandarin-garden", "run", "serve" ]
 
 [services.env]
 PORT = "25091"
-BASE_PATH = "/"
+BASE_PATH = "/mobile/"

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: billing
+    description: Stripe subscription operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /billing/status:
+    get:
+      operationId: getBillingStatus
+      tags: [billing]
+      summary: Get the signed-in user's membership status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Membership status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingStatus"
+  /billing/checkout:
+    post:
+      operationId: createBillingCheckout
+      tags: [billing]
+      summary: Create a Stripe subscription checkout session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResult"
+  /billing/portal:
+    post:
+      operationId: createBillingPortal
+      tags: [billing]
+      summary: Create a Stripe billing portal session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalInput"
+      responses:
+        "200":
+          description: Billing portal URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalResult"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +93,47 @@ components:
           type: string
       required:
         - status
+    BillingStatus:
+      type: object
+      properties:
+        isPremium:
+          type: boolean
+        subscriptionStatus:
+          type: string
+        currentPeriodEnd:
+          type: ["string", "null"]
+        cancelAtPeriodEnd:
+          type: boolean
+      required: [isPremium, subscriptionStatus, currentPeriodEnd, cancelAtPeriodEnd]
+    CheckoutInput:
+      type: object
+      properties:
+        successUrl:
+          type: string
+          format: uri
+        cancelUrl:
+          type: string
+          format: uri
+      required: [successUrl, cancelUrl]
+    CheckoutResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+      required: [url]
+    PortalInput:
+      type: object
+      properties:
+        returnUrl:
+          type: string
+          format: uri
+      required: [returnUrl]
+    PortalResult:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+      required: [url]
 

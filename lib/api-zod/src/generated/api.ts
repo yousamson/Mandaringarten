@@ -5,12 +5,51 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import * as zod from "zod";
+import * as zod from 'zod';
+
 
 /**
  * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  status: zod.string(),
-});
+  "status": zod.string()
+})
+
+
+/**
+ * @summary Get the signed-in user's membership status
+ */
+export const GetBillingStatusResponse = zod.object({
+  "isPremium": zod.boolean(),
+  "subscriptionStatus": zod.string(),
+  "currentPeriodEnd": zod.string().nullable(),
+  "cancelAtPeriodEnd": zod.boolean()
+})
+
+
+/**
+ * @summary Create a Stripe subscription checkout session
+ */
+export const CreateBillingCheckoutBody = zod.object({
+  "successUrl": zod.url(),
+  "cancelUrl": zod.url()
+})
+
+export const CreateBillingCheckoutResponse = zod.object({
+  "url": zod.url()
+})
+
+
+/**
+ * @summary Create a Stripe billing portal session
+ */
+export const CreateBillingPortalBody = zod.object({
+  "returnUrl": zod.url()
+})
+
+export const CreateBillingPortalResponse = zod.object({
+  "url": zod.url()
+})
+
+

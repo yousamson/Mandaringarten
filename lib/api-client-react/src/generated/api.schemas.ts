@@ -8,3 +8,29 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface BillingStatus {
+  isPremium: boolean;
+  subscriptionStatus: string;
+  /** @nullable */
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+}
+
+export interface CheckoutInput {
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface CheckoutResult {
+  url: string;
+}
+
+export interface PortalInput {
+  returnUrl: string;
+}
+
+export interface PortalResult {
+  url: string;
+}
+

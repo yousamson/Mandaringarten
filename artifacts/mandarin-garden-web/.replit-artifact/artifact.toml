@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "漢語樂園 Mandarin Garden"
+description = "A bilingual Mandarin learning website for children ages 2–12, with everyday vocabulary, pinyin, progressive lessons, games, and parent-managed monthly membership."
+version = "1.0.0"
+id = "artifacts/mandarin-garden-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24491
+
+[services.development]
+run = "pnpm --filter @workspace/mandarin-garden-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mandarin-garden-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mandarin-garden-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24491"
+BASE_PATH = "/"
