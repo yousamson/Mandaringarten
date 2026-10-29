@@ -25,6 +25,7 @@ import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
+import { ageStages, freeReadings, normalizeAgeStage } from '@/lib/age-stages';
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(
@@ -58,10 +59,11 @@ type ThemeId = 'meadow' | 'terracotta' | 'ocean' | 'lavender' | 'sunshine';
 function usePreferences() {
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('mg-language') as Language) || 'en');
   const [theme, setTheme] = useState<ThemeId>(() => (localStorage.getItem('mg-theme') as ThemeId) || 'meadow');
-  const [age, setAge] = useState(() => localStorage.getItem('mg-age') || '2-4');
+  const [age, setAge] = useState(() => normalizeAgeStage(localStorage.getItem('mg-age')));
+  useEffect(() => { localStorage.setItem('mg-age', age); }, [age]);
   const saveLanguage = (value: Language) => { localStorage.setItem('mg-language', value); setLanguage(value); };
   const saveTheme = (value: ThemeId) => { localStorage.setItem('mg-theme', value); setTheme(value); };
-  const saveAge = (value: string) => { localStorage.setItem('mg-age', value); setAge(value); };
+  const saveAge = (value: string) => { setAge(normalizeAgeStage(value)); };
   return { language, theme, age, saveLanguage, saveTheme, saveAge };
 }
 
@@ -148,7 +150,7 @@ function Garden() {
           <Route path="/messages"><MessagesPage language={l} /></Route>
           <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
           <Route path="/account"><AccountPage language={l} /></Route>
-          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
+          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} onAgeChange={preferences.saveAge} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
           <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
           <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
           <Route path="/curriculum">{guarded(<PlaygroundPage language={l} />)}</Route>
@@ -185,8 +187,8 @@ function LegacySync({ l }: { l: Language }) {
 
 
 type Copy = typeof copy.en;
-function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
-  const recommendedLevel = Math.max(0, ['2-4', '3-5', '6-8', '9-12'].indexOf(age));
+function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; onAgeChange: (value: string) => void; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
+  const recommendedLevel = ageStages.indexOf(normalizeAgeStage(age));
   return (
     <main className="page-shell">
       <section className="hero">
@@ -221,7 +223,7 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
         </div>
       </section>
       <StagePathCards l={language} />
-      <PracticeSection language={language} age={age} />
+      <PracticeSection language={language} age={age} onAgeChange={onAgeChange} />
       <section className="progress-band">
         <div>
           <div className="eyebrow">{t.path}</div>
@@ -242,7 +244,7 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
 }
 
 
-function PracticeSection({ language, age }: { language: Language; age: string }) {
+function PracticeSection({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
   const vocabulary = lessons.filter((lesson) => !lesson.premium).flatMap((lesson) => lesson.words);
   const questions = vocabulary.slice(0, 5);
   const [round, setRound] = useState(0);
@@ -253,15 +255,7 @@ function PracticeSection({ language, age }: { language: Language; age: string })
     ? [current, ...vocabulary.filter((item) => item.id !== current.id).slice((round * 2) % 8, (round * 2) % 8 + 3)]
     : [];
   const finished = round >= questions.length;
-  const reading = age === '9-12'
-    ? {
-      title: { en: 'A green corner for everyone', 'zh-Hant': '為公園留一片綠地', 'zh-Hans': '为公园留一片绿地' },
-      text: { en: 'Some neighbours hoped for more parking. Others wanted to keep the old trees. They gathered ideas and found a thoughtful plan: a park that is easy to visit and still full of green.', 'zh-Hant': '附近公園準備改建時，有人希望增加停車空間，也有人想保留樹木。居民先蒐集資料，再提出兼顧安全與綠地的方案。經過多次討論，大家找到折衷方法，使公園既方便使用，也保有自然環境。', 'zh-Hans': '附近公园准备改建时，有人希望增加停车空间，也有人想保留树木。居民先收集资料，再提出兼顾安全与绿地的方案。经过多次讨论，大家找到折中方法，使公园既方便使用，也保有自然环境。' },
-    }
-    : {
-      title: { en: 'The tiny school garden', 'zh-Hant': '校園小花圃', 'zh-Hans': '校园小花圃' },
-      text: { en: 'After class, Ming and a friend watered the little garden. They spotted a bright red flower and smiled. A small act of care helped the whole garden grow.', 'zh-Hant': '下課後，小明和同學到花圃澆水。他們看見一朵紅花，開心得笑了。', 'zh-Hans': '下课后，小明和同学到花圃浇水。他们看见一朵红花，开心得笑了。' },
-    };
+  const reading = freeReadings[normalizeAgeStage(age)];
   const select = (id: string) => {
     if (picked) return;
     setPicked(id);
@@ -289,10 +283,14 @@ function PracticeSection({ language, age }: { language: Language; age: string })
           </>
         ) : null}
       </div>
-      <article className="practice-card reading-card">
+      <article className="practice-card reading-card" data-testid="free-reading-card">
+        <label className="setting-name" htmlFor="free-reading-age">{tr(language, 'Reading age group', '閱讀年齡階段', '阅读年龄阶段')}</label>
+        <select id="free-reading-age" className="select-control" value={normalizeAgeStage(age)} onChange={(event) => onAgeChange(event.target.value)} data-testid="select-reading-age">
+          {ageStages.map((value, index) => <option key={value} value={value}>{copy[language].levelAges[index]}</option>)}
+        </select>
         <div className="practice-heading"><span className="practice-icon reading-icon"><BookOpen size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'A LITTLE READING' : language === 'zh-Hant' ? '讀一小段' : '读一小段'}</div><h2>{reading.title[language]}</h2></div></div>
         <p className="reading-text">{reading.text[language]}</p>
-        <div className="reading-meta"><span>{age === '9-12' ? (language === 'en' ? 'Ages 9–12 · Reading' : language === 'zh-Hant' ? '9–12 歲 · 閱讀表達' : '9–12 岁 · 阅读表达') : (language === 'en' ? 'Ages 6–8 · Short story' : language === 'zh-Hant' ? '6–8 歲 · 短篇故事' : '6–8 岁 · 短篇故事')}</span><span>2 min</span></div>
+        <div className="reading-meta"><span>{copy[language].levelAges[ageStages.indexOf(normalizeAgeStage(age))]} · {tr(language, 'Free reading', '免費閱讀', '免费阅读')}</span><span>{reading.minutes} {tr(language, 'min', '分鐘', '分钟')}</span></div>
       </article>
     </section>
   );
@@ -434,7 +432,7 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
             </div>
             <div className="setting-row"><div><div className="setting-name">{tr(l, 'Child’s age', '孩子年齡', '孩子年龄')}</div><div className="setting-detail">{tr(l, 'Used for the free reading card. Stages are chosen above.', '用於免費閱讀卡片，學習階段請在上方選擇。', '用于免费阅读卡片，学习阶段请在上方选择。')}</div></div>
               <select className="select-control" value={preferences.age} onChange={(event) => preferences.saveAge(event.target.value)} aria-label={t.age} data-testid="parent-age">
-                {['2-4', '3-5', '6-8', '9-12'].map((item, index) => <option key={item} value={item}>{t.levelAges[index]}</option>)}
+                {ageStages.map((item, index) => <option key={item} value={item}>{t.levelAges[index]}</option>)}
               </select>
             </div>
             <div className="setting-row"><div><div className="setting-name">{t.theme}</div><div className="setting-detail">{themes.find((item) => item.id === preferences.theme)?.name}</div></div>

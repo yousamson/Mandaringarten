@@ -1,3 +1,4 @@
+import { ageLabels } from './age-stages';
 export type Language = 'en' | 'zh-Hant' | 'zh-Hans';
 export type LessonWord = {
   id: string;
@@ -89,7 +90,7 @@ export const categoryNames: Record<Language, Record<string, string>> = {
   'zh-Hans': { all: '全部', daily: '日常生活', food: '吃喝', family: '家人朋友', leisure: '休闲活动', world: '身边世界' },
 };
 
-export const copy = {
+const baseCopy = {
   en: {
     navHome: 'Garden', navWords: 'Word paths', navParent: 'For parents', signIn: 'Sign in', welcome: 'A little Mandarin, every day', headline: 'Let curiosity take root.', intro: 'Short, joyful Mandarin practice for little learners — with a grown-up close by.', start: 'Start with a hello', browse: 'Explore the garden', today: 'A gentle 10-minute ritual', lessons: 'Choose a little path', lessonsHint: 'Tap a lesson to listen, say it, and make it yours.', learn: 'words to discover', free: 'FREE START', premium: 'FULL PATH', path: 'A path that grows with them', pathHint: 'Four stages to choose from, in any order. Each one opens a little more of the world.', levels: ['Seedling', 'Word explorer', 'Sentence builder', 'Little reader'], levelAges: ['2–4 years', '3–5 years', '6–8 years', '9–12 years'], levelNotes: ['First words & phrases', 'Listening & speaking', 'Words & short sentences', 'Reading & expression'], join: 'See family membership', minutes: '4 words · about 5 minutes', locked: 'Membership opens this lesson', back: 'Back to the garden', word: 'Word', listen: 'Listen', sentence: 'In a little sentence', next: 'I know it · next word', finish: 'Finish this lesson', complete: 'What a lovely round.', completeHint: 'Four new words have found a home.', return: 'Choose another lesson', parentTitle: 'A garden for growing minds.', parentSubtitle: 'A few thoughtful settings for the grown-ups who make learning feel safe.', interface: 'Interface language', interfaceHint: 'Choose the language for menus and buttons.', age: 'Learning stage', ageHint: 'Match the paths to your child’s age.', theme: 'Garden colors', membership: 'Family membership', premiumActive: 'Premium path is open', freePlan: 'Free garden', monthly: 'Monthly membership', price: '$9.99', perMonth: '/ month', benefits: ['The full Learning playground: all four stages, 800 words', 'Short vocabulary, pinyin and real sentences', 'Five games and 40 read-aloud stories, any stage you choose'], upgrade: 'Open the full garden', manage: 'Manage subscription', paymentNote: 'Secure checkout is handled by Stripe. You can manage or cancel any time in the billing portal.', account: 'Your parent account', signedOut: 'Sign in or create an account to manage membership. A new account becomes a member only after a successful payment; free lessons stay open without signing in.', signUp: 'Create an account', due: 'Next renewal', cancelAt: 'Cancellation scheduled', active: 'Active membership', loading: 'Checking membership…', retry: 'Try again', failed: 'We could not load membership. Please retry.', checkoutError: 'Checkout could not be started. Please try again.', portalError: 'Billing portal could not be opened. Please try again.', category: 'A small learning garden', footer: 'Small steps. New words. A whole world.' },
   'zh-Hant': {
@@ -98,9 +99,15 @@ export const copy = {
     navHome: '乐园首页', navWords: '词语小径', navParent: '家长专区', signIn: '登录', welcome: '每天一点点汉语', headline: '让好奇心慢慢发芽。', intro: '为小小学习者准备的轻松汉语练习，大人就在身边陪伴。', start: '从“你好”开始', browse: '逛逛乐园', today: '温柔的十分钟日常', lessons: '挑一条小路出发', lessonsHint: '点选课程，听一听、说一说，让词语成为自己的。', learn: '个词语等你发现', free: '免费开始', premium: '完整学习路径', path: '陪孩子一起长大的学习路', pathHint: '四个阶段自由选择，每一步都多认识一点世界。', levels: ['小芽学徒', '词语探险家', '短句小能手', '汉语小读者'], levelAges: ['2–4 岁', '3–5 岁', '6–8 岁', '9–12 岁'], levelNotes: ['单字及生活词汇', '听说启蒙', '词语短句', '阅读表达'], join: '看看家庭会员', minutes: '4 个词语 · 约 5 分钟', locked: '加入会员即可开启这堂课', back: '回到乐园', word: '词语', listen: '听一听', sentence: '放进短句里', next: '学会了，下一个', finish: '完成这堂课', complete: '真棒，完成一轮了。', completeHint: '四个新词语已经住进记忆里。', return: '挑选另一堂课', parentTitle: '陪伴孩子自在成长。', parentSubtitle: '为陪伴学习的大人准备的几项贴心设置。', interface: '界面语言', interfaceHint: '选择菜单和按钮使用的语言。', age: '学习阶段', ageHint: '依孩子年龄推荐合适的学习路径。', theme: '乐园色彩', membership: '家庭会员', premiumActive: '完整学习路径已开启', freePlan: '免费乐园', monthly: '月度会员', price: 'US$9.99', perMonth: '/ 月', benefits: ['完整学习乐园：四个阶段、800 个词语', '生活词语、拼音与实用短句', '五种游戏与 40 篇朗读故事，任选阶段'], upgrade: '开启完整乐园', manage: '管理订阅', paymentNote: '安全付款由 Stripe 处理，可随时前往账单入口管理或取消。', account: '家长账户', signedOut: '登录或创建账户即可管理会员方案。新账户须付款成功后才会成为会员；免费课程无需登录即可使用。', signUp: '创建账户', due: '下次续订', cancelAt: '已设置取消', active: '会员有效', loading: '正在查看会员状态…', retry: '再试一次', failed: '无法加载会员状态，请重试。', checkoutError: '目前无法开始结账，请再试一次。', portalError: '目前无法打开账单管理，请再试一次。', category: '一座小小学习乐园', footer: '每天一小步，词语带你看世界。' },
 };
 
+export const copy = {
+  en: { ...baseCopy.en, levelAges: ageLabels('en') },
+  'zh-Hant': { ...baseCopy['zh-Hant'], levelAges: ageLabels('zh-Hant') },
+  'zh-Hans': { ...baseCopy['zh-Hans'], levelAges: ageLabels('zh-Hans') },
+};
+
 export const levels = [
-  { age: '2-4', words: ['門|门|mén|door', '手|手|shǒu|hand', '媽媽|妈妈|mā ma|mum', '水|水|shuǐ|water'] },
-  { age: '3-5', words: ['刷牙|刷牙|shuā yá|brush teeth', '姐姐|姐姐|jiě jie|older sister', '牛奶|牛奶|niú nǎi|milk', '公園|公园|gōng yuán|park'] },
+  { age: '2-3', words: ['門|门|mén|door', '手|手|shǒu|hand', '媽媽|妈妈|mā ma|mum', '水|水|shuǐ|water'] },
+  { age: '4-5', words: ['刷牙|刷牙|shuā yá|brush teeth', '姐姐|姐姐|jiě jie|older sister', '牛奶|牛奶|niú nǎi|milk', '公園|公园|gōng yuán|park'] },
   { age: '6-8', words: ['整理|整理|zhěng lǐ|organize', '體貼|体贴|tǐ tiē|considerate', '營養|营养|yíng yǎng|nutrition', '植物|植物|zhí wù|plant'] },
   { age: '9-12', words: ['規劃|规划|guī huà|plan', '溝通|沟通|gōu tōng|communicate', '均衡|均衡|jūn héng|balanced', '環境|环境|huán jìng|environment'] },
 ];

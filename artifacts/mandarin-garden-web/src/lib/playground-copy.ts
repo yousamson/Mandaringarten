@@ -1,4 +1,5 @@
 import type { Language } from './garden-data';
+import { ageStages } from './age-stages';
 
 export const tr = (l: Language, en: string, hant: string, hans: string) => (l === 'en' ? en : l === 'zh-Hant' ? hant : hans);
 export const pick = (l: Language, v: readonly [string, string, string]) => tr(l, v[0], v[1], v[2]);
@@ -66,7 +67,7 @@ export const pathTheme = (l: Language, stage: number, packIndex: number) => {
   const theme = stageThemes[Math.min(9, Math.max(0, Math.floor(packIndex) - 1))];
   return pick(l, theme);
 };
-export const stageAges = ['2–4', '3–5', '6–8', '9–12'];
+export const stageAges = ageStages.map((age) => age.replace('-', '–'));
 export const stageNotes: [string, string, string][] = [
   ['First words, colours, animals and everyday phrases', '第一批詞語、顏色、動物與生活用語', '第一批词语、颜色、动物与生活用语'],
   ['Places, feelings, routines and listening', '地點、心情、日常作息與聆聽', '地点、心情、日常作息与聆听'],
