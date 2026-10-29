@@ -44,3 +44,9 @@ Concurrent billing reads can exhaust the connector's per-project request limit d
 **Why:** a sandbox purchase succeeded, but parallel membership/progress checks triggered a connector 429 and briefly showed a billing-panel error.
 
 **How to apply:** share in-flight identical reads and honor bounded rate-limit retries. Do not cache completed entitlement responses merely to suppress errors, since cancellation and renewal must remain visible.
+
+Before sandbox testing, verify Stripe mode through the application's connector transport, not just the first connection returned to the agent.
+
+**Why:** both sandbox and live connections can be attached at once; the development application's default connector resolved a live price while the agent's first connection was an empty sandbox. Development runtime mode alone did not establish payment isolation.
+
+**How to apply:** read the selected price's `livemode` through the same transport as checkout before submitting any test payment. If it is live, stop and resolve development connection routing without modifying live subscriptions.
