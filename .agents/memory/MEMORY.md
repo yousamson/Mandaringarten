@@ -1,2 +1,3 @@
 - [Expo preview startup](expo-preview-startup.md) — wait for Metro’s web route bundles before treating a cold-start blank capture as an app rendering failure.
 - [Membership progression](membership-progression.md) — premium monthly covers all four levels, but learners progress sequentially; never charge per-level unlock fees.
+- [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
