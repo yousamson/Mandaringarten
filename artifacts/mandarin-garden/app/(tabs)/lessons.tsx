@@ -65,6 +65,7 @@ export default function LessonsScreen() {
   return (
     <Screen>
       <ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >

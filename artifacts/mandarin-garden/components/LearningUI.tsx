@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -11,6 +10,7 @@ import {
   type PressableProps,
   type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 
 export function Screen({
@@ -21,19 +21,21 @@ export function Screen({
   style?: ViewStyle;
 }) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView
+    <View
       style={[
         styles.safe,
         {
           backgroundColor: colors.background,
-          paddingTop: Platform.OS === 'web' ? 67 : 0,
+          paddingTop: Platform.OS === 'web' ? 12 : insets.top,
+          paddingBottom: Platform.OS === 'web' ? 0 : insets.bottom,
         },
         style,
       ]}
     >
       {children}
-    </SafeAreaView>
+    </View>
   );
 }
 

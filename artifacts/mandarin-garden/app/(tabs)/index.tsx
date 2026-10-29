@@ -41,6 +41,7 @@ export default function HomeScreen() {
   return (
     <Screen>
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -321,6 +322,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
   content: {
     paddingHorizontal: 22,
     paddingTop: 12,
