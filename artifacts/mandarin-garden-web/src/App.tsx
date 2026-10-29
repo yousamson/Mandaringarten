@@ -203,13 +203,8 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           </div>
           <div className="hero-note"><Sparkles size={14} /> {t.today}</div>
         </div>
-        <div className="hero-art" data-age-stage={normalizeAgeStage(age)} aria-label="Illustration of a flower growing in a garden">
-          <div className="sun-disc" />
-          <div className="garden-illustration">
-            <div className="plant-stem" /><div className="leaf l1" /><div className="leaf l2" /><div className="leaf l3" /><div className="leaf l4" />
-            <div className="flower" /><div className="soil" />
-          </div>
-          <div className="sprout-card"><span className="sprout-dot"><Sprout size={17} /></span><span>{t.category}<br /><strong>你好 · nǐ hǎo</strong></span></div>
+        <div className="hero-art" data-age-stage={normalizeAgeStage(age)}>
+          <img className="hero-flower-image" src={`/images/mandarin-cosmos-${normalizeAgeStage(age)}.png`} alt={tr(language, `Cosmos flower growing for ${t.levelAges[recommendedLevel]}`, `${t.levelAges[recommendedLevel]}成長階段的波斯菊`, `${t.levelAges[recommendedLevel]}成长阶段的波斯菊`)} width="480" height="390" fetchPriority="high" />
         </div>
       </section>
       <section id="lessons" className="reveal">
@@ -217,11 +212,14 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           <div><div className="eyebrow">{t.category}</div><h2>{t.lessons}</h2><p className="section-sub">{t.lessonsHint}</p></div>
           <span className="status-pill">{t.minutes}</span>
         </div>
-        <div className="filter-row" role="group" aria-label="Filter lessons">
+        <div className="filter-row" role="group" aria-label={tr(language, 'Filter learning activities', '篩選學習內容', '筛选学习内容')}>
           {categories.filter((item) => item === 'all' || lessons.some((lesson) => !lesson.premium && lesson.category === item)).map((item) => <button key={item} className={`filter-chip ${category === item ? 'selected' : ''}`} onClick={() => setCategory(item)} data-testid={`filter-${item}`}>{categoryNames[language][item]}</button>)}
         </div>
         <div className="lesson-grid">
           {lessonsToShow.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} language={language} t={t} />)}
+        </div>
+        <div className="home-pinyin-placement">
+          <PinyinMatchCard key={normalizeAgeStage(age)} language={language} age={age} onAgeChange={onAgeChange} />
         </div>
       </section>
       <StagePathCards l={language} />
@@ -247,44 +245,9 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
 
 
 function PracticeSection({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
-  const vocabulary = lessons.filter((lesson) => !lesson.premium).flatMap((lesson) => lesson.words);
-  const questions = vocabulary.slice(0, 5);
-  const [round, setRound] = useState(0);
-  const [picked, setPicked] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const current = questions[round];
-  const choices = current
-    ? [current, ...vocabulary.filter((item) => item.id !== current.id).slice((round * 2) % 8, (round * 2) % 8 + 3)]
-    : [];
-  const finished = round >= questions.length;
   const reading = freeReadings[normalizeAgeStage(age)];
-  const select = (id: string) => {
-    if (picked) return;
-    setPicked(id);
-    if (id === current?.id) setScore((value) => value + 1);
-  };
-  const advance = () => { setRound((value) => value + 1); setPicked(null); };
-  const restart = () => { setRound(0); setPicked(null); setScore(0); };
   return (
-    <section className="practice-grid">
-      <div className="practice-card quiz-card">
-        <div className="practice-heading"><span className="practice-icon"><Sparkles size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'PLAY & REMEMBER' : language === 'zh-Hant' ? '玩一玩，記得更牢' : '玩一玩，记得更牢'}</div><h2>{language === 'en' ? 'A tiny pinyin match' : language === 'zh-Hant' ? '拼音小配對' : '拼音小配对'}</h2></div></div>
-        {finished ? (
-          <div className="quiz-result"><div className="quiz-score">{score}<span> / {questions.length}</span></div><p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p><button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
-        ) : current ? (
-          <>
-            <div className="quiz-question">
-              <span className="question-count">{language === 'en' ? `WORD ${round + 1} OF ${questions.length}` : language === 'zh-Hant' ? `第 ${round + 1} 個詞語 · 共 ${questions.length} 個` : `第 ${round + 1} 个词语 · 共 ${questions.length} 个`}</span>
-              <strong>{current.pinyin}</strong>
-              <span>{language === 'en' ? 'Find the matching characters' : language === 'zh-Hant' ? '找出相配的漢字' : '找出相配的汉字'}</span>
-            </div>
-            <div className="quiz-options">
-              {choices.map((choice) => <button key={choice.id} className={`quiz-option ${picked === choice.id ? choice.id === current.id ? 'correct' : 'incorrect' : ''} ${picked && choice.id === current.id ? 'correct' : ''}`} onClick={() => select(choice.id)} disabled={Boolean(picked)}>{language === 'zh-Hans' ? choice.simplified : choice.hanzi}</button>)}
-            </div>
-            {picked ? <div className={`quiz-feedback ${picked === current.id ? 'good' : ''}`}>{picked === current.id ? (language === 'en' ? 'That’s the one.' : language === 'zh-Hant' ? '答對了！' : '答对了！') : (language === 'en' ? `This one is ${current.hanzi}.` : `答案是 ${language === 'zh-Hans' ? current.simplified : current.hanzi}。`)} <button className="text-next" onClick={advance}>{round === questions.length - 1 ? (language === 'en' ? 'See results' : language === 'zh-Hant' ? '看結果' : '看结果') : (language === 'en' ? 'Next word' : language === 'zh-Hant' ? '下一個詞語' : '下一个词语')} <ArrowRight size={13} /></button></div> : null}
-          </>
-        ) : null}
-      </div>
+    <section className="practice-grid reading-section">
       <article className="practice-card reading-card" data-testid="free-reading-card">
         <label className="setting-name" htmlFor="free-reading-age">{tr(language, 'Reading age group', '閱讀年齡階段', '阅读年龄阶段')}</label>
         <select id="free-reading-age" className="select-control" value={normalizeAgeStage(age)} onChange={(event) => onAgeChange(event.target.value)} data-testid="select-reading-age">
@@ -301,10 +264,56 @@ function PracticeSection({ language, age, onAgeChange }: { language: Language; a
   );
 }
 
+function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
+  const stageWords = levels[ageStages.indexOf(normalizeAgeStage(age))].words.map((entry, index) => {
+    const [hanzi, simplified, pinyin] = entry.split('|');
+    return { id: `${age}-${index}`, hanzi, simplified, pinyin };
+  });
+  const [round, setRound] = useState(0);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [score, setScore] = useState(0);
+  const current = stageWords[round];
+  const finished = round >= stageWords.length;
+  const choices = stageWords.map((_, index) => stageWords[(index + round) % stageWords.length]);
+  const select = (id: string) => {
+    if (picked || !current) return;
+    setPicked(id);
+    if (id === current.id) setScore((value) => value + 1);
+  };
+  const advance = () => { setRound((value) => value + 1); setPicked(null); };
+  const restart = () => { setRound(0); setPicked(null); setScore(0); };
+  return (
+    <section className="practice-card quiz-card home-pinyin-card" data-testid="home-pinyin-match">
+        <div className="practice-heading"><span className="practice-icon"><Sparkles size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'PLAY & REMEMBER' : language === 'zh-Hant' ? '玩一玩，記得更牢' : '玩一玩，记得更牢'}</div><h2>{language === 'en' ? 'A tiny pinyin match' : language === 'zh-Hant' ? '拼音小配對' : '拼音小配对'}</h2></div></div>
+        <label className="pinyin-stage-picker" htmlFor="pinyin-age-stage">
+          <span>{tr(language, 'Choose an age stage', '選擇年齡階段', '选择年龄阶段')}</span>
+          <select id="pinyin-age-stage" className="select-control" value={normalizeAgeStage(age)} onChange={(event) => onAgeChange(event.target.value)}>
+            {ageStages.map((stage, index) => <option key={stage} value={stage}>{copy[language].levelAges[index]}</option>)}
+          </select>
+        </label>
+        {finished ? (
+          <div className="quiz-result"><div className="quiz-score">{score}<span> / {stageWords.length}</span></div><p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p><button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
+        ) : current ? (
+          <>
+            <div className="quiz-question">
+              <span className="question-count">{language === 'en' ? `WORD ${round + 1} OF ${stageWords.length}` : language === 'zh-Hant' ? `第 ${round + 1} 個詞語 · 共 ${stageWords.length} 個` : `第 ${round + 1} 个词语 · 共 ${stageWords.length} 个`}</span>
+              <strong>{current.pinyin}</strong>
+              <span>{language === 'en' ? 'Find the matching characters' : language === 'zh-Hant' ? '找出相配的漢字' : '找出相配的汉字'}</span>
+            </div>
+            <div className="quiz-options">
+              {choices.map((choice) => <button key={choice.id} className={`quiz-option ${picked === choice.id ? choice.id === current.id ? 'correct' : 'incorrect' : ''} ${picked && choice.id === current.id ? 'correct' : ''}`} onClick={() => select(choice.id)} disabled={Boolean(picked)}>{language === 'zh-Hans' ? choice.simplified : choice.hanzi}</button>)}
+            </div>
+            {picked ? <div className={`quiz-feedback ${picked === current.id ? 'good' : ''}`}>{picked === current.id ? (language === 'en' ? 'That’s the one.' : language === 'zh-Hant' ? '答對了！' : '答对了！') : (language === 'en' ? `This one is ${current.hanzi}.` : `答案是 ${language === 'zh-Hans' ? current.simplified : current.hanzi}。`)} <button className="text-next" onClick={advance}>{round === stageWords.length - 1 ? (language === 'en' ? 'See results' : language === 'zh-Hant' ? '看結果' : '看结果') : (language === 'en' ? 'Next word' : language === 'zh-Hant' ? '下一個詞語' : '下一个词语')} <ArrowRight size={13} /></button></div> : null}
+          </>
+        ) : null}
+    </section>
+  );
+}
+
 function LessonCard({ lesson, language, t }: { lesson: GardenLesson; language: Language; t: Copy }) {
   const Icon = icons[lesson.icon as keyof typeof icons] || BookOpen;
   return (
-    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': '#e9f0e2' } as CSSProperties} aria-label={`${lesson.title[language]} · ${tr(language, 'Open lesson', '開始學習', '开始学习')}`} data-testid={`card-lesson-${lesson.id}`}>
+    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': '#e9f0e2' } as CSSProperties} aria-label={`${lesson.title[language]} · ${tr(language, 'Open learning activity', '開始學習', '开始学习')}`} data-testid={`card-lesson-${lesson.id}`}>
       <div className="lesson-top"><span className="lesson-icon"><Icon size={20} strokeWidth={1.7} /></span><span className="premium-label">{t.free}</span></div>
       <h3 className="lesson-title">{lesson.title[language]}</h3>
       <p className="lesson-description">{lesson.subtitle[language]}</p>

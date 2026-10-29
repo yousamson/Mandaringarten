@@ -3,6 +3,7 @@ import type { Language } from '@/lib/garden-data';
 import type { LegalDoc } from '@/lib/legal/privacy';
 import { LEGAL_SOURCES, LEGAL_VERSION, legalConfig, legalConfigComplete } from '@/lib/legal-config';
 import { tr } from '@/lib/playground-copy';
+import { cleanProductText } from '@/lib/product-language';
 
 const langs: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -18,8 +19,8 @@ export function LegalDocument({ docs, language, source, testId, hideSourceFor = 
     <main className="page-shell legal-page" lang={l} data-testid={testId}>
       <header className="legal-head">
         <div className="eyebrow">{tr(l, `Version ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`)}</div>
-        <h1>{doc.title}</h1>
-        <p>{doc.summary}</p>
+        <h1>{cleanProductText(doc.title)}</h1>
+        <p>{cleanProductText(doc.summary)}</p>
         <div className="legal-langs" role="group" aria-label="Document language">
           {langs.map((item) => <button key={item.value} className={`filter-chip ${shown === item.value ? 'selected' : ''}`} onClick={() => setShown(item.value)} aria-pressed={shown === item.value} data-testid={`button-legal-lang-${item.value}`}>{item.label}</button>)}
         </div>
@@ -27,8 +28,8 @@ export function LegalDocument({ docs, language, source, testId, hideSourceFor = 
       <article className="legal-body">
         {doc.sections.map((s) => (
           <section key={s.h}>
-            <h2>{s.h}</h2>
-            {s.p.map((p) => <p key={p.slice(0, 32)}>{p}</p>)}
+            <h2>{cleanProductText(s.h)}</h2>
+            {s.p.map((p) => <p key={p.slice(0, 32)}>{cleanProductText(p)}</p>)}
           </section>
         ))}
         <section>

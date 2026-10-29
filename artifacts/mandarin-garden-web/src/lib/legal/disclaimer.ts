@@ -7,7 +7,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     summary: 'The rules for using Mandarin Garden, what it can and cannot promise, and how membership billing, renewal and refunds work.',
     sections: [
       { h: '1. About these terms', p: [
-        'These terms and this disclaimer govern your use of Mandarin Garden (漢語樂園). They are adapted from the Automattic Terms of Service, which Automattic publishes under the Creative Commons Attribution-ShareAlike 4.0 licence, and this adapted text is shared under the same licence.',
+        'These terms and this disclaimer govern your use of Mandarin Garden (漢語樂園).',
         'By creating an account you confirm you have read and agree to these terms and to our Privacy Policy.',
       ] },
       { h: '2. Who may use Mandarin Garden', p: [
@@ -28,11 +28,10 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
         'You can cancel at any time from the billing portal under For parents. Cancelling stops future renewals. It takes effect at the end of the current paid period, and you keep access until then. If the price changes, we will tell you in advance and the new price will apply only from your next renewal.',
       ] },
       { h: '7. Refunds', p: [
-        'Subscription fees are non-refundable, including for partial months and unused time, except (a) where a refund is required by mandatory law that applies to you, or (b) where you were charged in error, such as a duplicate or unauthorised charge. To report an erroneous charge, contact us using the details below.',
-        'Nothing in these terms excludes, limits or waives any consumer rights that cannot legally be excluded, limited or waived under the law that applies to you.',
+        'Subscription fees are non-refundable, including for partial months and unused time.',
       ] },
       { h: '8. Intellectual property', p: [
-        'The stories, vocabulary selections, games, illustrations, design and software of Mandarin Garden belong to us or our licensors. You may use them for personal, non-commercial learning in your family. Please do not copy, sell, redistribute or create commercial products from them without permission. This legal text itself is available under CC BY-SA 4.0.',
+        'The stories, vocabulary selections, games, illustrations, design and software of Mandarin Garden belong to us or our licensors. You may use them for personal, non-commercial learning in your family. Please do not copy, sell, redistribute or create commercial products from them without permission.',
       ] },
       { h: '9. Acceptable use', p: [
         'Do not misuse the service: no attempts to break security, scrape content at scale, interfere with other families, avoid payment or use the service unlawfully.',
@@ -48,10 +47,11 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: '13. Changes', p: [
         'We may update these terms. When we make material changes we will update the version date and ask you to accept the new version before you continue using account features.',
+        'To the extent permitted by applicable law, we reserve all rights to modify, update, suspend or discontinue the platform, its content, services and these terms, and to make final decisions concerning platform operations and use of the services.',
       ] },
       { h: "Membership, expiry and account deletion", p: [
         "Signed-in use requires a parent account and an active paid membership; registering alone does not activate membership. If you cancel, access continues until the end of the period you have already paid for. When a membership expires, member features are blocked, but renewing, contacting the team and deleting the account remain available.",
-        "Deleting your account is permanent and irreversible. It cancels any ongoing subscription immediately and ends access at once, with no refund for unused time except where mandatory law requires a refund or you were charged in error. A limited amount of information may remain where needed to operate or protect the service, and providers may retain information under their own policies.",
+         "Deleting your account is permanent and irreversible. It cancels any ongoing subscription immediately, ends access at once and does not qualify you for a refund for unused time. A limited amount of information may remain where needed to operate or protect the service, and providers may retain information under their own policies.",
       ] },
     ],
   },
@@ -60,7 +60,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     summary: '使用漢語樂園的規則、我們能與不能承諾的事項，以及會員收費、續訂與退款方式。',
     sections: [
       { h: '1. 關於本條款', p: [
-        '本條款與免責聲明規範您對漢語樂園（Mandarin Garden）的使用。本文改編自 Automattic 服務條款，原文由 Automattic 以「創用 CC 姓名標示－相同方式分享 4.0」授權發布，本改編內容亦以相同授權分享。',
+        '本條款與免責聲明規範您對漢語樂園（Mandarin Garden）的使用。',
         '建立帳戶即表示您確認已閱讀並同意本條款及我們的私隱政策。',
       ] },
       { h: '2. 使用資格', p: [
@@ -81,11 +81,10 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
         '您可隨時在「家長專區」的帳單管理入口取消。取消後將停止日後續訂，並於當期已付費期間結束時生效，在此之前仍可繼續使用。如價格調整，我們會事先通知，新價格只會從下次續訂起適用。',
       ] },
       { h: '7. 退款', p: [
-        '訂閱費用一經支付恕不退還，包括未滿一個月或未使用的期間；但以下情況除外：（a）適用於您的強制性法律規定須退款；或（b）錯誤收費，例如重複或未經授權的扣款。如需回報錯誤收費，請透過下方聯絡方式與我們聯繫。',
-        '本條款不排除、限制或放棄任何依適用法律不得排除、限制或放棄的消費者權利。',
+        '訂閱費用一經支付恕不退還，包括未滿一個月或未使用的期間。',
       ] },
       { h: '8. 智慧財產權', p: [
-        '漢語樂園的故事、詞彙選編、遊戲、插圖、設計與軟體屬於我們或授權人所有。您可在家庭內作個人、非商業的學習用途。未經許可，請勿複製、出售、轉發或用於製作商業產品。本法律文字本身以 CC BY-SA 4.0 授權提供。',
+        '漢語樂園的故事、詞彙選編、遊戲、插圖、設計與軟體屬於我們或授權人所有。您可在家庭內作個人、非商業的學習用途。未經許可，請勿複製、出售、轉發或用於製作商業產品。',
       ] },
       { h: '9. 合理使用', p: [
         '請勿濫用服務：不得嘗試破壞安全機制、大量擷取內容、干擾其他家庭、逃避付款或以違法方式使用本服務。',
@@ -101,10 +100,11 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: '13. 條款變更', p: [
         '我們可能更新本條款。如有重大變更，我們會更新版本日期，並請您在繼續使用帳戶功能前接受新版本。',
+        '在適用法律允許的範圍內，本平台保留一切修改及決定權，包括修改、更新、暫停或終止網站內容、功能、服務及本條款，並就平台運作和服務使用相關事宜作出最終決定。',
       ] },
       { h: "會員、到期與刪除帳戶", p: [
         "登入後使用須具備家長帳戶及有效的付費會員；僅註冊不會開通會員。取消後，使用權持續至已付費期間結束。會員到期後，會員功能將無法使用，但續訂、聯絡團隊及刪除帳戶仍可使用。",
-        "刪除帳戶為永久且不可逆的操作，會立即取消進行中的訂閱並即刻終止使用權，未使用期間不予退款；但強制性法律規定須退款或錯誤收費者除外。為維持或保障服務，部分資料仍可能保留；服務商亦可能按其政策保存資料。",
+         "刪除帳戶為永久且不可逆的操作，會立即取消進行中的訂閱並即刻終止使用權，未使用期間不予退款。為維持或保障服務，部分資料仍可能保留；服務商亦可能按其政策保存資料。",
       ] },
     ],
   },
@@ -113,7 +113,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     summary: '使用汉语乐园的规则、我们能与不能承诺的事项，以及会员收费、续订与退款方式。',
     sections: [
       { h: '1. 关于本条款', p: [
-        '本条款与免责声明规范您对汉语乐园（Mandarin Garden）的使用。本文改编自 Automattic 服务条款，原文由 Automattic 以“知识共享 署名－相同方式共享 4.0”许可发布，本改编内容亦以相同许可分享。',
+        '本条款与免责声明规范您对汉语乐园（Mandarin Garden）的使用。',
         '创建账户即表示您确认已阅读并同意本条款及我们的隐私政策。',
       ] },
       { h: '2. 使用资格', p: [
@@ -137,7 +137,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
         '订阅费用一经支付恕不退还，包括未满一个月或未使用的期间。',
       ] },
       { h: '8. 知识产权', p: [
-        '汉语乐园的故事、词汇选编、游戏、插图、设计与软件属于我们或许可人所有。您可在家庭内作个人、非商业的学习用途。未经许可，请勿复制、出售、转发或用于制作商业产品。本法律文字本身以 CC BY-SA 4.0 许可提供。',
+        '汉语乐园的故事、词汇选编、游戏、插图、设计与软件属于我们或许可人所有。您可在家庭内作个人、非商业的学习用途。未经许可，请勿复制、出售、转发或用于制作商业产品。',
       ] },
       { h: '9. 合理使用', p: [
         '请勿滥用服务：不得尝试破坏安全机制、大量抓取内容、干扰其他家庭、逃避付款或以违法方式使用本服务。',
@@ -153,10 +153,11 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: '13. 条款变更', p: [
         '我们可能更新本条款。如有重大变更，我们会更新版本日期，并请您在继续使用账户功能前接受新版本。',
+        '在适用法律允许的范围内，本平台保留一切修改及决定权，包括修改、更新、暂停或终止网站内容、功能、服务及本条款，并就平台运营和服务使用相关事宜作出最终决定。',
       ] },
       { h: "会员、到期与删除账户", p: [
         "登录后使用须具备家长账户及有效的付费会员；仅注册不会开通会员。取消后，使用权持续至已付费期间结束。会员到期后，会员功能将无法使用，但续订、联系团队及删除账户仍可使用。",
-        "删除账户为永久且不可逆的操作，会立即取消进行中的订阅并即刻终止使用权，未使用期间不予退款；但强制性法律规定须退款或错误收费者除外。为维持或保护服务，部分信息仍可能保留；服务商也可能依其政策保存信息。",
+         "删除账户为永久且不可逆的操作，会立即取消进行中的订阅并即刻终止使用权，未使用期间不予退款。为维持或保护服务，部分信息仍可能保留；服务商也可能依其政策保存信息。",
       ] },
     ],
   },

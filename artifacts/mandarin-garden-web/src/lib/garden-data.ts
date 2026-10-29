@@ -1,4 +1,5 @@
 import { ageLabels } from './age-stages';
+import { cleanProductCopy } from './product-language';
 export type Language = 'en' | 'zh-Hant' | 'zh-Hans';
 export type LessonWord = {
   id: string;
@@ -99,11 +100,11 @@ const baseCopy = {
     navHome: '乐园首页', navWords: '词语小径', navParent: '家长专区', signIn: '登录', welcome: '每天一点点汉语', headline: '让好奇心慢慢发芽。', intro: '为小小学习者准备的轻松汉语练习，大人就在身边陪伴。', start: '从“你好”开始', browse: '逛逛乐园', today: '温柔的十分钟日常', lessons: '挑一条小路出发', lessonsHint: '点选课程，听一听、说一说，让词语成为自己的。', learn: '个词语等你发现', free: '免费开始', premium: '完整学习路径', path: '陪孩子一起长大的学习路', pathHint: '四个阶段自由选择，每一步都多认识一点世界。', levels: ['小芽学徒', '词语探险家', '短句小能手', '汉语小读者'], levelAges: ['2–4 岁', '3–5 岁', '6–8 岁', '9–12 岁'], levelNotes: ['单字及生活词汇', '听说启蒙', '词语短句', '阅读表达'], join: '看看家庭会员', minutes: '4 个词语 · 约 5 分钟', locked: '加入会员即可开启这堂课', back: '回到乐园', word: '词语', listen: '听一听', sentence: '放进短句里', next: '学会了，下一个', finish: '完成这堂课', complete: '真棒，完成一轮了。', completeHint: '四个新词语已经住进记忆里。', return: '挑选另一堂课', parentTitle: '陪伴孩子自在成长。', parentSubtitle: '为陪伴学习的大人准备的几项贴心设置。', interface: '界面语言', interfaceHint: '选择菜单和按钮使用的语言。', age: '学习阶段', ageHint: '依孩子年龄推荐合适的学习路径。', theme: '乐园色彩', membership: '家庭会员', premiumActive: '完整学习路径已开启', freePlan: '免费乐园', monthly: '月度会员', price: 'US$9.99', perMonth: '/ 月', benefits: ['完整学习乐园：四个阶段、800 个词语', '生活词语、拼音与实用短句', '五种游戏与 40 篇朗读故事，任选阶段'], upgrade: '开启完整乐园', manage: '管理订阅', paymentNote: '安全付款由 Stripe 处理，可随时前往账单入口管理或取消。', account: '家长账户', signedOut: '登录或创建账户即可管理会员方案。新账户须付款成功后才会成为会员；免费课程无需登录即可使用。', signUp: '创建账户', due: '下次续订', cancelAt: '已设置取消', active: '会员有效', loading: '正在查看会员状态…', retry: '再试一次', failed: '无法加载会员状态，请重试。', checkoutError: '目前无法开始结账，请再试一次。', portalError: '目前无法打开账单管理，请再试一次。', category: '一座小小学习乐园', footer: '每天一小步，词语带你看世界。' },
 };
 
-export const copy = {
+export const copy = cleanProductCopy({
   en: { ...baseCopy.en, levelAges: ageLabels('en') },
   'zh-Hant': { ...baseCopy['zh-Hant'], levelAges: ageLabels('zh-Hant') },
   'zh-Hans': { ...baseCopy['zh-Hans'], levelAges: ageLabels('zh-Hans') },
-};
+});
 
 export const levels = [
   { age: '2-3', words: ['門|门|mén|door', '手|手|shǒu|hand', '媽媽|妈妈|mā ma|mum', '水|水|shuǐ|water'] },

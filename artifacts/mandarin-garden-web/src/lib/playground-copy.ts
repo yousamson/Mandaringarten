@@ -1,7 +1,8 @@
 import type { Language } from './garden-data';
 import { ageStages } from './age-stages';
+import { cleanProductText } from './product-language';
 
-export const tr = (l: Language, en: string, hant: string, hans: string) => (l === 'en' ? en : l === 'zh-Hant' ? hant : hans);
+export const tr = (l: Language, en: string, hant: string, hans: string) => cleanProductText(l === 'en' ? en : l === 'zh-Hant' ? hant : hans);
 export const pick = (l: Language, v: readonly [string, string, string]) => tr(l, v[0], v[1], v[2]);
 
 export const playgroundName: Record<Language, string> = { en: 'Learning playground', 'zh-Hant': '學習樂園', 'zh-Hans': '学习乐园' };
