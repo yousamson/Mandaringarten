@@ -5,6 +5,8 @@ import { buildRound, newRoundId, type Question } from '@/lib/playground-games';
 import { modeCopy, pick, tr, type GameMode } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 import { useRecordRound, XP_PER_CORRECT } from '@/hooks/use-learning';
+import { questionAwardId } from '@/lib/progress-outbox';
+import type { LearningRoundInput } from '@workspace/api-client-react';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -17,26 +19,48 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   const [picked, setPicked] = useState<string | null>(null);
   const [built, setBuilt] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
-  const [save, setSave] = useState<SaveState>('idle');
-  const { record } = useRecordRound(uid);
-  const recordRef = useRef(record);
-  recordRef.current = record;
-  const submitted = useRef<string | null>(null);
+  const [pendingSaves, setPendingSaves] = useState(0);
+  const [savedAnswers, setSavedAnswers] = useState(0);
+  const [failedAnswers, setFailedAnswers] = useState<LearningRoundInput[]>([]);
+  const { replay } = useRecordRound(uid);
+  const replayRef = useRef(replay);
+  replayRef.current = replay;
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const savingIds = useRef(new Set<string>());
+  const activeRoundId = useRef(roundId);
+  activeRoundId.current = roundId;
 
   const q: Question | undefined = questions[idx];
   const done = idx >= questions.length;
+  const save: SaveState = pendingSaves > 0 ? 'saving' : failedAnswers.length ? 'error' : savedAnswers > 0 ? 'saved' : 'idle';
 
-  const submit = () => {
-    setSave('saving');
-    recordRef.current({ stage, mode, roundId, correctCount: correct }, { onSuccess: () => setSave('saved'), onError: () => setSave('error') });
+  const saveAnswer = (input: LearningRoundInput, ownerRoundId: string) => {
+    if (savingIds.current.has(input.roundId)) return;
+    savingIds.current.add(input.roundId);
+    setPendingSaves((count) => count + 1);
+    const request = saveQueue.current.then(async () => { await replayRef.current(input); });
+    saveQueue.current = request.then(() => undefined, () => undefined);
+    const finish = () => {
+      savingIds.current.delete(input.roundId);
+      setPendingSaves((count) => Math.max(0, count - 1));
+    };
+    void request.then(
+      () => {
+        if (activeRoundId.current === ownerRoundId) setSavedAnswers((count) => count + 1);
+        setFailedAnswers((items) => items.filter((item) => item.roundId !== input.roundId));
+        finish();
+      },
+      () => {
+        if (activeRoundId.current === ownerRoundId) {
+          setFailedAnswers((items) => items.some((item) => item.roundId === input.roundId) ? items : [...items, input]);
+        }
+        finish();
+      },
+    );
   };
-
-  useEffect(() => {
-    if (!done || submitted.current === roundId) return;
-    submitted.current = roundId;
-    submit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done, roundId]);
+  const retryFailedAnswers = () => {
+    for (const input of failedAnswers) saveAnswer(input, activeRoundId.current);
+  };
 
   // Listen mode plays each new word once; replay is always available.
   useEffect(() => {
@@ -47,10 +71,18 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   const answer = (value: string) => {
     if (picked || !q) return;
     setPicked(value);
-    if (value === q.answer) setCorrect((c) => c + 1);
+    if (value === q.answer) {
+      setCorrect((c) => c + 1);
+      saveAnswer({
+        stage,
+        mode,
+        roundId: questionAwardId(roundId, idx),
+        correctCount: 1,
+      }, roundId);
+    }
   };
   const next = () => { setIdx((i) => i + 1); setPicked(null); setBuilt([]); };
-  const restart = () => { setSeed((s) => s + 1); setIdx(0); setPicked(null); setBuilt([]); setCorrect(0); setSave('idle'); };
+  const restart = () => { setSeed((s) => s + 1); setIdx(0); setPicked(null); setBuilt([]); setCorrect(0); setSavedAnswers(0); };
 
   if (questions.length === 0) {
     return <div className="game-card"><p className="panel-desc">{tr(l, 'No questions available for this stage yet.', '此階段暫時沒有題目。', '此阶段暂时没有题目。')}</p></div>;
@@ -73,9 +105,9 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
           <div className="quiz-score">{correct}<span> / {questions.length}</span></div>
           <p className="round-xp">+{correct * XP_PER_CORRECT} XP</p>
           <div className={`save-state ${save}`} role="status" data-testid="status-round-save">
-            {save === 'saving' ? tr(l, 'Saving to your account…', '正在儲存到帳戶…', '正在保存到账户…')
-              : save === 'saved' ? <><Check size={13} /> {tr(l, 'Saved to this stage', '已儲存到此階段', '已保存到此阶段')}</>
-              : save === 'error' ? <><CloudOff size={13} /> {tr(l, 'Could not save this round.', '這一輪未能儲存。', '这一轮未能保存。')} <button className="text-next" onClick={submit} data-testid="button-retry-round">{tr(l, 'Retry', '重試', '重试')}</button></>
+            {save === 'saving' ? tr(l, 'Saving XP to your account…', '正在把 XP 儲存到帳戶…', '正在把 XP 保存到账户…')
+              : save === 'saved' ? <><Check size={13} /> {tr(l, 'XP saved to this stage', 'XP 已儲存到此階段', 'XP 已保存到此阶段')}</>
+              : save === 'error' ? <><CloudOff size={13} /> {tr(l, 'Some XP could not be saved.', '部分 XP 未能儲存。', '部分 XP 未能保存。')} <button className="text-next" onClick={retryFailedAnswers} data-testid="button-retry-round">{tr(l, 'Retry', '重試', '重试')}</button></>
               : null}
           </div>
           <button className="button-secondary" onClick={restart} disabled={save === 'saving'} data-testid="button-new-round"><RotateCcw size={14} /> {tr(l, 'New round', '新的一輪', '新的一轮')}</button>

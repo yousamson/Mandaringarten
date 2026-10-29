@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { ActionButton, PageTitle, Screen, Surface } from '@/components/LearningUI';
-import { useLearning } from '@/context/LearningContext';
+import { useLearning, XP_PER_CORRECT } from '@/context/LearningContext';
 import { allWords, lessons } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
@@ -21,7 +21,8 @@ export default function GamesScreen() {
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const { isPremium } = useSubscription();
-  const { level, recordGame } = useLearning();
+  const learning = useLearning();
+  const { level, recordGame, awardCorrectAnswer } = learning;
   const [mode, setMode] = useState<GameMode>('pinyin');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -74,15 +75,28 @@ export default function GamesScreen() {
 
   const isCorrect = selectedAnswer === correctAnswer;
 
+  if (!learning.hydrated) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
+
   const chooseAnswer = (answer: string) => {
     if (selectedAnswer || roundFinished) return;
     setSelectedAnswer(answer);
-    if (answer === correctAnswer) setScore((value) => value + 1);
+    if (answer === correctAnswer) {
+      setScore((value) => value + 1);
+      awardCorrectAnswer(isPremium);
+    }
   };
 
   const nextQuestion = () => {
     if (questionIndex + 1 >= QUESTIONS_PER_ROUND) {
-      recordGame(score, isPremium);
+      recordGame();
       setRoundFinished(true);
       return;
     }
@@ -173,6 +187,9 @@ export default function GamesScreen() {
             >
               {t('games.roundScore', { score, total: QUESTIONS_PER_ROUND })}
             </Text>
+              <Text style={[styles.resultCopy, { color: colors.primary }]}>
+                {t('games.xpEarned', { xp: score * XP_PER_CORRECT })}
+              </Text>
             <ActionButton
               label={t('games.playAgain')}
               onPress={restartRound}
@@ -197,7 +214,7 @@ export default function GamesScreen() {
               <View style={[styles.scoreChip, { backgroundColor: colors.secondary }]}>
                 <Ionicons name="star" size={14} color={colors.primary} />
                 <Text style={[styles.scoreText, { color: colors.primary }]}>
-                  {score}
+                  {score * XP_PER_CORRECT} XP
                 </Text>
               </View>
             </View>
@@ -296,7 +313,7 @@ export default function GamesScreen() {
                 ]}
               >
                 <Text style={[styles.feedbackTitle, { color: colors.foreground }]}>
-                  {isCorrect ? t('games.correct') : t('games.correctAnswer', { answer: correctAnswer })}
+                  {isCorrect ? `${t('games.correct')} · +${XP_PER_CORRECT} XP` : t('games.correctAnswer', { answer: correctAnswer })}
                 </Text>
                 <Text style={[styles.feedbackCopy, { color: colors.mutedForeground }]}>
                   {localizedSentence(question.id, question.sentence, language)}
@@ -345,6 +362,11 @@ export default function GamesScreen() {
 }
 
 const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     paddingHorizontal: 22,
     paddingTop: 16,

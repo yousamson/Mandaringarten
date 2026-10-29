@@ -35,7 +35,7 @@ test('a higher snapshot from a second browser merges, but an older one never dou
   assert.deepEqual(mergeLegacyProgress(higher, 230, earned), higher);
 });
 
-const { queueRound, pendingRounds, acknowledgeRound } = await load('../../mandarin-garden-web/src/lib/progress-outbox.ts');
+const { questionAwardId, queueRound, pendingRounds, acknowledgeRound } = await load('../../mandarin-garden-web/src/lib/progress-outbox.ts');
 const storage = new Map();
 globalThis.localStorage = {
   get length() { return storage.size; },
@@ -61,6 +61,25 @@ test('pending rounds survive reload, stay account-isolated and acknowledge only 
   acknowledgeRound('family-a', round.roundId);
   assert.equal(pendingRounds('family-a').length, 1);
   assert.equal(pendingRounds('family-b').length, 1);
+});
+
+test('per-question XP event IDs are stable for retries and distinct across questions', () => {
+  const first = questionAwardId('game-round-123', 0);
+  assert.equal(first, questionAwardId('game-round-123', 0));
+  assert.notEqual(first, questionAwardId('game-round-123', 1));
+  assert.throws(() => questionAwardId('game-round-123', -1), RangeError);
+});
+
+test('pending per-question XP awards remain distinct and idempotent in the outbox', () => {
+  storage.clear();
+  const answer0 = { stage: 2, mode: 'match', roundId: questionAwardId('game-round-123', 0), correctCount: 1 };
+  const answer1 = { ...answer0, roundId: questionAwardId('game-round-123', 1) };
+  queueRound('family-a', answer0);
+  queueRound('family-a', answer1);
+  queueRound('family-a', answer0);
+  assert.deepEqual(pendingRounds('family-a'), [answer0, answer1]);
+  acknowledgeRound('family-a', answer0.roundId);
+  assert.deepEqual(pendingRounds('family-a'), [answer1]);
 });
 
 test('corrupt pending rounds fail explicitly instead of being discarded', () => {

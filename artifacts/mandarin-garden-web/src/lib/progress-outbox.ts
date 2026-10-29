@@ -4,6 +4,14 @@ export const OUTBOX_PREFIX = 'mg-pending-round:';
 export const OUTBOX_EVENT = 'mg-progress-outbox';
 const key = (uid: string, roundId: string) => `${OUTBOX_PREFIX}${uid}:${roundId}`;
 
+/** A stable per-question event ID makes retries idempotent while XP is awarded immediately. */
+export function questionAwardId(roundId: string, questionIndex: number): string {
+  if (!Number.isInteger(questionIndex) || questionIndex < 0) {
+    throw new RangeError('Question index must be a non-negative integer.');
+  }
+  return `${roundId}:answer:${questionIndex}`;
+}
+
 /** One key per round prevents different tabs from overwriting each other's queue. */
 export function queueRound(uid: string, round: LearningRoundInput) {
   localStorage.setItem(key(uid, round.roundId), JSON.stringify(round));

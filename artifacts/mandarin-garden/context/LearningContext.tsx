@@ -10,6 +10,7 @@ import React, {
 import type { AgeBand } from '@/data/vocabulary';
 
 const STORAGE_KEY = 'mandarin-garden-learning-v1';
+export const XP_PER_CORRECT = 5;
 
 type LearningState = {
   ageBand: AgeBand;
@@ -27,9 +28,10 @@ type LearningContextValue = LearningState & {
   level: number;
   nextLevelXp: number;
   setAgeBand: (ageBand: AgeBand) => void;
+  awardCorrectAnswer: (countsForCurriculum?: boolean) => void;
   markWordLearned: (wordId: string) => void;
   completeLesson: (lessonId: string) => void;
-  recordGame: (score: number, countsForCurriculum?: boolean) => void;
+  recordGame: () => void;
 };
 
 const initialState: LearningState = {
@@ -152,10 +154,17 @@ export function LearningProvider({
     });
   }, []);
 
-  const recordGame = useCallback((score: number, countsForCurriculum = false) => {
-    const earnedXp = Math.max(0, score) * 5;
+  const awardCorrectAnswer = useCallback((countsForCurriculum = false) => {
+    setState((current) => withActivity(
+      current,
+      XP_PER_CORRECT,
+      countsForCurriculum ? XP_PER_CORRECT : 0,
+    ));
+  }, []);
+
+  const recordGame = useCallback(() => {
     setState((current) => ({
-      ...withActivity(current, earnedXp, countsForCurriculum ? earnedXp : 0),
+      ...withActivity(current, 0, 0),
       gamesPlayed: current.gamesPlayed + 1,
     }));
   }, []);
@@ -168,11 +177,12 @@ export function LearningProvider({
       level,
       nextLevelXp: level < 4 ? level * 100 : 300,
       setAgeBand,
+      awardCorrectAnswer,
       markWordLearned,
       completeLesson,
       recordGame,
     };
-  }, [state, hydrated, setAgeBand, markWordLearned, completeLesson, recordGame]);
+  }, [state, hydrated, setAgeBand, awardCorrectAnswer, markWordLearned, completeLesson, recordGame]);
 
   return (
     <LearningContext.Provider value={value}>
