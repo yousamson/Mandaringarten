@@ -7,6 +7,12 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { useLanguage } from '@/context/LanguageContext';
 import { translate } from '@/lib/i18n';
 import { useColors } from '@/hooks/useColors';
+import {
+  finalizeParentSession,
+  getSignUpAction,
+  submitEmailPasswordSignUp,
+  verifyEmailSignUpCode,
+} from '@/lib/signUpFlow';
 
 export default function SignUpScreen() {
   const colors = useColors();
@@ -37,13 +43,7 @@ export default function SignUpScreen() {
     : [];
   const isVerifying = needsCode || verificationField !== null;
 
-  const finish = () =>
-    signUp.finalize({
-      navigate: ({ session }) => {
-        if (session?.currentTask) return;
-        router.replace('/(tabs)');
-      },
-    });
+  const finish = () => finalizeParentSession(signUp, () => router.replace('/(tabs)'));
 
   const sendOAuthVerification = async (
     field: 'email_address' | 'phone_number',
@@ -99,33 +99,34 @@ export default function SignUpScreen() {
   };
 
   const submit = async () => {
-    setError('');
-    try {
-      const result = await signUp.password({ emailAddress, password });
-      if (result.error) {
-        setError(result.error.message || t('auth.genericError'));
-        return;
-      }
-      if (signUp.status === 'complete') {
-        await finish();
-        return;
-      }
-      if (signUp.unverifiedFields.includes('email_address')) {
-        await signUp.verifications.sendEmailCode();
-        setNeedsCode(true);
-      }
-    } catch {
-      setError(t('auth.genericError'));
-    }
+    await submitEmailPasswordSignUp({
+      signUp,
+      emailAddress,
+      password,
+      finish,
+      setNeedsCode,
+      setError,
+      genericError: t('auth.genericError'),
+    });
   };
 
   const verify = async () => {
+    if (!isOAuthContinuation) {
+      await verifyEmailSignUpCode({
+        signUp,
+        code,
+        finish,
+        setError,
+        genericError: t('auth.genericError'),
+      });
+      return;
+    }
+
     setError('');
     try {
-      const result =
-        isOAuthContinuation && verificationField === 'phone_number'
-          ? await signUp.verifications.verifyPhoneCode({ code })
-          : await signUp.verifications.verifyEmailCode({ code });
+      const result = verificationField === 'phone_number'
+        ? await signUp.verifications.verifyPhoneCode({ code })
+        : await signUp.verifications.verifyEmailCode({ code });
       if (result.error) {
         setError(result.error.message || t('auth.genericError'));
         return;
@@ -327,13 +328,12 @@ export default function SignUpScreen() {
                   ? t('auth.continue')
                   : t('auth.create')
           }
-          onPress={() =>
-            void (isVerifying
-              ? verify()
-              : isOAuthContinuation
-                ? continueGoogleSignUp()
-                : submit())
-          }
+          onPress={() => {
+            const action = getSignUpAction({ isOAuthContinuation, isVerifying });
+            if (action === 'verify') void verify();
+            else if (action === 'continue-google') void continueGoogleSignUp();
+            else void submit();
+          }}
           disabled={
             busy ||
             (isVerifying && !code) ||
