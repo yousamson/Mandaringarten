@@ -1,4 +1,4 @@
-export type AgeBand = '0-2' | '3-5' | '6-8' | '9-12';
+export type AgeBand = '0-4' | '3-5' | '6-8' | '9-12';
 
 export type Word = {
   id: string;
@@ -22,7 +22,7 @@ export type Lesson = {
 };
 
 export const ageBands: { value: AgeBand; labelKey: string; noteKey: string }[] = [
-  { value: '0-2', labelKey: 'age.0-2.label', noteKey: 'age.0-2.note' },
+  { value: '0-4', labelKey: 'age.0-4.label', noteKey: 'age.0-4.note' },
   { value: '3-5', labelKey: 'age.3-5.label', noteKey: 'age.3-5.note' },
   { value: '6-8', labelKey: 'age.6-8.label', noteKey: 'age.6-8.note' },
   { value: '9-12', labelKey: 'age.9-12.label', noteKey: 'age.9-12.note' },

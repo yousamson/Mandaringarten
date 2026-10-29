@@ -12,13 +12,14 @@ import * as Speech from 'expo-speech';
 import { useRouter } from 'expo-router';
 import { ActionButton, PageTitle, Screen, Surface } from '@/components/LearningUI';
 import { useLearning } from '@/context/LearningContext';
-import { lessons, type Lesson, type Word } from '@/data/vocabulary';
+import { ageBands, lessons, type Lesson, type Word } from '@/data/vocabulary';
+import { curriculumLevels } from '@/data/curriculum';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { localizedSentence, localizedWord, translate } from '@/lib/i18n';
 
-const filters = ['all', 'daily', 'food', 'family', 'world'];
+const filters = ['all', 'daily', 'food', 'family', 'world', 'leisure'];
 
 export default function LessonsScreen() {
   const colors = useColors();
@@ -26,7 +27,7 @@ export default function LessonsScreen() {
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const router = useRouter();
-  const { completedLessonIds, learnedWordIds, markWordLearned, completeLesson } =
+  const { ageBand, completedLessonIds, learnedWordIds, markWordLearned, completeLesson } =
     useLearning();
   const { isPremium } = useSubscription();
   const [filter, setFilter] = useState('all');
@@ -40,6 +41,9 @@ export default function LessonsScreen() {
       ),
     [filter],
   );
+  const curriculum = curriculumLevels.find((item) => item.age === ageBand) ?? curriculumLevels[1];
+  const curriculumUnlocked = isPremium && curriculum.level === 1;
+  const ageLabel = ageBands.find((band) => band.value === ageBand)?.labelKey ?? 'age.3-5.label';
 
   const openLesson = (lesson: Lesson) => {
     if (lesson.premium && !isPremium) {
@@ -79,6 +83,55 @@ export default function LessonsScreen() {
           title={t('lessons.title')}
           subtitle={t('lessons.subtitle')}
         />
+        <Surface style={styles.curriculumCard}>
+          <Text style={[styles.curriculumTitle, { color: colors.foreground }]}>
+            {t('curriculum.levelLabel', { level: curriculum.level, age: t(ageLabel) })}
+          </Text>
+          <Text style={[styles.curriculumDescription, { color: colors.mutedForeground }]}>
+            {t(curriculum.formatKey)}
+          </Text>
+          {!curriculumUnlocked ? (
+            <Text style={[styles.curriculumLocked, { color: colors.primary }]}>
+              {curriculum.level === 1 ? t('lessons.locked') : t('curriculum.locked')}
+            </Text>
+          ) : (
+            <>
+              {curriculum.themes.map((theme) => (
+                <View key={theme.id} style={styles.curriculumTheme}>
+                  <Text style={[styles.curriculumThemeTitle, { color: colors.primary }]}>
+                    {t(`category.${theme.id}`)}
+                  </Text>
+                  <Text style={[styles.curriculumItems, { color: colors.foreground }]}>
+                    {theme.items.map((item) => language === 'zh-Hans' ? item.simplified : item.hanzi).join('　')}
+                  </Text>
+                  <Text style={[styles.curriculumItems, { color: colors.mutedForeground }]}>
+                    {theme.items.map((item) => `${item.pinyin} · ${item.meaning}`).join('   ')}
+                  </Text>
+                </View>
+              ))}
+              <Text style={[styles.curriculumThemeTitle, { color: colors.primary }]}>
+                {t(`curriculum.games${curriculum.level}`)}
+              </Text>
+            </>
+          )}
+          {curriculum.readings ? (
+            <View style={styles.readings}>
+              <Text style={[styles.curriculumThemeTitle, { color: colors.primary }]}>
+                {t('curriculum.reading')}
+              </Text>
+              {curriculumUnlocked ? curriculum.readings.map((reading) => (
+                  <View key={reading.difficulty} style={[styles.readingCard, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.readingTitle, { color: colors.foreground }]}>
+                    {reading.title} · {t(`curriculum.${reading.difficulty}`)}
+                  </Text>
+                  <Text style={[styles.curriculumItems, { color: colors.mutedForeground }]}>
+                    {reading.text}
+                  </Text>
+                </View>
+              )) : null}
+            </View>
+          ) : null}
+        </Surface>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -373,6 +426,48 @@ export default function LessonsScreen() {
 }
 
 const styles = StyleSheet.create({
+  curriculumCard: {
+    gap: 10,
+    marginBottom: 14,
+  },
+  curriculumTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  curriculumDescription: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  curriculumLocked: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  curriculumTheme: {
+    gap: 3,
+    paddingTop: 7,
+  },
+  curriculumThemeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  curriculumItems: {
+    fontSize: 12,
+    lineHeight: 19,
+  },
+  readings: {
+    gap: 8,
+    paddingTop: 8,
+  },
+  readingCard: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 8,
+    gap: 4,
+  },
+  readingTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   content: {
     paddingHorizontal: 22,
     paddingTop: 16,

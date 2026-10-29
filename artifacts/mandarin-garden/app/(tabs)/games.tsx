@@ -9,6 +9,7 @@ import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { localizedSentence, localizedWord, translate } from '@/lib/i18n';
+import { curriculumLevels } from '@/data/curriculum';
 
 type GameMode = 'pinyin' | 'meaning';
 
@@ -20,26 +21,45 @@ export default function GamesScreen() {
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const { isPremium } = useSubscription();
-  const { recordGame } = useLearning();
+  const { ageBand, recordGame } = useLearning();
   const [mode, setMode] = useState<GameMode>('pinyin');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [roundFinished, setRoundFinished] = useState(false);
 
+  const curriculum = curriculumLevels.find((item) => item.age === ageBand);
+  const levelWords = (curriculum?.level === 1 && isPremium
+    ? curriculum.themes.flatMap((theme) =>
+        theme.items.map((item, index) => ({
+          id: `curriculum-${theme.id}-${index}`,
+          hanzi: language === 'zh-Hans' ? item.simplified : item.hanzi,
+          pinyin: item.pinyin,
+          meaning: item.meaning,
+          sentence: item.hanzi,
+          sentencePinyin: item.pinyin,
+          category: theme.id,
+          icon: 'book-outline',
+        })),
+      )
+    : []);
   const playableWords = useMemo(
-    () =>
-      lessons
+    () => [
+      ...lessons
         .filter((lesson) => isPremium || !lesson.premium)
         .flatMap((lesson) => lesson.words),
-    [isPremium],
+      ...levelWords,
+    ],
+    [isPremium, levelWords],
   );
 
   const question = playableWords[questionIndex % playableWords.length] ?? allWords[0];
   const answerFor = (word: (typeof allWords)[number]) =>
     mode === 'pinyin'
       ? localizedWord(word.id, word.hanzi, language)
-      : t(`meaning.${word.id}`);
+      : word.id.startsWith('curriculum-')
+        ? word.meaning
+        : t(`meaning.${word.id}`);
   const correctAnswer = answerFor(question);
   const options = useMemo(() => {
     const choices = new Set<string>([correctAnswer]);
