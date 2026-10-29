@@ -43,7 +43,7 @@ export default function LessonsScreen() {
   );
   const curriculum = curriculumLevels[level - 1] ?? curriculumLevels[0];
   const curriculumUnlocked = isPremium;
-  const ageLabel = ageBands.find((band) => band.value === curriculum.age)?.labelKey ?? 'age.0-4.label';
+  const ageLabel = ageBands.find((band) => band.value === curriculum.age)?.labelKey ?? 'age.2-4.label';
 
   const openLesson = (lesson: Lesson) => {
     if (lesson.premium && (!isPremium || level < 4)) {

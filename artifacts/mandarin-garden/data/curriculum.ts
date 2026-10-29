@@ -1,4 +1,4 @@
-export type CurriculumAge = '0-4' | '3-5' | '6-8' | '9-12';
+export type CurriculumAge = '2-4' | '3-5' | '6-8' | '9-12';
 export type ThemeId = 'daily' | 'family' | 'food' | 'leisure' | 'world';
 
 export type CurriculumItem = {
@@ -26,7 +26,7 @@ export type CurriculumLevel = {
 
 export const curriculumLevels: CurriculumLevel[] = [
   {
-    age: '0-4',
+    age: '2-4',
     level: 1,
     formatKey: 'curriculum.format1',
     gameKeys: ['curriculum.game.pictureMatch', 'curriculum.game.listenPoint'],

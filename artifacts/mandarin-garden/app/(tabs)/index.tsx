@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const learning = useLearning();
   const { isPremium } = useSubscription();
   const ageLabel =
-    ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.3-5.label';
+    ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.2-4.label';
   const progress = Math.min(
     100,
     learning.level >= 4

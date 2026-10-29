@@ -1,4 +1,4 @@
-export type AgeBand = '0-4' | '3-5' | '6-8' | '9-12';
+export type AgeBand = '2-4' | '3-5' | '6-8' | '9-12';
 
 export type Word = {
   id: string;
@@ -22,7 +22,7 @@ export type Lesson = {
 };
 
 export const ageBands: { value: AgeBand; labelKey: string; noteKey: string }[] = [
-  { value: '0-4', labelKey: 'age.0-4.label', noteKey: 'age.0-4.note' },
+  { value: '2-4', labelKey: 'age.2-4.label', noteKey: 'age.2-4.note' },
   { value: '3-5', labelKey: 'age.3-5.label', noteKey: 'age.3-5.note' },
   { value: '6-8', labelKey: 'age.6-8.label', noteKey: 'age.6-8.note' },
   { value: '9-12', labelKey: 'age.9-12.label', noteKey: 'age.9-12.note' },
@@ -284,5 +284,5 @@ export const lessons: Lesson[] = [
 export const allWords = lessons.flatMap((lesson) => lesson.words);
 
 export function ageBandNote(ageBand: AgeBand): string {
-  return ageBands.find((band) => band.value === ageBand)?.noteKey ?? 'age.3-5.note';
+  return ageBands.find((band) => band.value === ageBand)?.noteKey ?? 'age.2-4.note';
 }

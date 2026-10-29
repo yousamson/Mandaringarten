@@ -1,7 +1,7 @@
 kind = "mobile"
 previewPath = "/"
 title = "漢語樂園 Mandarin Garden"
-description = "漢語樂園 Mandarin Garden｜為 0–12 歲兒童設計的中英雙語漢語學習 App，涵蓋日常詞彙、拼音、短句、小遊戲與循序漸進的四級課程。 Mandarin Garden is a bilingual Mandarin learning app for children ages 0–12, with everyday vocabulary, pinyin, short sentences, games, and four progressive levels."
+description = "漢語樂園 Mandarin Garden｜為 2–12 歲兒童設計的中英雙語漢語學習 App，涵蓋日常詞彙、拼音、短句、小遊戲與循序漸進的四級課程。 Mandarin Garden is a bilingual Mandarin learning app for children ages 2–12, with everyday vocabulary, pinyin, short sentences, games, and four progressive levels."
 version = "1.0.0"
 id = "artifacts/mandarin-garden"
 router = "expo-domain"

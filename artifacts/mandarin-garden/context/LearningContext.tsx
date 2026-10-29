@@ -33,7 +33,7 @@ type LearningContextValue = LearningState & {
 };
 
 const initialState: LearningState = {
-  ageBand: '3-5',
+  ageBand: '2-4',
   xp: 0,
   curriculumXp: 0,
   streak: 0,
@@ -92,7 +92,9 @@ export function LearningProvider({
         if (stored) {
           const parsed = JSON.parse(stored) as Record<string, unknown>;
           const savedAgeBand =
-            parsed.ageBand === '0-2' ? '0-4' : parsed.ageBand;
+            parsed.ageBand === '0-2' || parsed.ageBand === '0-4'
+              ? '2-4'
+              : parsed.ageBand;
           setState({
             ...initialState,
             ...parsed,
