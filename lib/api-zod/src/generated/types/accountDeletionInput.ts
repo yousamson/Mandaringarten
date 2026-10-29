@@ -6,10 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AccountDeletionInputConfirmation } from './accountDeletionInputConfirmation';
+import type { AccountDeletionInputPolicyVersion } from './accountDeletionInputPolicyVersion';
 
 export interface AccountDeletionInput {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
   dataDeletionAccepted: true;
   noRefundAccepted: true;
   subscriptionCancellationAccepted: true;
   confirmation: AccountDeletionInputConfirmation;
+  policyVersion: AccountDeletionInputPolicyVersion;
 }

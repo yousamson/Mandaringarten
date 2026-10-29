@@ -15,14 +15,14 @@ Parents contact the management team through platform messages, with a management
 
 **How to apply:** keep conversations private to their parent and authorized management. Do not automatically convert the administrator login into public legal contact details.
 
-Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of irreversible data deletion, cessation of subscription/access and non-refundable paid fees, while preserving mandatory legal exceptions.
+Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts, while preserving mandatory legal exceptions.
 
-**Why:** the user requested self-service deletion with acknowledgment that all account data is deleted and paid monthly fees are not refunded.
+**Why:** the user requested self-service deletion and explicitly requires policy and no-refund acknowledgements before deletion.
 
-**How to apply:** stop future billing, remove login/learning/messages, and clearly disclose unavoidable processor financial retention and minimal security records. Never claim that deleting the app account erases all third-party financial records.
+**How to apply:** require the deletion acknowledgements before accepting the request, then stop future billing, remove login/learning/messages, and clearly disclose unavoidable processor financial retention and minimal security records. Never claim that deleting the app account erases all third-party financial records.
 
-Members who have accepted the current policy version must not be asked to repeat policy acknowledgements at every sign-in. Keep required acknowledgements in registration and before checkout.
+Members who have accepted the current policy version must not be asked to repeat policy acknowledgements at every sign-in. Keep separate acknowledgements in registration, before checkout and before account deletion.
 
 **Why:** the user explicitly said members do not need to reconfirm.
 
-**How to apply:** use the saved account consent for existing members; do not gate sign-in on per-session policy checkboxes. Preserve the separate checkout acknowledgements.
+**How to apply:** use the saved account consent for existing members; do not gate sign-in on per-session policy checkboxes. Preserve the separate checkout and account-deletion acknowledgements.

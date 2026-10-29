@@ -5,9 +5,10 @@ import { useDeleteAccount } from '@workspace/api-client-react';
 import { AlertTriangle, MessageCircle, Trash2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { AccessChecking, AccountSignOut } from '@/components/access-gate';
-import { ConsentCheck } from '@/components/legal/consent-check';
+import { ConsentCheck, DisclaimerAgreement, PrivacyAgreement } from '@/components/legal/consent-check';
 import { clearUserLocalData, useAccountAccess } from '@/hooks/use-account';
 import type { Language } from '@/lib/garden-data';
+import { LEGAL_VERSION } from '@/lib/legal-config';
 import { tr } from '@/lib/playground-copy';
 
 export default function AccountPage({ language: l }: { language: Language }) {
@@ -15,6 +16,8 @@ export default function AccountPage({ language: l }: { language: Language }) {
   const client = useQueryClient();
   const { signOut } = useClerk();
   const del = useDeleteAccount();
+  const [privacyOk, setPrivacyOk] = useState(false);
+  const [disclaimerOk, setDisclaimerOk] = useState(false);
   const [dataOk, setDataOk] = useState(false);
   const [refundOk, setRefundOk] = useState(false);
   const [cancelOk, setCancelOk] = useState(false);
@@ -32,11 +35,11 @@ export default function AccountPage({ language: l }: { language: Language }) {
     );
   }
   const deleting = a.data?.access === 'deleting';
-  const ready = dataOk && refundOk && cancelOk && typed === 'DELETE' && !del.isPending && !finishing;
+  const ready = privacyOk && disclaimerOk && dataOk && refundOk && cancelOk && typed === 'DELETE' && !del.isPending && !finishing;
   const submit = () => {
     if (!ready) return;
     setError('');
-    del.mutate({ data: { dataDeletionAccepted: true, noRefundAccepted: true, subscriptionCancellationAccepted: true, confirmation: 'DELETE' } }, {
+    del.mutate({ data: { privacyAccepted: true, disclaimerAccepted: true, dataDeletionAccepted: true, noRefundAccepted: true, subscriptionCancellationAccepted: true, confirmation: 'DELETE', policyVersion: LEGAL_VERSION } }, {
       onSuccess: (result) => {
         if (result?.deleted !== true) { setError(tr(l, 'Deletion did not complete. Nothing is final yet; please try again.', '刪除未完成，請再試一次。', '删除未完成，请再试一次。')); return; }
         setFinishing(true);
@@ -67,8 +70,10 @@ export default function AccountPage({ language: l }: { language: Language }) {
             <li>{tr(l, 'Not erased: payment and transaction records our payment processor, Stripe, must keep by law, and a minimal one-way (hashed) security record used to stop a deleted account being misused.', '不會刪除：付款處理商 Stripe 依法須保留的付款與交易紀錄，以及用於防止已刪除帳戶遭濫用的最少量單向雜湊安全紀錄。', '不会删除：付款处理商 Stripe 依法须保留的付款与交易记录，以及用于防止已删除账户遭滥用的最少量单向哈希安全记录。')}</li>
           </ul>
           <div className="consent-list">
+            <ConsentCheck checked={privacyOk} onChange={setPrivacyOk} testId="check-delete-privacy"><PrivacyAgreement l={l} /></ConsentCheck>
+            <ConsentCheck checked={disclaimerOk} onChange={setDisclaimerOk} testId="check-delete-disclaimer"><DisclaimerAgreement l={l} /></ConsentCheck>
             <ConsentCheck checked={dataOk} onChange={setDataOk} testId="check-delete-data">{tr(l, 'I understand my account, learning progress and messages will be permanently and irreversibly deleted.', '我了解我的帳戶、學習進度與訊息將被永久且不可逆地刪除。', '我了解我的账户、学习进度与消息将被永久且不可逆地删除。')}</ConsentCheck>
-            <ConsentCheck checked={refundOk} onChange={setRefundOk} testId="check-delete-norefund">{tr(l, 'I understand no refund is given for any unused period, except where mandatory law requires one or I was charged in error.', '我了解未使用的期間不予退款，但強制性法律規定或錯誤收費者除外。', '我了解未使用的期间不予退款，但强制性法律规定或错误收费者除外。')}</ConsentCheck>
+            <ConsentCheck checked={refundOk} onChange={setRefundOk} testId="check-delete-norefund">{tr(l, 'I understand paid subscription amounts are non-refundable, including unused time, except where applicable law requires a refund or the charge was made in error.', '我已明白已繳付的訂閱月費不獲退還，未使用期間亦不予退款；但適用法律要求退款或屬錯誤收費者除外。', '我已明白已缴付的订阅月费不予退还，未使用期间也不予退款；但适用法律要求退款或属于错误收费的情况除外。')}</ConsentCheck>
             <ConsentCheck checked={cancelOk} onChange={setCancelOk} testId="check-delete-cancel">{tr(l, 'I understand any ongoing subscription is cancelled immediately and my access ends now.', '我了解進行中的訂閱會立即取消，使用權即刻結束。', '我了解进行中的订阅会立即取消，使用权即刻结束。')}</ConsentCheck>
           </div>
           <label className="field-label" htmlFor="delete-confirm">{tr(l, 'Type DELETE to confirm', '請輸入 DELETE 以確認', '请输入 DELETE 以确认')}</label>

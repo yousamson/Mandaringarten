@@ -181,11 +181,21 @@ export const AccountDeletionInputConfirmation = {
   DELETE: 'DELETE',
 } as const;
 
+export type AccountDeletionInputPolicyVersion = typeof AccountDeletionInputPolicyVersion[keyof typeof AccountDeletionInputPolicyVersion];
+
+
+export const AccountDeletionInputPolicyVersion = {
+  '2026-10-291': '2026-10-29.1',
+} as const;
+
 export interface AccountDeletionInput {
+  privacyAccepted: true;
+  disclaimerAccepted: true;
   dataDeletionAccepted: true;
   noRefundAccepted: true;
   subscriptionCancellationAccepted: true;
   confirmation: AccountDeletionInputConfirmation;
+  policyVersion: AccountDeletionInputPolicyVersion;
 }
 
 export interface AccountDeletionResult {

@@ -10,6 +10,7 @@ export * from './accountAccess';
 export * from './accountAccessAccess';
 export * from './accountDeletionInput';
 export * from './accountDeletionInputConfirmation';
+export * from './accountDeletionInputPolicyVersion';
 export * from './accountDeletionResult';
 export * from './billingCheckoutRequest';
 export * from './billingPlanResponse';

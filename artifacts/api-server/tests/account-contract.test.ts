@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { DeleteAccountBody, CreateSupportThreadBody, SendSupportMessageBody } from "@workspace/api-zod";
 
 test("deletion requires every explicit acknowledgment and exact typed confirmation", () => {
-  const valid = { dataDeletionAccepted: true, noRefundAccepted: true, subscriptionCancellationAccepted: true, confirmation: "DELETE" };
+  const valid = { privacyAccepted: true, disclaimerAccepted: true, dataDeletionAccepted: true, noRefundAccepted: true, subscriptionCancellationAccepted: true, confirmation: "DELETE", policyVersion: "2026-10-29.1" };
   assert.equal(DeleteAccountBody.safeParse(valid).success, true);
-  for (const key of ["dataDeletionAccepted", "noRefundAccepted", "subscriptionCancellationAccepted"] as const) {
+  for (const key of ["privacyAccepted", "disclaimerAccepted", "dataDeletionAccepted", "noRefundAccepted", "subscriptionCancellationAccepted"] as const) {
     assert.equal(DeleteAccountBody.safeParse({ ...valid, [key]: false }).success, false);
     const missing: Record<string, unknown> = { ...valid };
     delete missing[key];
@@ -14,6 +14,7 @@ test("deletion requires every explicit acknowledgment and exact typed confirmati
   for (const confirmation of ["delete", "", "DELETE "]) {
     assert.equal(DeleteAccountBody.safeParse({ ...valid, confirmation }).success, false);
   }
+  assert.equal(DeleteAccountBody.safeParse({ ...valid, policyVersion: "outdated" }).success, false);
 });
 
 test("messages enforce limits and cannot set server-owned identity or author role", () => {

@@ -40,7 +40,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
         'Mandarin Garden is provided “as is” and “as available”. We may change, pause or retire features, and the service may sometimes be unavailable for maintenance, outages at our providers (Clerk, Replit or Stripe) or reasons outside our control. We do not promise uninterrupted or error-free service.',
       ] },
       { h: '11. Limitation of liability', p: [
-        'To the extent permitted by law, we are not liable for indirect, incidental or consequential losses. Where liability cannot be excluded, it is limited to the amount you paid us in the twelve months before the claim, unless the law that applies to you requires otherwise.',
+        'To the extent permitted by law, we are not liable for indirect, incidental or consequential losses.',
       ] },
       { h: '12. Ending use', p: [
         'You may stop using Mandarin Garden at any time. We may suspend or close accounts that seriously or repeatedly break these terms, and where reasonable we will tell you first.',
@@ -93,7 +93,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
         '漢語樂園按「現狀」及「現有」基礎提供。我們可能變更、暫停或停止部分功能；服務也可能因維護、服務商（Clerk、Replit 或 Stripe）中斷或我們無法控制的原因而暫時無法使用。我們不保證服務不中斷或沒有錯誤。',
       ] },
       { h: '11. 責任限制', p: [
-        '在法律允許的範圍內，我們不對間接、附帶或衍生損失負責。如責任無法排除，則以您在索償前十二個月內支付給我們的金額為上限，除非適用於您的法律另有規定。',
+        '在法律允許的範圍內，我們不對間接、附帶或衍生損失負責。',
       ] },
       { h: '12. 終止使用', p: [
         '您可隨時停止使用漢語樂園。對於嚴重或多次違反本條款的帳戶，我們可暫停或關閉；在合理情況下，我們會事先通知您。',

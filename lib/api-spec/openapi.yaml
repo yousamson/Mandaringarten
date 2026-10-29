@@ -447,12 +447,15 @@ components:
         access: { type: string, enum: [active, subscription_required, deleting] }
     AccountDeletionInput:
       type: object
-      required: [dataDeletionAccepted, noRefundAccepted, subscriptionCancellationAccepted, confirmation]
+      required: [privacyAccepted, disclaimerAccepted, dataDeletionAccepted, noRefundAccepted, subscriptionCancellationAccepted, confirmation, policyVersion]
       properties:
+        privacyAccepted: { type: boolean, enum: [true] }
+        disclaimerAccepted: { type: boolean, enum: [true] }
         dataDeletionAccepted: { type: boolean, enum: [true] }
         noRefundAccepted: { type: boolean, enum: [true] }
         subscriptionCancellationAccepted: { type: boolean, enum: [true] }
         confirmation: { type: string, enum: ["DELETE"] }
+        policyVersion: { type: string, enum: ["2026-10-29.1"] }
     AccountDeletionResult:
       type: object
       required: [deleted]

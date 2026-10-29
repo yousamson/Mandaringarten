@@ -60,7 +60,7 @@ async function cancelAndRemoveCustomer(customerId: string) {
 router.delete("/account", async (req, res) => {
   const parsed = DeleteAccountBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "All deletion acknowledgments and the exact confirmation DELETE are required." }); return;
+    res.status(400).json({ error: "All policy and deletion acknowledgments and the exact confirmation DELETE are required." }); return;
   }
   const userId = getAuth(req).userId!;
   const hash = accountHash(userId);

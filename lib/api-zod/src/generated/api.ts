@@ -186,10 +186,13 @@ export const GetAccountAccessResponse = zod.object({
 
 
 export const DeleteAccountBody = zod.object({
+  "privacyAccepted": zod.literal(true),
+  "disclaimerAccepted": zod.literal(true),
   "dataDeletionAccepted": zod.literal(true),
   "noRefundAccepted": zod.literal(true),
   "subscriptionCancellationAccepted": zod.literal(true),
-  "confirmation": zod.enum(['DELETE'])
+  "confirmation": zod.enum(['DELETE']),
+  "policyVersion": zod.enum(['2026-10-29.1'])
 })
 
 export const DeleteAccountResponse = zod.object({
