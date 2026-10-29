@@ -8,7 +8,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     sections: [
       { h: '1. About these terms', p: [
         'These terms and this disclaimer govern your use of Mandarin Garden (漢語樂園). They are adapted from the Automattic Terms of Service, which Automattic publishes under the Creative Commons Attribution-ShareAlike 4.0 licence, and this adapted text is shared under the same licence.',
-        'This document is a draft that has not been reviewed by a lawyer. By creating an account you confirm you have read and agree to these terms and to our Privacy Policy.',
+        'By creating an account you confirm you have read and agree to these terms and to our Privacy Policy.',
       ] },
       { h: '2. Who may use Mandarin Garden', p: [
         'Accounts are for adults only: parents, legal guardians or other responsible adults who are at least 18 years old or the age of majority where they live. Children may use the activities only through an adult’s account and under that adult’s supervision.',
@@ -51,7 +51,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: "Membership, expiry and account deletion", p: [
         "Signed-in use requires a parent account and an active paid membership; registering alone does not activate membership. If you cancel, access continues until the end of the period you have already paid for. When a membership expires, member features are blocked, but renewing, contacting the team and deleting the account remain available.",
-        "Deleting your account is permanent and irreversible. It cancels any ongoing subscription immediately and ends access at once, with no refund for unused time except where mandatory law requires a refund or you were charged in error. Records Stripe must retain by law and a minimal hashed security record are not erased.",
+        "Deleting your account is permanent and irreversible. It cancels any ongoing subscription immediately and ends access at once, with no refund for unused time except where mandatory law requires a refund or you were charged in error. A limited amount of information may remain where needed to operate or protect the service, and providers may retain information under their own policies.",
       ] },
     ],
   },
@@ -61,7 +61,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     sections: [
       { h: '1. 關於本條款', p: [
         '本條款與免責聲明規範您對漢語樂園（Mandarin Garden）的使用。本文改編自 Automattic 服務條款，原文由 Automattic 以「創用 CC 姓名標示－相同方式分享 4.0」授權發布，本改編內容亦以相同授權分享。',
-        '本文件為草稿，尚未經律師審閱。建立帳戶即表示您確認已閱讀並同意本條款及我們的私隱政策。',
+        '建立帳戶即表示您確認已閱讀並同意本條款及我們的私隱政策。',
       ] },
       { h: '2. 使用資格', p: [
         '帳戶僅限成人使用：家長、法定監護人或其他負責任的成人，且年滿 18 歲或達到所在地的成年年齡。兒童只能透過成人帳戶、並在該成人監督下使用各項活動。',
@@ -104,7 +104,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: "會員、到期與刪除帳戶", p: [
         "登入後使用須具備家長帳戶及有效的付費會員；僅註冊不會開通會員。取消後，使用權持續至已付費期間結束。會員到期後，會員功能將無法使用，但續訂、聯絡團隊及刪除帳戶仍可使用。",
-        "刪除帳戶為永久且不可逆的操作，會立即取消進行中的訂閱並即刻終止使用權，未使用期間不予退款；但強制性法律規定須退款或錯誤收費者除外。Stripe 依法須保留的紀錄及最少量雜湊安全紀錄不會被刪除。",
+        "刪除帳戶為永久且不可逆的操作，會立即取消進行中的訂閱並即刻終止使用權，未使用期間不予退款；但強制性法律規定須退款或錯誤收費者除外。為維持或保障服務，部分資料仍可能保留；服務商亦可能按其政策保存資料。",
       ] },
     ],
   },
@@ -114,7 +114,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
     sections: [
       { h: '1. 关于本条款', p: [
         '本条款与免责声明规范您对汉语乐园（Mandarin Garden）的使用。本文改编自 Automattic 服务条款，原文由 Automattic 以“知识共享 署名－相同方式共享 4.0”许可发布，本改编内容亦以相同许可分享。',
-        '本文件为草稿，尚未经律师审阅。创建账户即表示您确认已阅读并同意本条款及我们的隐私政策。',
+        '创建账户即表示您确认已阅读并同意本条款及我们的隐私政策。',
       ] },
       { h: '2. 使用资格', p: [
         '账户仅限成年人使用：家长、法定监护人或其他负责任的成年人，且年满 18 岁或达到所在地的成年年龄。儿童只能通过成年人账户、并在该成年人监督下使用各项活动。',
@@ -157,7 +157,7 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: "会员、到期与删除账户", p: [
         "登录后使用须具备家长账户及有效的付费会员；仅注册不会开通会员。取消后，使用权持续至已付费期间结束。会员到期后，会员功能将无法使用，但续订、联系团队及删除账户仍可使用。",
-        "删除账户为永久且不可逆的操作，会立即取消进行中的订阅并即刻终止使用权，未使用期间不予退款；但强制性法律规定须退款或错误收费者除外。Stripe 依法须保留的记录及最少量哈希安全记录不会被删除。",
+        "删除账户为永久且不可逆的操作，会立即取消进行中的订阅并即刻终止使用权，未使用期间不予退款；但强制性法律规定须退款或错误收费者除外。为维持或保护服务，部分信息仍可能保留；服务商也可能依其政策保存信息。",
       ] },
     ],
   },
