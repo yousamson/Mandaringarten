@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { useSSO } from '@clerk/expo';
+import { useSSO } from '@clerk/expo/experimental';
 import { useRouter } from 'expo-router';
 import { ActionButton, Screen, Surface } from '@/components/LearningUI';
 import { useLanguage } from '@/context/LanguageContext';
@@ -32,26 +32,55 @@ export default function WelcomeScreen() {
     setError('');
     setIsSigningInWithGoogle(true);
     try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: 'oauth_google',
-        redirectUrl:
-          Platform.OS === 'web'
-            ? AuthSession.makeRedirectUri()
-            : AuthSession.makeRedirectUri({ scheme: 'mandarin-garden' }),
-      });
-      if (createdSessionId && setActive) {
-        await setActive({
-          session: createdSessionId,
-          navigate: ({ session }) => {
-            if (session.currentTask) return;
-            router.replace('/(tabs)');
-          },
+      const { createdSessionId, signUp, authSessionResult } =
+        await startSSOFlow({
+          strategy: 'oauth_google',
+          redirectUrl:
+            Platform.OS === 'web'
+              ? AuthSession.makeRedirectUri()
+              : AuthSession.makeRedirectUri({ scheme: 'mandarin-garden' }),
         });
-      } else {
-        setError(t('auth.googleSetup'));
+      if (createdSessionId || signUp?.status === 'complete') {
+        if (!createdSessionId) {
+          const { error: finalizeError } = await signUp!.finalize();
+          if (finalizeError) throw finalizeError;
+        }
+        router.replace('/(tabs)');
+        return;
       }
-    } catch {
+
+      if (signUp?.status === 'missing_requirements') {
+        router.replace('/(auth)/sign-up?continueOAuth=1');
+        return;
+      }
+
+      if (
+        authSessionResult?.type === 'cancel' ||
+        authSessionResult?.type === 'dismiss'
+      ) {
+        return;
+      }
+
       setError(t('auth.googleError'));
+    } catch (caughtError) {
+      const clerkError =
+        caughtError && typeof caughtError === 'object'
+          ? (caughtError as {
+        code?: string;
+        errors?: Array<{ code?: string }>;
+            })
+          : {};
+      const errorCodes = [
+        clerkError.code,
+        ...(clerkError.errors ?? []).map((item) => item.code),
+      ];
+      const providerSetupError = errorCodes.some(
+        (code) =>
+          code === 'oauth_provider_not_enabled' ||
+          code === 'oauth_not_enabled' ||
+          code === 'strategy_not_enabled',
+      );
+      setError(providerSetupError ? t('auth.googleSetup') : t('auth.googleError'));
     } finally {
       setIsSigningInWithGoogle(false);
     }
