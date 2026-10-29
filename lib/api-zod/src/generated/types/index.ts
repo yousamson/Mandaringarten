@@ -6,7 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './billingCheckoutRequest';
+export * from './billingPlanResponse';
+export * from './billingRedirectResponse';
+export * from './billingReturnUrlRequest';
 export * from './billingStatus';
+export * from './billingSubscriptionResponse';
 export * from './checkoutInput';
 export * from './checkoutResult';
 export * from './healthStatus';

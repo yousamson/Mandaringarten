@@ -18,6 +18,17 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Get the premium monthly plan
+ */
+export const GetBillingPlanResponse = zod.object({
+  "unitAmount": zod.int(),
+  "currency": zod.string(),
+  "interval": zod.string(),
+  "priceLabel": zod.string()
+})
+
+
+/**
  * @summary Get the signed-in user's membership status
  */
 export const GetBillingStatusResponse = zod.object({
@@ -29,12 +40,25 @@ export const GetBillingStatusResponse = zod.object({
 
 
 /**
- * @summary Create a Stripe subscription checkout session
+ * @summary Get the signed-in user's subscription status
  */
-export const CreateBillingCheckoutBody = zod.object({
+export const GetBillingSubscriptionResponse = zod.object({
+  "isPremium": zod.boolean(),
+  "hasBillingCustomer": zod.boolean(),
+  "subscriptionStatus": zod.string().nullable(),
+  "currentPeriodEnd": zod.int().nullable()
+})
+
+
+/**
+ * @summary Create a premium subscription checkout session
+ */
+export const CreateBillingCheckoutBody = zod.union([zod.object({
+  "returnUrl": zod.url()
+}),zod.object({
   "successUrl": zod.url(),
   "cancelUrl": zod.url()
-})
+})])
 
 export const CreateBillingCheckoutResponse = zod.object({
   "url": zod.url()
@@ -42,7 +66,7 @@ export const CreateBillingCheckoutResponse = zod.object({
 
 
 /**
- * @summary Create a Stripe billing portal session
+ * @summary Create a customer billing portal session
  */
 export const CreateBillingPortalBody = zod.object({
   "returnUrl": zod.url()

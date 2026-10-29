@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -18,6 +18,7 @@ import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { languageOptions, translate } from '@/lib/i18n';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function ParentScreen() {
   const colors = useColors();
@@ -28,19 +29,51 @@ export default function ParentScreen() {
   const subscription = useSubscription();
   const { user } = useUser();
   const { signOut } = useClerk();
+  const routeParams = useLocalSearchParams<{ billing?: string | string[] }>();
+  const billingReturn = Array.isArray(routeParams.billing)
+    ? routeParams.billing[0]
+    : routeParams.billing;
   const [confirmPurchase, setConfirmPurchase] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const packageToPurchase = subscription.packageToPurchase;
+  useEffect(() => {
+    if (billingReturn === 'success') void subscription.refresh();
+  }, [billingReturn]);
+
+  useEffect(() => {
+    if (!subscription.isWeb || subscription.isLoading) return;
+    if (billingReturn === 'success') {
+      setNotice(
+        translate(
+          language,
+          subscription.isPremium
+            ? 'parent.purchaseComplete'
+            : 'parent.purchasePending',
+        ),
+      );
+    } else if (billingReturn === 'cancelled') {
+      setNotice(translate(language, 'parent.purchaseCancelled'));
+    } else if (billingReturn === 'returned') {
+      setNotice(null);
+    }
+  }, [
+    billingReturn,
+    language,
+    subscription.isLoading,
+    subscription.isPremium,
+    subscription.isWeb,
+  ]);
+
   const purchase = async () => {
-    if (!packageToPurchase) {
+    if (!subscription.canPurchase) {
       setNotice(t('parent.purchaseUnavailable'));
       return;
     }
     try {
-      await subscription.purchase(packageToPurchase);
       setConfirmPurchase(false);
-      setNotice(t('parent.purchaseComplete'));
+      await subscription.purchase(packageToPurchase);
+      if (!subscription.isWeb) setNotice(t('parent.purchaseComplete'));
     } catch (error) {
       setNotice(t('parent.purchaseFailed'));
       setConfirmPurchase(false);
@@ -59,6 +92,15 @@ export default function ParentScreen() {
       );
     } catch {
       setNotice(t('parent.restoreFailed'));
+    }
+  };
+
+  const manageSubscription = async () => {
+    setNotice(null);
+    try {
+      await subscription.manageSubscription();
+    } catch {
+      setNotice(t('parent.manageSubscriptionFailed'));
     }
   };
 
@@ -327,7 +369,11 @@ export default function ParentScreen() {
                         { color: colors.mutedForeground },
                       ]}
                     >
-                      {t('parent.pricePeriod')}
+                    {t(
+                      subscription.isWeb
+                        ? 'parent.pricePeriodWeb'
+                        : 'parent.pricePeriod',
+                    )}
                     </Text>
                   </>
                 ) : (
@@ -339,7 +385,11 @@ export default function ParentScreen() {
                   >
                     {subscription.configured
                       ? t('parent.planNotPublished')
-                      : t('parent.planSetupPending')}
+                      : t(
+                          subscription.isWeb
+                            ? 'parent.planSetupPendingWeb'
+                            : 'parent.planSetupPending',
+                        )}
                   </Text>
                 )}
               </View>
@@ -347,7 +397,7 @@ export default function ParentScreen() {
                 label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
                 onPress={() => setConfirmPurchase(true)}
                 testID="upgrade-premium"
-                disabled={!packageToPurchase || subscription.isPurchasing}
+                disabled={!subscription.canPurchase || subscription.isPurchasing}
                 loading={subscription.isPurchasing}
                 icon={
                   !subscription.isPurchasing ? (
@@ -365,17 +415,45 @@ export default function ParentScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                {t('parent.subscriptionLegal')}
+                {t(
+                  subscription.isWeb
+                    ? 'parent.subscriptionLegalWeb'
+                    : 'parent.subscriptionLegal',
+                )}
               </Text>
-              <ActionButton
-                label={t('parent.restore')}
-                onPress={restore}
-                tone="outline"
-                testID="restore-purchases"
-                loading={subscription.isRestoring}
-                disabled={subscription.isRestoring}
-              />
+              {subscription.isWeb ? (
+                subscription.hasBillingCustomer ? (
+                  <ActionButton
+                    label={t('parent.manageSubscription')}
+                    onPress={() => void manageSubscription()}
+                    tone="outline"
+                    testID="manage-subscription"
+                    loading={subscription.isManagingSubscription}
+                    disabled={subscription.isManagingSubscription}
+                  />
+                ) : null
+              ) : (
+                <ActionButton
+                  label={t('parent.restore')}
+                  onPress={restore}
+                  tone="outline"
+                  testID="restore-purchases"
+                  loading={subscription.isRestoring}
+                  disabled={subscription.isRestoring}
+                />
+              )}
             </>
+          ) : subscription.isWeb ? (
+            subscription.hasBillingCustomer ? (
+              <ActionButton
+                label={t('parent.manageSubscription')}
+                onPress={() => void manageSubscription()}
+                tone="outline"
+                testID="manage-subscription"
+                loading={subscription.isManagingSubscription}
+                disabled={subscription.isManagingSubscription}
+              />
+            ) : null
           ) : (
             <ActionButton
               label={t('parent.restore')}
@@ -447,10 +525,19 @@ export default function ParentScreen() {
               ]}
             >
               {subscription.priceLabel
-                ? t('parent.confirmPrice', {
-                    price: subscription.priceLabel,
-                    store: Platform.OS === 'ios' ? t('store.apple') : Platform.OS === 'android' ? t('store.google') : t('store.other'),
-                  })
+                ? subscription.isWeb
+                  ? t('parent.confirmWebPrice', {
+                      price: subscription.priceLabel,
+                    })
+                  : t('parent.confirmPrice', {
+                      price: subscription.priceLabel,
+                      store:
+                        Platform.OS === 'ios'
+                          ? t('store.apple')
+                          : Platform.OS === 'android'
+                            ? t('store.google')
+                            : t('store.other'),
+                    })
                 : t('parent.confirmStorePrice')}
             </Text>
             <ActionButton

@@ -4,12 +4,13 @@ import { useRef } from 'react';
 import CurriculumPage from '@/pages/curriculum';
 import { ClerkProvider, Show, SignInButton, SignUpButton, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { useCreateBillingCheckout, useCreateBillingPortal, useGetBillingStatus, getGetBillingStatusQueryKey } from '@workspace/api-client-react';
+import { useCreateBillingCheckout, useCreateBillingPortal, useGetBillingPlan, useGetBillingStatus, getGetBillingStatusQueryKey } from '@workspace/api-client-react';
 import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Leaf, LockKeyhole, LogOut, Menu, MessageCircle, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import NotFound from '@/pages/not-found';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
+import { billingCopy } from '@/lib/billing-copy';
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(
@@ -340,17 +341,35 @@ function LessonPage({ language, t }: { language: Language; t: Copy }) {
 function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePreferences>; t: Copy }) {
   const { isSignedIn, user } = useUser();
   const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: [...getGetBillingStatusQueryKey(), user?.id], retry: false } });
+  const plan = useGetBillingPlan({ query: { retry: false, staleTime: 300_000 } });
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
+  const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
   const active = status.data?.isPremium ?? false;
   const hasSubscription = ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(status.data?.subscriptionStatus ?? "");
   const checking = Boolean(isSignedIn && status.isLoading);
-  const busy = checkout.isPending || portal.isPending || working || checking || Boolean(isSignedIn && status.isError);
+  const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && status.isError);
+  const priceLabel = plan.data?.priceLabel ?? billingCopy[preferences.language].priceUnavailable;
+  const checkoutNotice =
+    checkoutResult === 'cancelled'
+      ? billingCopy[preferences.language].checkoutCancelled
+      : checkoutResult === 'success'
+        ? active
+          ? billingCopy[preferences.language].checkoutSuccess
+          : isSignedIn && status.isLoading
+            ? t.loading
+            : billingCopy[preferences.language].checkoutPending
+        : '';
+
+  useEffect(() => {
+    if (checkoutResult === 'success' && isSignedIn) void status.refetch();
+  }, [checkoutResult, isSignedIn]);
+
   const initiateCheckout = () => {
     setError('');
-    if (!isSignedIn) return;
+    if (!isSignedIn || !plan.data) return;
     setWorking(true);
     checkout.mutate(
       { data: { successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/parent?checkout=cancelled` } },
@@ -408,13 +427,15 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
             {status.isLoading && isSignedIn ? <div className="setting-row"><span className="panel-desc">{t.loading}</span><span className="status-pill">•••</span></div> : null}
             {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => status.refetch()}>{t.retry}</button></div> : null}
             {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{active ? t.premiumActive : t.freePlan}</span></div> : null}
-            <div className="plan-price">{t.price} <small>{t.perMonth}</small></div>
+            <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div>
+            {plan.isError ? <div className="alert"><p>{billingCopy[preferences.language].priceUnavailable}</p><button className="button-secondary" onClick={() => plan.refetch()}>{t.retry}</button></div> : null}
+            {checkoutNotice ? <div className="membership-note" role="status">{checkoutNotice}{checkoutResult === 'success' && !active ? <button className="button-secondary" onClick={() => void status.refetch()}>{t.retry}</button> : null}</div> : null}
             <ul className="benefit-list">{t.benefits.map((benefit) => <li key={benefit}><Check size={15} />{benefit}</li>)}</ul>
             {error ? <div className="alert" role="alert">{error}</div> : null}
             <Show when="signed-in">
               {hasSubscription
                 ? <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={openPortal} disabled={busy} data-testid="button-manage-subscription">{busy ? t.loading : t.manage} <ArrowRight size={15} /></button>
-                : <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={busy} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>}
+                : <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={busy || !plan.data || plan.isError} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>}
             </Show>
             <Show when="signed-out">
               <SignInButton mode="modal"><button className="button-primary" data-testid="button-sign-in-to-upgrade">{t.signIn} · {t.upgrade} <ArrowRight size={15} /></button></SignInButton>

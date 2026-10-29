@@ -9,6 +9,13 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface BillingPlanResponse {
+  unitAmount: number;
+  currency: string;
+  interval: string;
+  priceLabel: string;
+}
+
 export interface BillingStatus {
   isPremium: boolean;
   subscriptionStatus: string;
@@ -17,9 +24,28 @@ export interface BillingStatus {
   cancelAtPeriodEnd: boolean;
 }
 
+export interface BillingSubscriptionResponse {
+  isPremium: boolean;
+  hasBillingCustomer: boolean;
+  /** @nullable */
+  subscriptionStatus: string | null;
+  /** @nullable */
+  currentPeriodEnd: number | null;
+}
+
+export interface BillingReturnUrlRequest {
+  returnUrl: string;
+}
+
 export interface CheckoutInput {
   successUrl: string;
   cancelUrl: string;
+}
+
+export type BillingCheckoutRequest = BillingReturnUrlRequest | CheckoutInput;
+
+export interface BillingRedirectResponse {
+  url: string;
 }
 
 export interface CheckoutResult {

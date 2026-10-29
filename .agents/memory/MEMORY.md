@@ -2,3 +2,4 @@
 - [Product platform direction](platform-direction.md) — web with Stripe is the main delivery path; preserve the native Expo app separately.
 - [Membership progression](membership-progression.md) — premium monthly covers all four levels, but learners progress sequentially; never charge per-level unlock fees.
 - [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
+- [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.

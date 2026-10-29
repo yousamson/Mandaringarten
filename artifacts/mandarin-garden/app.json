@@ -12,9 +12,12 @@
       "backgroundColor": "#FFF9ED"
     },
     "ios": {
+      "bundleIdentifier": "com.mandaringarden.app",
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.mandaringarden.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png",
       "output": "static"

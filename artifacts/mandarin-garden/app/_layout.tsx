@@ -9,10 +9,18 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { LearningProvider } from '@/context/LearningContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { setBaseUrl } from '@workspace/api-client-react';
 import {
   initializeRevenueCat,
   SubscriptionProvider,
 } from '@/lib/subscriptions';
+
+const apiDomain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
+setBaseUrl(
+  apiDomain
+    ? `https://${apiDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '')}`
+    : null,
+);
 
 initializeRevenueCat();
 
