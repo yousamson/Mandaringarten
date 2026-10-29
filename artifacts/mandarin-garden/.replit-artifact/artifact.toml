@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "字字樂園"
+description = "A playful Mandarin learning app for children ages 0–12, with daily vocabulary, pinyin, short sentences, mini-games, level progression, and free and monthly premium memberships."
+version = "1.0.0"
+id = "artifacts/mandarin-garden"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 25091
+
+[services.development]
+run = "pnpm --filter @workspace/mandarin-garden run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mandarin-garden", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/mandarin-garden", "run", "serve" ]
+
+[services.env]
+PORT = "25091"
+BASE_PATH = "/"
