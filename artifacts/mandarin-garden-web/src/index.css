@@ -65,6 +65,22 @@
   --radius: 1rem;
 }
 
+.garden-app[lang="zh-Hans"], .legal-page[lang="zh-Hans"] {
+  --app-font-sans: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --app-font-serif: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-family: var(--app-font-sans);
+}
+
+.legal-page[lang="zh-Hant"] {
+  --app-font-sans: 'DM Sans', 'Noto Sans TC', sans-serif;
+  --app-font-serif: 'Fraunces', 'Noto Sans TC', serif;
+  font-family: var(--app-font-sans);
+}
+
+:lang(zh-Hans) :is(.quiz-option, .reading-text, .word-hanzi, .sentence-hanzi, .vocab-chip b, .answer-line) {
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+
 .dark {
   --background: 157 20% 13%;
   --foreground: 44 35% 92%;

@@ -32,3 +32,15 @@ The generic Replit Stripe connector proxy can resolve a live price from a develo
 **Why:** a development-mode API request returned the production live price while the explicit development connection had no matching price.
 
 **How to apply:** require Stripe Price `livemode` to exactly match the app runtime before exposing a plan or creating checkout. Treat development checkout as unavailable until its test-mode price is configured.
+
+Customer ownership must be scoped to the Stripe account and test/live mode, not just the login user. Preserve legacy mappings when reconnecting Stripe or preparing a new sandbox.
+
+**Why:** a saved customer from a different Stripe connection made authenticated access checks fail with “No such customer”, blocking both the parent area and the subscription entry point.
+
+**How to apply:** validate legacy customers against the current connection before reusing them. A definitive missing customer means subscription is required, not active access; network and permission failures must still fail closed.
+
+Concurrent billing reads can exhaust the connector's per-project request limit during a parent-page reload.
+
+**Why:** a sandbox purchase succeeded, but parallel membership/progress checks triggered a connector 429 and briefly showed a billing-panel error.
+
+**How to apply:** share in-flight identical reads and honor bounded rate-limit retries. Do not cache completed entitlement responses merely to suppress errors, since cancellation and renewal must remain visible.

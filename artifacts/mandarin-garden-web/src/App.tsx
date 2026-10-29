@@ -101,6 +101,7 @@ function Garden() {
   const preferences = usePreferences();
   useUserScopedCache();
   const l = preferences.language;
+  useEffect(() => { document.documentElement.lang = l; }, [l]);
   const t = copy[l];
   const [path] = useLocation();
   const [category, setCategory] = useState('all');
@@ -113,7 +114,7 @@ function Garden() {
   const access = useAccountAccess();
 
   return (
-    <div className={shellClass}>
+    <div className={shellClass} lang={l}>
       <div className="page-shell">
         <header className="topbar">
           <Link href="/" className="brand" data-testid="link-home">

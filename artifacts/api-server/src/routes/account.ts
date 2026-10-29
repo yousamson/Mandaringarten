@@ -2,7 +2,7 @@ import { Router, type IRouter, type ErrorRequestHandler } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { eq, inArray, desc } from "drizzle-orm";
 import {
-  db, accountDeletionsTable, billingAccountsTable, billingCustomersTable,
+  db, accountDeletionsTable, billingAccountsTable, billingCustomersTable, billingCustomerScopesTable,
   learningProgressTable, learningRoundsTable, legalConsentsTable, checkoutConsentsTable,
   supportThreadsTable, supportMessagesTable,
 } from "@workspace/db";
@@ -11,6 +11,7 @@ import { accountHash, deletionState, lockAccount } from "../account-lifecycle";
 import { isAdministrator } from "../admin";
 import { hasPremiumMembership } from "./billing";
 import { stripeRequest } from "../stripeClient";
+import { currentCustomerIds } from "../stripe-customers";
 
 const router: IRouter = Router();
 router.use("/account", (req, res, next) => {
@@ -70,7 +71,7 @@ router.delete("/account", async (req, res) => {
   });
   const mappings = await db.select().from(billingCustomersTable).where(eq(billingCustomersTable.clerkUserId, userId));
   const olderMappings = await db.select().from(billingAccountsTable).where(eq(billingAccountsTable.clerkUserId, userId));
-  for (const id of new Set([...mappings, ...olderMappings].map((m) => m.stripeCustomerId))) {
+  for (const id of await currentCustomerIds(userId, [...mappings, ...olderMappings].map((m) => m.stripeCustomerId))) {
     await cancelAndRemoveCustomer(id);
   }
   // Remove local data first; a failed identity deletion leaves the retry route
@@ -95,6 +96,7 @@ router.delete("/account", async (req, res) => {
     await tx.delete(legalConsentsTable).where(eq(legalConsentsTable.clerkUserId, userId));
     await tx.delete(checkoutConsentsTable).where(eq(checkoutConsentsTable.clerkUserId, userId));
     await tx.delete(billingCustomersTable).where(eq(billingCustomersTable.clerkUserId, userId));
+    await tx.delete(billingCustomerScopesTable).where(eq(billingCustomerScopesTable.clerkUserId, userId));
     await tx.delete(billingAccountsTable).where(eq(billingAccountsTable.clerkUserId, userId));
   });
   try { await clerkClient.users.deleteUser(userId); }

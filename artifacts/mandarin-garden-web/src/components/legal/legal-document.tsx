@@ -10,12 +10,12 @@ const langs: { value: Language; label: string }[] = [
   { value: 'zh-Hans', label: '简体中文' },
 ];
 
-export function LegalDocument({ docs, language, source, testId }: { docs: Record<Language, LegalDoc>; language: Language; source: string; testId: string }) {
+export function LegalDocument({ docs, language, source, testId, hideSourceFor = [] }: { docs: Record<Language, LegalDoc>; language: Language; source: string; testId: string; hideSourceFor?: Language[] }) {
   const [shown, setShown] = useState<Language>(language);
   const doc = docs[shown];
   const l = shown;
   return (
-    <main className="page-shell legal-page" data-testid={testId}>
+    <main className="page-shell legal-page" lang={l} data-testid={testId}>
       <header className="legal-head">
         <div className="eyebrow">{tr(l, `Version ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`)}</div>
         <h1>{doc.title}</h1>
@@ -45,9 +45,9 @@ export function LegalDocument({ docs, language, source, testId }: { docs: Record
           )}
         </section>
       </article>
-      <footer className="legal-source">
+      {!hideSourceFor.includes(l) && <footer className="legal-source">
         {tr(l, 'Adapted from ', '改編自 ', '改编自 ')}<a className="doc-link" href={source} target="_blank" rel="noopener noreferrer">{source}</a>{tr(l, ' by Automattic, licensed under ', '（Automattic），授權條款：', '（Automattic），许可协议：')}<a className="doc-link" href={LEGAL_SOURCES.licence} target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>{tr(l, '. This adaptation is shared under the same licence.', '。本改編版本以相同授權分享。', '。本改编版本以相同许可分享。')}
-      </footer>
+      </footer>}
     </main>
   );
 }

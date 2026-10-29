@@ -8,8 +8,9 @@ import {
   GetBillingStatusResponse,
   GetBillingSubscriptionResponse,
 } from "@workspace/api-zod";
-import { billingCustomersTable, checkoutConsentsTable, db } from "@workspace/db";
+import { checkoutConsentsTable, db } from "@workspace/db";
 import { hasCurrentConsent, POLICY_VERSION } from "../legal";
+import { getCustomer, getOrCreateCustomer } from "../stripe-customers";
 import { eq } from "drizzle-orm";
 import {
   Router,
@@ -151,46 +152,6 @@ async function getPremiumPrice(): Promise<StripePrice> {
   }
 
   return price;
-}
-
-async function getOrCreateCustomer(userId: string) {
-  return withAccountWrite(userId, async (tx) => {
-  const [existing] = await tx
-    .select()
-    .from(billingCustomersTable)
-    .where(eq(billingCustomersTable.clerkUserId, userId))
-    .limit(1);
-  if (existing) return existing;
-
-  const form = new URLSearchParams();
-  form.set("metadata[clerkUserId]", userId);
-  const customer = await stripeRequest<{ id: string }>("/v1/customers", {
-    method: "POST",
-    form,
-    idempotencyKey: `mandarin-garden-customer-${userId}`,
-  });
-  await tx
-    .insert(billingCustomersTable)
-    .values({ clerkUserId: userId, stripeCustomerId: customer.id })
-    .onConflictDoNothing();
-
-  const [saved] = await tx
-    .select()
-    .from(billingCustomersTable)
-    .where(eq(billingCustomersTable.clerkUserId, userId))
-    .limit(1);
-  if (!saved) throw new Error("Could not save the Stripe customer mapping.");
-  return saved;
-  });
-}
-
-async function getCustomer(userId: string) {
-  const [customer] = await db
-    .select()
-    .from(billingCustomersTable)
-    .where(eq(billingCustomersTable.clerkUserId, userId))
-    .limit(1);
-  return customer ?? null;
 }
 
 async function listSubscriptions(customerId: string) {

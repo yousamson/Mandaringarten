@@ -18,6 +18,7 @@
 //   export type Post = typeof postsTable.$inferSelect;
 
 export * from "./billing-customers";
+export * from "./billing-customer-scopes";
 export * from "./billingAccounts";
 export * from "./learning";
 export * from "./support";
