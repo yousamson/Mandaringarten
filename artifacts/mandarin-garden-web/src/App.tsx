@@ -132,7 +132,6 @@ function Garden() {
             <select className="language-select" aria-label="Interface language" value={l} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} data-testid="select-language">
               {languages.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
             </select>
-            <Link href="/parent" className="parent-link"><Leaf size={15} /> <span>{t.navParent}</span></Link>
             <div className="auth-slot"><Show when="signed-in"><SignOutControl label={signOutLabels[l]} className="avatar-button" /></Show><Show when="signed-out"><Link href="/sign-in" className="avatar-button" aria-label={t.signIn} title={t.signIn} data-testid="button-sign-in"><ArrowRight size={16} /></Link></Show></div>
             <button className="mobile-menu" onClick={() => setMenuOpen((value) => !value)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} data-testid="button-menu">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
           </div>
@@ -142,8 +141,8 @@ function Garden() {
         <Switch>
           <Route path="/privacy"><PrivacyPage language={l} /></Route>
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
-          <Route path="/sign-in"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
-          <Route path="/register"><AuthPage key="register" mode="register" language={l} /></Route>
+          <Route path="/sign-in/*?"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
+          <Route path="/register/*?"><AuthPage key="register" mode="register" language={l} /></Route>
           <Route path="/membership"><AccountConsentBoundary language={l}><MembershipPage l={l} /></AccountConsentBoundary></Route>
           <Route path="/messages"><MessagesPage language={l} /></Route>
           <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
@@ -196,7 +195,6 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
           <p className="hero-copy">{t.intro}</p>
           <div className="button-row">
             <Link href="/lesson/greetings" className="button-primary">{t.start} <ArrowRight size={16} /></Link>
-            <a href="#lessons" className="button-secondary">{t.browse}</a>
           </div>
           <div className="hero-note"><Sparkles size={14} /> {t.today}</div>
         </div>
@@ -237,7 +235,6 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
             </div>
           ))}
         </div>
-        <Link href="/playground" className="progress-link">{tr(language, 'Open the Learning playground', '開啟學習樂園', '开启学习乐园')} <ChevronRight size={14} /></Link>
       </section>
     </main>
   );
@@ -303,11 +300,11 @@ function PracticeSection({ language, age }: { language: Language; age: string })
 function LessonCard({ lesson, language, t }: { lesson: GardenLesson; language: Language; t: Copy }) {
   const Icon = icons[lesson.icon as keyof typeof icons] || BookOpen;
   return (
-    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': '#e9f0e2' } as CSSProperties} data-testid={`card-lesson-${lesson.id}`}>
+    <Link href={`/lesson/${lesson.id}`} className="lesson-card" style={{ '--card-tint': '#e9f0e2' } as CSSProperties} aria-label={`${lesson.title[language]} · ${tr(language, 'Open lesson', '開始學習', '开始学习')}`} data-testid={`card-lesson-${lesson.id}`}>
       <div className="lesson-top"><span className="lesson-icon"><Icon size={20} strokeWidth={1.7} /></span><span className="premium-label">{t.free}</span></div>
       <h3 className="lesson-title">{lesson.title[language]}</h3>
       <p className="lesson-description">{lesson.subtitle[language]}</p>
-      <div className="lesson-bottom"><span>{lesson.words.length} {t.learn}</span><strong>{t.start} <ArrowRight size={12} /></strong></div>
+      <div className="lesson-bottom"><span>{lesson.words.length} {t.learn}</span><strong aria-hidden="true"><ArrowRight size={12} /></strong></div>
     </Link>
   );
 }

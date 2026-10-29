@@ -4,7 +4,7 @@ import { Link } from 'wouter';
 import { useLearningProgress, useMembership } from '@/hooks/use-learning';
 import type { Language } from '@/lib/garden-data';
 import { packsForStage, PACK_COUNT } from '@/lib/playground-games';
-import { pick, stageLabel, stageNames, tr } from '@/lib/playground-copy';
+import { pathTheme, pick, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 
 export function StagePathPlayer({ packIndex, l }: { packIndex: number; l: Language }) {
@@ -44,7 +44,7 @@ export function StagePathPlayer({ packIndex, l }: { packIndex: number; l: Langua
   const total = pack.words.length;
   const hz = script === 'simp' ? word.simp : word.trad;
   const other = script === 'simp' ? word.trad : word.simp;
-  const title = `${stageLabel(l, stage)} · ${tr(l, `Path ${packIndex}`, `第 ${packIndex} 條小徑`, `第 ${packIndex} 条小径`)}`;
+  const title = `${stageLabel(l, stage)} · ${pathTheme(l, stage, packIndex)}`;
 
   return (
     <main className="page-shell"><div className="lesson-page">{back}

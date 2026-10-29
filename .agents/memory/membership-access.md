@@ -20,3 +20,9 @@ Parents may permanently delete their account, including when a subscription has 
 **Why:** the user requested self-service deletion with acknowledgment that all account data is deleted and paid monthly fees are not refunded.
 
 **How to apply:** stop future billing, remove login/learning/messages, and clearly disclose unavoidable processor financial retention and minimal security records. Never claim that deleting the app account erases all third-party financial records.
+
+Members who have accepted the current policy version must not be asked to repeat policy acknowledgements at every sign-in. Keep required acknowledgements in registration and before checkout.
+
+**Why:** the user explicitly said members do not need to reconfirm.
+
+**How to apply:** use the saved account consent for existing members; do not gate sign-in on per-session policy checkboxes. Preserve the separate checkout acknowledgements.

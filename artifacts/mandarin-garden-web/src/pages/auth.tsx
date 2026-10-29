@@ -13,7 +13,7 @@ type Mode = 'sign-in' | 'register';
 /** Consent gate rendered BEFORE any Clerk component, for both sign-in and registration. */
 export default function AuthPage({ mode, language: l }: { mode: Mode; language: Language }) {
   const { isLoaded, isSignedIn } = useUser();
-  const [consented, setConsented] = useState(() => readAuthConsent(mode === 'register'));
+  const [consented, setConsented] = useState(() => mode !== 'register' || readAuthConsent(true));
   const [privacy, setPrivacy] = useState(false);
   const [disclaimer, setDisclaimer] = useState(false);
   const [adult, setAdult] = useState(false);
@@ -47,7 +47,7 @@ export default function AuthPage({ mode, language: l }: { mode: Mode; language: 
           </div>
         </div>
         <div className="auth-panel">
-          {!consented ? (
+          {isRegister && !consented ? (
             <div className="consent-card" data-testid="auth-consent-gate">
               <div className="eyebrow">{tr(l, `Before you continue · v${LEGAL_VERSION}`, `繼續之前 · 版本 ${LEGAL_VERSION}`, `继续之前 · 版本 ${LEGAL_VERSION}`)}</div>
               <h2>{tr(l, 'Please confirm each item.', '請逐項確認。', '请逐项确认。')}</h2>
@@ -65,8 +65,8 @@ export default function AuthPage({ mode, language: l }: { mode: Mode; language: 
           ) : (
             <div className="clerk-frame" data-testid={`clerk-${mode}`}>
               {isRegister
-                ? <SignUp routing="hash" signInUrl="/sign-in" fallbackRedirectUrl="/membership" forceRedirectUrl="/membership" />
-                : <SignIn routing="hash" signUpUrl="/register" fallbackRedirectUrl="/parent" />}
+                ? <SignUp routing="path" path="/register" signInUrl="/sign-in" fallbackRedirectUrl="/membership" forceRedirectUrl="/membership" />
+                : <SignIn routing="path" path="/sign-in" signUpUrl="/register" fallbackRedirectUrl="/parent" />}
             </div>
           )}
         </div>

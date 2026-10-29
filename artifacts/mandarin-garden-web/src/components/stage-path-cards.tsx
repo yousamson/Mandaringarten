@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import { useLearningProgress, useMembership } from '@/hooks/use-learning';
 import type { Language } from '@/lib/garden-data';
 import { packsForStage } from '@/lib/playground-games';
-import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
+import { pathTheme, pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor } from '@/lib/speech';
 
 /** Premium word paths, generated from the parent-selected stage's 200-word bank. */
@@ -39,7 +39,7 @@ export function StagePathCards({ l }: { l: Language }) {
         {packs.map((p) => (
           <Link key={p.index} href={`/lesson/stage-path-${p.index}`} className={`lesson-card path-card stage-tone-${stage}`} data-testid={`card-stage-path-${p.index}`}>
             <div className="lesson-top"><span className="lesson-icon"><Sprout size={20} strokeWidth={1.7} /></span><span className="premium-label">{locked ? <><LockKeyhole size={11} /> {tr(l, 'Members', '會員', '会员')}</> : `${p.start}–${p.start + p.words.length - 1}`}</span></div>
-            <h3 className="lesson-title">{tr(l, `Path ${p.index}`, `第 ${p.index} 條小徑`, `第 ${p.index} 条小径`)}</h3>
+            <h3 className="lesson-title">{pathTheme(l, stage, p.index)}</h3>
             <p className="lesson-description path-preview">{p.words.slice(0, 4).map((w) => (script === 'simp' ? w.simp : w.trad)).join(' · ')}</p>
             <div className="lesson-bottom"><span>{p.words.length} {tr(l, 'words', '個詞語', '个词语')}</span><strong>{locked ? tr(l, 'Locked', '未開啟', '未开启') : tr(l, 'Start', '開始', '开始')} <ArrowRight size={12} /></strong></div>
           </Link>
