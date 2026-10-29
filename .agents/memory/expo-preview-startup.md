@@ -9,8 +9,14 @@ A blank Expo web capture during a cold start may reflect incomplete Metro web bu
 
 **How to apply:** When the first preview is blank, check workflow logs for completed web bundles and browser errors before changing app code.
 
-Relocating the Expo preview below `/mobile/` is not verified merely by a healthy Metro workflow. In this workspace, the subpath returned a router 404 after bundling; neither adding `EXPO_BASE_URL` to service environment nor temporarily setting Expo's experimental base URL resolved it.
+Expo development previews must stay on their dedicated Expo origin. Treat the shared `/mobile/` URL as an entry redirect to that origin, not a router basename.
 
-**Why:** The web product became the root entry, but native Expo service health did not prove that its relocated browser route worked.
+**Why:** Expo Router explicitly ignores base URL stripping in development. A subpath on the shared origin becomes a nonexistent screen, while moving native routes would change deep-link behavior. The main web product must retain `/`.
 
-**How to apply:** Verify the actual subpath response separately from Expo Go/native availability. Do not repeat those two configuration guesses or claim the mobile browser preview is restored without a successful response.
+**How to apply:** Preserve the dedicated native manifest/bundle origin and verify both the shared entry redirect and visible destination screen. Native manifest and bundle checks are separate from a browser capture; neither proves physical-device execution.
+
+Prefer eager web route loading for this preserved preview.
+
+**Why:** On-demand web route chunks repeatedly outlasted preview captures, even with warm Metro bundles, leaving a blank screen. Eager web loading rendered the welcome screen without changing native loading behavior.
+
+**How to apply:** Keep web-only eager loading unless a future change verifies reliable lazy route loading through the Expo preview origin.
