@@ -1,0 +1,1 @@
+- [Expo preview startup](expo-preview-startup.md) — wait for Metro’s web route bundles before treating a cold-start blank capture as an app rendering failure.
