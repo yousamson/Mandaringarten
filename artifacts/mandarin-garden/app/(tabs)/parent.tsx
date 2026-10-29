@@ -61,7 +61,9 @@ export default function ParentScreen() {
 
   const progressPercent = Math.min(
     100,
-    (learning.xp / Math.max(1, learning.nextLevelXp)) * 100,
+    learning.level >= 4
+      ? 100
+      : ((learning.curriculumXp - (learning.level - 1) * 100) / 100) * 100,
   );
   const levelName = t(`level.name${((learning.level - 1) % 4) + 1}`);
 
@@ -138,10 +140,12 @@ export default function ParentScreen() {
           <ProgressBar value={progressPercent} />
           <View style={styles.progressFooter}>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {t('parent.xp', { count: learning.xp })}
+              {t('parent.xp', { count: learning.curriculumXp })}
             </Text>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {t('parent.nextLevel', { count: learning.nextLevelXp })}
+              {learning.level >= 4
+                ? t('parent.maxLevel')
+                : t('parent.nextLevel', { count: learning.nextLevelXp })}
             </Text>
           </View>
           <View style={[styles.statsRow, { borderTopColor: colors.border }]}>

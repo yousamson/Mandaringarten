@@ -14,6 +14,7 @@ const STORAGE_KEY = 'mandarin-garden-learning-v1';
 type LearningState = {
   ageBand: AgeBand;
   xp: number;
+  curriculumXp: number;
   streak: number;
   learnedWordIds: string[];
   completedLessonIds: string[];
@@ -28,12 +29,13 @@ type LearningContextValue = LearningState & {
   setAgeBand: (ageBand: AgeBand) => void;
   markWordLearned: (wordId: string) => void;
   completeLesson: (lessonId: string) => void;
-  recordGame: (score: number) => void;
+  recordGame: (score: number, countsForCurriculum?: boolean) => void;
 };
 
 const initialState: LearningState = {
   ageBand: '3-5',
   xp: 0,
+  curriculumXp: 0,
   streak: 0,
   learnedWordIds: [],
   completedLessonIds: [],
@@ -60,14 +62,18 @@ function yesterdayKey(): string {
   return `${year}-${month}-${day}`;
 }
 
-function withActivity(state: LearningState, xp: number): LearningState {
+function withActivity(
+  state: LearningState,
+  xp: number,
+  curriculumXp: number = xp,
+): LearningState {
   const today = localDateKey();
   if (state.lastActiveDate === today) {
-    return { ...state, xp: state.xp + xp };
+    return { ...state, xp: state.xp + xp, curriculumXp: state.curriculumXp + curriculumXp };
   }
   const streak =
     state.lastActiveDate === yesterdayKey() ? state.streak + 1 : 1;
-  return { ...state, xp: state.xp + xp, streak, lastActiveDate: today };
+  return { ...state, xp: state.xp + xp, curriculumXp: state.curriculumXp + curriculumXp, streak, lastActiveDate: today };
 }
 
 export function LearningProvider({
@@ -84,8 +90,14 @@ export function LearningProvider({
       .then((stored) => {
         if (!active) return;
         if (stored) {
-          const parsed = JSON.parse(stored) as Partial<LearningState>;
-          setState({ ...initialState, ...parsed });
+          const parsed = JSON.parse(stored) as Record<string, unknown>;
+          const savedAgeBand =
+            parsed.ageBand === '0-2' ? '0-4' : parsed.ageBand;
+          setState({
+            ...initialState,
+            ...parsed,
+            ageBand: (savedAgeBand as AgeBand) ?? initialState.ageBand,
+          });
         }
       })
       .catch(() => {
@@ -119,6 +131,7 @@ export function LearningProvider({
           learnedWordIds: [...current.learnedWordIds, wordId],
         },
         10,
+        0,
       );
     });
   }, []);
@@ -132,24 +145,26 @@ export function LearningProvider({
           completedLessonIds: [...current.completedLessonIds, lessonId],
         },
         20,
+        0,
       );
     });
   }, []);
 
-  const recordGame = useCallback((score: number) => {
+  const recordGame = useCallback((score: number, countsForCurriculum = false) => {
+    const earnedXp = Math.max(0, score) * 5;
     setState((current) => ({
-      ...withActivity(current, Math.max(0, score) * 5),
+      ...withActivity(current, earnedXp, countsForCurriculum ? earnedXp : 0),
       gamesPlayed: current.gamesPlayed + 1,
     }));
   }, []);
 
   const value = useMemo<LearningContextValue>(() => {
-    const level = Math.floor(state.xp / 100) + 1;
+    const level = Math.min(4, Math.floor(state.curriculumXp / 100) + 1);
     return {
       ...state,
       hydrated,
       level,
-      nextLevelXp: level * 100,
+      nextLevelXp: level < 4 ? level * 100 : 300,
       setAgeBand,
       markWordLearned,
       completeLesson,

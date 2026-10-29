@@ -21,6 +21,7 @@ export type CurriculumLevel = {
   gameKeys: string[];
   themes: { id: ThemeId; items: CurriculumItem[] }[];
   readings?: Reading[];
+  sentences?: { traditional: string; simplified: string }[];
 };
 
 export const curriculumLevels: CurriculumLevel[] = [
@@ -43,7 +44,7 @@ export const curriculumLevels: CurriculumLevel[] = [
     formatKey: 'curriculum.format2',
     gameKeys: ['curriculum.game.pinyinMatch', 'curriculum.game.phraseBuilder'],
     themes: [
-      { id: 'daily', items: [{ hanzi: '刷牙', simplified: '刷牙', pinyin: 'shuā yá', meaning: 'brush teeth' }, { hanzi: '洗手', simplified: '洗手', pinyin: 'xǐ shǒu', meaning: 'wash hands' }] },
+      { id: 'daily', items: [{ hanzi: '刷牙', simplified: '刷牙', pinyin: 'shuā yá', meaning: 'brush teeth' }, { hanzi: '洗手', simplified: '洗手', pinyin: 'xǐ shǒu', meaning: 'wash hands' }, { hanzi: '自己穿衣', simplified: '自己穿衣', pinyin: 'zì jǐ chuān yī', meaning: 'get dressed by oneself' }] },
       { id: 'family', items: [{ hanzi: '姐姐', simplified: '姐姐', pinyin: 'jiě jie', meaning: 'older sister' }, { hanzi: '朋友', simplified: '朋友', pinyin: 'péng you', meaning: 'friend' }] },
       { id: 'food', items: [{ hanzi: '牛奶', simplified: '牛奶', pinyin: 'niú nǎi', meaning: 'milk' }, { hanzi: '點心', simplified: '点心', pinyin: 'diǎn xīn', meaning: 'snack' }] },
       { id: 'leisure', items: [{ hanzi: '跳舞', simplified: '跳舞', pinyin: 'tiào wǔ', meaning: 'dance' }, { hanzi: '踢球', simplified: '踢球', pinyin: 'tī qiú', meaning: 'play ball' }] },
@@ -62,6 +63,10 @@ export const curriculumLevels: CurriculumLevel[] = [
       { id: 'leisure', items: [{ hanzi: '觀察', simplified: '观察', pinyin: 'guān chá', meaning: 'observe' }, { hanzi: '全神貫注', simplified: '全神贯注', pinyin: 'quán shén guàn zhù', meaning: 'fully focused' }] },
       { id: 'world', items: [{ hanzi: '植物', simplified: '植物', pinyin: 'zhí wù', meaning: 'plant' }, { hanzi: '一心一意', simplified: '一心一意', pinyin: 'yī xīn yī yì', meaning: 'wholeheartedly' }] },
     ],
+    sentences: [
+      { traditional: '我先整理書包，再和朋友去公園。', simplified: '我先整理书包，再和朋友去公园。' },
+      { traditional: '下雨了，所以我們留在家裡看書。', simplified: '下雨了，所以我们留在家里看书。' },
+    ],
     readings: [
       { difficulty: 'easy', title: '校園小花圃', text: '下課後，小明和同學到花圃澆水。他們看見一朵紅花，開心得笑了。' },
       { difficulty: 'intermediate', title: '一起準備點心', text: '星期六，姐姐和弟弟一起準備水果點心。姐姐洗水果，弟弟把餐具放好。完成後，他們邀請家人一起分享。' },
@@ -79,6 +84,10 @@ export const curriculumLevels: CurriculumLevel[] = [
       { id: 'food', items: [{ hanzi: '均衡', simplified: '均衡', pinyin: 'jūn héng', meaning: 'balanced' }, { hanzi: '津津有味', simplified: '津津有味', pinyin: 'jīn jīn yǒu wèi', meaning: 'with great enjoyment' }] },
       { id: 'leisure', items: [{ hanzi: '堅持', simplified: '坚持', pinyin: 'jiān chí', meaning: 'persist' }, { hanzi: '持之以恆', simplified: '持之以恒', pinyin: 'chí zhī yǐ héng', meaning: 'persevere' }] },
       { id: 'world', items: [{ hanzi: '環境', simplified: '环境', pinyin: 'huán jìng', meaning: 'environment' }, { hanzi: '未雨綢繆', simplified: '未雨绸缪', pinyin: 'wèi yǔ chóu móu', meaning: 'prepare ahead' }] },
+    ],
+    sentences: [
+      { traditional: '雖然下雨了，大家仍然準時到達公園。', simplified: '虽然下雨了，大家仍然准时到达公园。' },
+      { traditional: '如果我們一起照顧花草，社區就會更美麗。', simplified: '如果我们一起照顾花草，社区就会更美丽。' },
     ],
     readings: [
       { difficulty: 'easy', title: '社區小花園', text: '社區裡有一座小花園。週末時，居民會一起整理花圃、清掃步道，讓大家都有舒服的休息空間。' },

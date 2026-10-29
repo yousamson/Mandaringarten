@@ -21,15 +21,15 @@ export default function GamesScreen() {
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const { isPremium } = useSubscription();
-  const { ageBand, recordGame } = useLearning();
+  const { level, recordGame } = useLearning();
   const [mode, setMode] = useState<GameMode>('pinyin');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [roundFinished, setRoundFinished] = useState(false);
 
-  const curriculum = curriculumLevels.find((item) => item.age === ageBand);
-  const levelWords = (curriculum?.level === 1 && isPremium
+  const curriculum = curriculumLevels[level - 1] ?? curriculumLevels[0];
+  const levelWords = (isPremium
     ? curriculum.themes.flatMap((theme) =>
         theme.items.map((item, index) => ({
           id: `curriculum-${theme.id}-${index}`,
@@ -44,13 +44,13 @@ export default function GamesScreen() {
       )
     : []);
   const playableWords = useMemo(
-    () => [
-      ...lessons
-        .filter((lesson) => isPremium || !lesson.premium)
-        .flatMap((lesson) => lesson.words),
-      ...levelWords,
-    ],
-    [isPremium, levelWords],
+    () =>
+      isPremium
+        ? levelWords
+        : lessons
+            .filter((lesson) => !lesson.premium)
+            .flatMap((lesson) => lesson.words),
+    [isPremium, level, levelWords],
   );
 
   const question = playableWords[questionIndex % playableWords.length] ?? allWords[0];
@@ -82,7 +82,7 @@ export default function GamesScreen() {
 
   const nextQuestion = () => {
     if (questionIndex + 1 >= QUESTIONS_PER_ROUND) {
-      recordGame(score);
+      recordGame(score, isPremium);
       setRoundFinished(true);
       return;
     }

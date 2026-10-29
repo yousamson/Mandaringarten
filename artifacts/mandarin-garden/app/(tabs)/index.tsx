@@ -34,12 +34,14 @@ export default function HomeScreen() {
     ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.3-5.label';
   const progress = Math.min(
     100,
-    (learning.xp / Math.max(1, learning.nextLevelXp)) * 100,
+    learning.level >= 4
+      ? 100
+      : ((learning.curriculumXp - (learning.level - 1) * 100) / 100) * 100,
   );
   const nextLesson =
     lessons.find(
       (lesson) =>
-        (!lesson.premium || isPremium) &&
+        (!lesson.premium || (isPremium && learning.level >= 4)) &&
         !learning.completedLessonIds.includes(lesson.id),
     ) ?? lessons[0];
 
@@ -175,7 +177,10 @@ export default function HomeScreen() {
               <Text
                 style={[styles.progressTitle, { color: colors.foreground }]}
               >
-                {t('home.levelTitle', { level: learning.level })}
+                {t('home.levelTitle', {
+                  level: learning.level,
+                  name: t(`level.name${learning.level}`),
+                })}
               </Text>
             </View>
             <View

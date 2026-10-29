@@ -27,7 +27,7 @@ export default function LessonsScreen() {
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const router = useRouter();
-  const { ageBand, completedLessonIds, learnedWordIds, markWordLearned, completeLesson } =
+  const { level, curriculumXp, nextLevelXp, completedLessonIds, learnedWordIds, markWordLearned, completeLesson } =
     useLearning();
   const { isPremium } = useSubscription();
   const [filter, setFilter] = useState('all');
@@ -41,12 +41,12 @@ export default function LessonsScreen() {
       ),
     [filter],
   );
-  const curriculum = curriculumLevels.find((item) => item.age === ageBand) ?? curriculumLevels[1];
-  const curriculumUnlocked = isPremium && curriculum.level === 1;
-  const ageLabel = ageBands.find((band) => band.value === ageBand)?.labelKey ?? 'age.3-5.label';
+  const curriculum = curriculumLevels[level - 1] ?? curriculumLevels[0];
+  const curriculumUnlocked = isPremium;
+  const ageLabel = ageBands.find((band) => band.value === curriculum.age)?.labelKey ?? 'age.0-4.label';
 
   const openLesson = (lesson: Lesson) => {
-    if (lesson.premium && !isPremium) {
+    if (lesson.premium && (!isPremium || level < 4)) {
       router.push('/(tabs)/parent');
       return;
     }
@@ -92,7 +92,7 @@ export default function LessonsScreen() {
           </Text>
           {!curriculumUnlocked ? (
             <Text style={[styles.curriculumLocked, { color: colors.primary }]}>
-              {curriculum.level === 1 ? t('lessons.locked') : t('curriculum.locked')}
+              {t('lessons.locked')}
             </Text>
           ) : (
             <>
@@ -112,6 +112,16 @@ export default function LessonsScreen() {
               <Text style={[styles.curriculumThemeTitle, { color: colors.primary }]}>
                 {t(`curriculum.games${curriculum.level}`)}
               </Text>
+              {curriculum.sentences?.map((sentence, index) => (
+                <Text key={`sentence-${index}`} style={[styles.curriculumItems, { color: colors.foreground }]}>
+                  {language === 'zh-Hans' ? sentence.simplified : sentence.traditional}
+                </Text>
+              ))}
+              {curriculum.level < 4 ? (
+                <Text style={[styles.curriculumItems, { color: colors.mutedForeground }]}>
+                  {t('curriculum.progress', { points: Math.max(0, nextLevelXp - curriculumXp) })}
+                </Text>
+              ) : null}
             </>
           )}
           {curriculum.readings ? (
@@ -173,7 +183,7 @@ export default function LessonsScreen() {
 
         <View style={styles.lessonList}>
           {visibleLessons.map((lesson, index) => {
-            const locked = lesson.premium && !isPremium;
+            const locked = lesson.premium && (!isPremium || level < 4);
             const learned = lesson.words.filter((word) =>
               learnedWordIds.includes(word.id),
             ).length;
