@@ -26,3 +26,9 @@ Checkout idempotency must distinguish a retry from a new purchase after a comple
 **Why:** a sandbox cancellation followed by immediate renewal returned the first, already-completed payment page instead of a new checkout.
 
 **How to apply:** include the latest known checkout lifecycle and stable request inputs in the idempotency scope. Reuse genuinely open sessions, but let closed sessions start a new purchase.
+
+The generic Replit Stripe connector proxy can resolve a live price from a development app even when a separate development connection has no test price. Do not assume the proxy selects Stripe mode from `NODE_ENV`.
+
+**Why:** a development-mode API request returned the production live price while the explicit development connection had no matching price.
+
+**How to apply:** require Stripe Price `livemode` to exactly match the app runtime before exposing a plan or creating checkout. Treat development checkout as unavailable until its test-mode price is configured.

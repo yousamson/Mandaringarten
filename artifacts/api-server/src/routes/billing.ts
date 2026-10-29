@@ -143,7 +143,7 @@ async function getPremiumPrice(): Promise<StripePrice> {
     price.unit_amount !== PREMIUM_AMOUNT ||
     price.currency !== PREMIUM_CURRENCY ||
     price.recurring?.interval !== PREMIUM_INTERVAL ||
-    (process.env.NODE_ENV === "production" && !price.livemode)
+    price.livemode !== (process.env.NODE_ENV === "production")
   ) {
     throw new Error(
       "The active premium price must be exactly USD 9.99 per month.",
