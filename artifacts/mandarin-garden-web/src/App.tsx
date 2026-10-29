@@ -19,6 +19,7 @@ import { StagePathPlayer } from '@/components/stage-path-player';
 import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useSelectStage, XP_COMPLETE } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
+import FreeReadingPage from '@/pages/free-reading';
 import DisclaimerPage from '@/pages/disclaimer';
 import PlaygroundPage from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
@@ -144,6 +145,7 @@ function Garden() {
         <Switch>
           <Route path="/privacy"><PrivacyPage language={l} /></Route>
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
+          <Route path="/reading/:age"><FreeReadingPage language={l} /></Route>
           <Route path="/sign-in/*?"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
           <Route path="/register/*?"><AuthPage key="register" mode="register" language={l} /></Route>
           <Route path="/membership"><AccountConsentBoundary language={l}><MembershipPage l={l} /></AccountConsentBoundary></Route>
@@ -201,7 +203,7 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           </div>
           <div className="hero-note"><Sparkles size={14} /> {t.today}</div>
         </div>
-        <div className="hero-art" aria-label="Illustration of a flower growing in a garden">
+        <div className="hero-art" data-age-stage={normalizeAgeStage(age)} aria-label="Illustration of a flower growing in a garden">
           <div className="sun-disc" />
           <div className="garden-illustration">
             <div className="plant-stem" /><div className="leaf l1" /><div className="leaf l2" /><div className="leaf l3" /><div className="leaf l4" />
@@ -288,9 +290,12 @@ function PracticeSection({ language, age, onAgeChange }: { language: Language; a
         <select id="free-reading-age" className="select-control" value={normalizeAgeStage(age)} onChange={(event) => onAgeChange(event.target.value)} data-testid="select-reading-age">
           {ageStages.map((value, index) => <option key={value} value={value}>{copy[language].levelAges[index]}</option>)}
         </select>
-        <div className="practice-heading"><span className="practice-icon reading-icon"><BookOpen size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'A LITTLE READING' : language === 'zh-Hant' ? '讀一小段' : '读一小段'}</div><h2>{reading.title[language]}</h2></div></div>
-        <p className="reading-text">{reading.text[language]}</p>
-        <div className="reading-meta"><span>{copy[language].levelAges[ageStages.indexOf(normalizeAgeStage(age))]} · {tr(language, 'Free reading', '免費閱讀', '免费阅读')}</span><span>{reading.minutes} {tr(language, 'min', '分鐘', '分钟')}</span></div>
+        <Link href={`/reading/${normalizeAgeStage(age)}`} className="free-reading-link" data-testid="link-free-reading">
+          <div className="practice-heading"><span className="practice-icon reading-icon"><BookOpen size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'A LITTLE READING' : language === 'zh-Hant' ? '讀一小段' : '读一小段'}</div><h2>{reading.title[language]}</h2></div></div>
+          <p className="reading-text">{reading.text[language]}</p>
+          <div className="reading-meta"><span>{copy[language].levelAges[ageStages.indexOf(normalizeAgeStage(age))]} · {tr(language, 'Free reading', '免費閱讀', '免费阅读')}</span><span>{reading.minutes} {tr(language, 'min', '分鐘', '分钟')}</span></div>
+          <span className="button-secondary free-reading-open">{tr(language, 'Read and listen', '閱讀並聆聽', '阅读并聆听')} <ArrowRight size={14} /></span>
+        </Link>
       </article>
     </section>
   );

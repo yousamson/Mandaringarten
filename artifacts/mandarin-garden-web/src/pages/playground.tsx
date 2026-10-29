@@ -59,7 +59,10 @@ function LockedPlayground({ l, signedIn }: { l: Language; signedIn: boolean }) {
 }
 
 function PlaygroundBody({ uid, progress, l }: { uid: string; progress: NormalizedProgress; l: Language }) {
-  const [mode, setMode] = useState<GameMode>('match');
+  const [mode, setMode] = useState<GameMode>(() => {
+    const requested = new URLSearchParams(window.location.search).get('mode');
+    return GAME_MODES.includes(requested as GameMode) ? requested as GameMode : 'match';
+  });
   const [selectError, setSelectError] = useState(false);
   const stageSelect = useSelectStage(uid);
   const stage = progress.selectedStage;
