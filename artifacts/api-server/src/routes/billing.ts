@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type ErrorRequestHandler } from "express";
 import { getAuth } from "@clerk/express";
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { eq } from "drizzle-orm";
@@ -20,16 +20,20 @@ type StripeSubscription = {
   status: string;
   current_period_end?: number;
   cancel_at_period_end?: boolean;
-  items?: { data?: Array<{ price?: { id?: string } }> };
+  items?: { data?: Array<{ price?: { id?: string }; current_period_end?: number }> };
 };
 
 async function stripeRequest<T>(
   path: string,
   form?: URLSearchParams,
+  idempotencyKey?: string,
 ): Promise<T> {
   const response = await connectors.proxy("stripe", path, {
     method: form ? "POST" : "GET",
-    headers: form ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
+    headers: form ? {
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+    } : undefined,
     body: form?.toString(),
   });
   const result = (await response.json()) as T & { error?: { message?: string } };
@@ -45,14 +49,23 @@ function currentUserId(req: Parameters<typeof getAuth>[0]): string | null {
 
 function safeReturnUrl(raw: string, origin: string | undefined): string | null {
   try {
+    if (!origin) return null;
     const url = new URL(raw);
     const localHost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
     if (url.protocol !== "https:" && !(url.protocol === "http:" && localHost)) return null;
-    if (origin && url.origin !== origin) return null;
+    if (url.origin !== origin) return null;
     return url.toString();
   } catch {
     return null;
   }
+}
+
+async function customerSubscriptions(customerId: string): Promise<StripeSubscription[]> {
+  const query = new URLSearchParams({ customer: customerId, status: "all", limit: "100" });
+  const result = await stripeRequest<{ data: StripeSubscription[] }>(`/v1/subscriptions?${query}`);
+  return result.data.filter((item) =>
+    item.items?.data?.some((line) => line.price?.id === monthlyPriceId),
+  );
 }
 
 async function getCustomer(userId: string): Promise<string> {
@@ -66,14 +79,12 @@ async function getCustomer(userId: string): Promise<string> {
   const customer = await stripeRequest<StripeCustomer>(
     "/v1/customers",
     new URLSearchParams({ "metadata[clerkUserId]": userId }),
+    `mandarin-customer:${userId}`,
   );
   await db
     .insert(billingCustomersTable)
     .values({ clerkUserId: userId, stripeCustomerId: customer.id })
-    .onConflictDoUpdate({
-      target: billingCustomersTable.clerkUserId,
-      set: { stripeCustomerId: customer.id, updatedAt: new Date() },
-    });
+    .onConflictDoNothing({ target: billingCustomersTable.clerkUserId });
   const [saved] = await db
     .select()
     .from(billingCustomersTable)
@@ -103,23 +114,18 @@ router.get("/billing/status", async (req, res): Promise<void> => {
     return;
   }
 
-  const query = new URLSearchParams({
-    customer: customer.stripeCustomerId,
-    status: "all",
-    limit: "20",
-  });
-  const subscriptions = await stripeRequest<{ data: StripeSubscription[] }>(
-    `/v1/subscriptions?${query.toString()}`,
-  );
-  const subscription = subscriptions.data.find((item) =>
-    item.items?.data?.some((line) => line.price?.id === monthlyPriceId),
-  );
+  const subscriptions = await customerSubscriptions(customer.stripeCustomerId);
+  const subscription = subscriptions.find((item) =>
+    item.status === "active" || item.status === "trialing",
+  ) ?? subscriptions[0];
   const isPremium = subscription?.status === "active" || subscription?.status === "trialing";
+  const periodEnd = subscription?.current_period_end ??
+    subscription?.items?.data?.[0]?.current_period_end;
   res.json(GetBillingStatusResponse.parse({
     isPremium,
     subscriptionStatus: subscription?.status ?? "none",
-    currentPeriodEnd: subscription?.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toISOString()
+    currentPeriodEnd: periodEnd
+      ? new Date(periodEnd * 1000).toISOString()
       : null,
     cancelAtPeriodEnd: subscription?.cancel_at_period_end ?? false,
   }));
@@ -145,6 +151,21 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
   }
 
   const customerId = await getCustomer(userId);
+  const existingSubscriptions = await customerSubscriptions(customerId);
+  if (existingSubscriptions.some((item) =>
+    ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(item.status),
+  )) {
+    res.status(409).json({ error: "An existing subscription must be managed in the billing portal." });
+    return;
+  }
+  const sessions = await stripeRequest<{
+    data: Array<{ mode: string; status: string; url: string | null }>;
+  }>(`/v1/checkout/sessions?${new URLSearchParams({ customer: customerId, limit: "20" })}`);
+  const openSession = sessions.data.find((item) => item.mode === "subscription" && item.status === "open" && item.url);
+  if (openSession?.url) {
+    res.json(CreateBillingCheckoutResponse.parse({ url: openSession.url }));
+    return;
+  }
   const session = await stripeRequest<{ url: string | null }>(
     "/v1/checkout/sessions",
     new URLSearchParams({
@@ -158,6 +179,7 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       "metadata[clerkUserId]": userId,
       "subscription_data[metadata][clerkUserId]": userId,
     }),
+    `mandarin-premium:${customerId}:${Math.floor(Date.now() / 1_800_000)}`,
   );
   if (!session.url) {
     res.status(502).json({ error: "Stripe did not return a checkout URL." });
@@ -200,5 +222,11 @@ router.post("/billing/portal", async (req, res): Promise<void> => {
   );
   res.json(CreateBillingPortalResponse.parse({ url: session.url }));
 });
+
+const billingErrorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  req.log.error({ err: error }, "Billing request failed");
+  res.status(502).json({ error: "The billing service is temporarily unavailable. Please try again." });
+};
+router.use(billingErrorHandler);
 
 export default router;

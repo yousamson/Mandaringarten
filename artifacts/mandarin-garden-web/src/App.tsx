@@ -1,5 +1,7 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
+import CurriculumPage from '@/pages/curriculum';
 import { ClerkProvider, Show, SignInButton, SignUpButton, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { useCreateBillingCheckout, useCreateBillingPortal, useGetBillingStatus, getGetBillingStatusQueryKey } from '@workspace/api-client-react';
@@ -62,8 +64,27 @@ function SignOutControl({ label, className }: { label: string; className: string
   return <button type="button" className={className} aria-label={label} title={label} onClick={() => void signOut({ redirectUrl: '/' })}><LogOut size={15} /></button>;
 }
 
+export const tagline: Record<Language, string> = {
+  en: 'Make learning Mandarin easier every day',
+  'zh-Hant': '讓每天學習漢語更輕鬆',
+  'zh-Hans': '让每天学习汉语更轻松',
+};
+
+function useUserScopedCache() {
+  const { user, isLoaded } = useUser();
+  const client = useQueryClient();
+  const prev = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!isLoaded) return;
+    const id = user?.id ?? null;
+    if (prev.current !== undefined && prev.current !== id) client.clear();
+    prev.current = id;
+  }, [isLoaded, user?.id, client]);
+}
+
 function Garden() {
   const preferences = usePreferences();
+  useUserScopedCache();
   const t = copy[preferences.language];
   const [path, setPath] = useLocation();
   const [category, setCategory] = useState('all');
@@ -77,11 +98,12 @@ function Garden() {
         <header className="topbar">
           <Link href="/" className="brand" data-testid="link-home">
             <span className="brand-mark"><Sprout size={23} strokeWidth={1.9} /></span>
-            <span>Mandarin Garden</span>
+            <span className="brand-text"><span>漢語樂園 Mandarin Garden</span><small className="brand-tagline">{tagline[preferences.language]}</small></span>
           </Link>
           <nav className={`nav-links ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
             <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>{t.navHome}</Link>
             <a className={`nav-link ${path === '/#lessons' ? 'active' : ''}`} href="/#lessons" onClick={() => setMenuOpen(false)}>{t.navWords}</a>
+            <Link href="/curriculum" className={`nav-link ${path === '/curriculum' ? 'active' : ''}`} onClick={() => setMenuOpen(false)} data-testid="link-curriculum">{preferences.language === 'en' ? 'Curriculum' : preferences.language === 'zh-Hant' ? '學習課程' : '学习课程'}</Link>
             <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>{t.navParent}</Link>
           </nav>
           <div className="top-actions">
@@ -100,12 +122,13 @@ function Garden() {
             <HomePage language={preferences.language} t={t} age={preferences.age} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />
           </Route>
           <Route path="/lesson/:lessonId"><LessonPage language={preferences.language} t={t} /></Route>
+          <Route path="/curriculum"><CurriculumPage language={preferences.language} age={preferences.age} /></Route>
           <Route path="/parent"><ParentPage preferences={preferences} t={t} /></Route>
           <Route component={NotFound} />
         </Switch>
       </ErrorBoundary>
       <div className="page-shell">
-        <footer className="footer"><span>© Mandarin Garden</span><span>{t.footer}</span></footer>
+        <footer className="footer"><span>© 漢語樂園 Mandarin Garden</span><span>{tagline.en} · 讓每天學習漢語更輕鬆 · 让每天学习汉语更轻松</span></footer>
       </div>
     </div>
   );
@@ -113,7 +136,7 @@ function Garden() {
 
 type Copy = typeof copy.en;
 function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
-  const currentLevel = Math.max(0, ['2-4', '3-5', '6-8', '9-12'].indexOf(age));
+  const recommendedLevel = Math.max(0, ['2-4', '3-5', '6-8', '9-12'].indexOf(age));
   return (
     <main className="page-shell">
       <section className="hero">
@@ -158,12 +181,12 @@ function HomePage({ language, t, age, lessonsToShow, category, setCategory }: { 
         <div className="level-track">
           {levels.map((level, index) => (
             <div className="level-item" key={level.age}>
-              <div className={`level-node ${index <= currentLevel ? 'active' : ''}`}>{index < currentLevel ? <Check size={13} /> : index + 1}</div>
+              <div className={`level-node ${index === recommendedLevel ? 'active' : ''}`}>{index + 1}</div>
               <div className="level-caption">{t.levelAges[index]}</div>
             </div>
           ))}
         </div>
-        <Link href="/parent" className="progress-link">{t.join} <ChevronRight size={14} /></Link>
+        <Link href="/curriculum" className="progress-link">{language === 'en' ? 'Open your learning path' : language === 'zh-Hant' ? '開啟學習進度' : '开启学习进度'} <ChevronRight size={14} /></Link>
       </section>
     </main>
   );
@@ -253,7 +276,7 @@ function LessonPage({ language, t }: { language: Language; t: Copy }) {
   const lesson = lessons.find((item) => item.id === lessonId);
   const userState = useUser();
   const isSignedIn = userState.isSignedIn ?? false;
-  const billing = useGetBillingStatus({ query: { enabled: isSignedIn, queryKey: getGetBillingStatusQueryKey(), retry: false } });
+  const billing = useGetBillingStatus({ query: { enabled: isSignedIn, queryKey: [...getGetBillingStatusQueryKey(), userState.user?.id], retry: false } });
   useEffect(() => { setIndex(0); setDone(false); }, [lessonId]);
   if (!lesson) return <main className="page-shell not-found"><h1>That path is not here.</h1><Link href="/" className="button-primary">{t.back}</Link></main>;
   const locked = lesson.premium && (!isSignedIn || billing.data?.isPremium !== true);
@@ -316,13 +339,15 @@ function LessonPage({ language, t }: { language: Language; t: Copy }) {
 
 function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePreferences>; t: Copy }) {
   const { isSignedIn, user } = useUser();
-  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: getGetBillingStatusQueryKey(), retry: false } });
+  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: [...getGetBillingStatusQueryKey(), user?.id], retry: false } });
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
   const [error, setError] = useState('');
   const [working, setWorking] = useState(false);
   const active = status.data?.isPremium ?? false;
-  const busy = checkout.isPending || portal.isPending || working;
+  const hasSubscription = ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(status.data?.subscriptionStatus ?? "");
+  const checking = Boolean(isSignedIn && status.isLoading);
+  const busy = checkout.isPending || portal.isPending || working || checking || Boolean(isSignedIn && status.isError);
   const initiateCheckout = () => {
     setError('');
     if (!isSignedIn) return;
@@ -379,15 +404,15 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
         <aside>
           <section className="panel membership-card">
             <h2><Leaf size={18} /> {t.membership}</h2>
-            <p className="panel-desc">{active ? t.premiumActive : t.freePlan}</p>
+            <p className="panel-desc">{checking ? t.loading : status.isError && isSignedIn ? t.failed : active ? t.premiumActive : t.freePlan}</p>
             {status.isLoading && isSignedIn ? <div className="setting-row"><span className="panel-desc">{t.loading}</span><span className="status-pill">•••</span></div> : null}
             {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => status.refetch()}>{t.retry}</button></div> : null}
-            {status.data && isSignedIn ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{active ? t.premiumActive : t.freePlan}</span></div> : null}
+            {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{active ? t.premiumActive : t.freePlan}</span></div> : null}
             <div className="plan-price">{t.price} <small>{t.perMonth}</small></div>
             <ul className="benefit-list">{t.benefits.map((benefit) => <li key={benefit}><Check size={15} />{benefit}</li>)}</ul>
             {error ? <div className="alert" role="alert">{error}</div> : null}
             <Show when="signed-in">
-              {active
+              {hasSubscription
                 ? <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={openPortal} disabled={busy} data-testid="button-manage-subscription">{busy ? t.loading : t.manage} <ArrowRight size={15} /></button>
                 : <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={busy} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>}
             </Show>
