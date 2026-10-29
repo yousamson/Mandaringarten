@@ -10,5 +10,5 @@ export type CheckoutInputPolicyVersion = typeof CheckoutInputPolicyVersion[keyof
 
 
 export const CheckoutInputPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;

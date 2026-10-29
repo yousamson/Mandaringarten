@@ -2,13 +2,17 @@ import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useStat
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, Show, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { useCreateBillingCheckout, useCreateBillingPortal, useGetBillingPlan, useGetBillingStatus, getGetBillingStatusQueryKey } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Leaf, LogOut, Menu, MessageCircle, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AccountConsentBoundary } from '@/components/legal/account-consent-boundary';
 import { clearAuthConsent } from '@/hooks/use-consent';
-import { ConsentCheck, DisclaimerAgreement, DocLink, PrivacyAgreement, disclaimerName, privacyName } from '@/components/legal/consent-check';
+import { disclaimerName, privacyName } from '@/components/legal/consent-check';
+import { MemberGate, MembershipPage } from '@/components/access-gate';
+import { MembershipPanel } from '@/components/membership-panel';
+import { useAccountAccess } from '@/hooks/use-account';
+import AccountPage from '@/pages/account';
+import MessagesPage from '@/pages/messages';
 import { StagePicker } from '@/components/playground/stage-picker';
 import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
@@ -19,8 +23,6 @@ import DisclaimerPage from '@/pages/disclaimer';
 import PlaygroundPage from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
-import { billingCopy } from '@/lib/billing-copy';
-import { LEGAL_VERSION } from '@/lib/legal-config';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 
@@ -107,7 +109,8 @@ function Garden() {
   const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
   const shellClass = `garden-app theme-${preferences.theme}`;
   const close = () => setMenuOpen(false);
-  const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><LegacySync />{node}</AccountConsentBoundary>;
+  const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><MemberGate l={l}><LegacySync />{node}</MemberGate></AccountConsentBoundary>;
+  const access = useAccountAccess();
 
   return (
     <div className={shellClass}>
@@ -122,6 +125,8 @@ function Garden() {
             <a className="nav-link" href="/#lessons" onClick={close}>{t.navWords}</a>
             <Link href="/playground" className={`nav-link ${path === '/playground' || path === '/curriculum' ? 'active' : ''}`} onClick={close} data-testid="link-playground">{playgroundName[l]}</Link>
             <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={close}>{t.navParent}</Link>
+            {access.isSignedIn ? <Link href="/messages" className={`nav-link ${path === '/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-messages">{tr(l, 'Messages', '訊息', '消息')}</Link> : null}
+            {access.isAdmin ? <Link href="/admin/messages" className={`nav-link ${path === '/admin/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin">{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</Link> : null}
           </nav>
           <div className="top-actions">
             <select className="language-select" aria-label="Interface language" value={l} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} data-testid="select-language">
@@ -139,6 +144,10 @@ function Garden() {
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
           <Route path="/sign-in"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
           <Route path="/register"><AuthPage key="register" mode="register" language={l} /></Route>
+          <Route path="/membership"><AccountConsentBoundary language={l}><MembershipPage l={l} /></AccountConsentBoundary></Route>
+          <Route path="/messages"><MessagesPage language={l} /></Route>
+          <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
+          <Route path="/account"><AccountPage language={l} /></Route>
           <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
           <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
           <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
@@ -402,63 +411,8 @@ function ParentStagePanel({ l }: { l: Language }) {
 
 function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePreferences>; t: Copy }) {
   const l = preferences.language;
-  const { isSignedIn, user } = useUser();
-  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: [...getGetBillingStatusQueryKey(), user?.id ?? null], retry: false } });
-  const plan = useGetBillingPlan({ query: { retry: false, staleTime: 300_000 } });
-  const checkout = useCreateBillingCheckout();
-  const portal = useCreateBillingPortal();
-  const [error, setError] = useState('');
-  const [working, setWorking] = useState(false);
-  // Checkout acknowledgements: always start unticked, never persisted.
-  const [privacyOk, setPrivacyOk] = useState(false);
-  const [disclaimerOk, setDisclaimerOk] = useState(false);
-  const [noRefundOk, setNoRefundOk] = useState(false);
-  const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
-  const active = status.data?.isPremium ?? false;
-  const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'].includes(status.data?.subscriptionStatus ?? '');
-  const checking = Boolean(isSignedIn && status.isLoading);
-  const statusReady = Boolean(isSignedIn && status.data && !status.isError);
-  const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && status.isError);
-  const allAccepted = privacyOk && disclaimerOk && noRefundOk;
-  const canCheckout = statusReady && Boolean(plan.data) && !plan.isError && allAccepted && !busy;
-  const priceLabel = plan.data?.priceLabel ?? billingCopy[l].priceUnavailable;
-  const checkoutNotice =
-    checkoutResult === 'cancelled' ? billingCopy[l].checkoutCancelled
-      : checkoutResult === 'success' ? (active ? billingCopy[l].checkoutSuccess : isSignedIn && status.isLoading ? t.loading : billingCopy[l].checkoutPending)
-        : '';
-  const refetchStatus = useRef(status.refetch);
-  refetchStatus.current = status.refetch;
-
-  useEffect(() => {
-    if (checkoutResult === 'success' && isSignedIn) void refetchStatus.current();
-  }, [checkoutResult, isSignedIn]);
-
-  const isForbidden = (err: unknown) => typeof err === 'object' && err !== null && (err as { status?: number }).status === 403;
-
-  const initiateCheckout = () => {
-    setError('');
-    if (!isSignedIn || !plan.data || !allAccepted) return;
-    setWorking(true);
-    checkout.mutate(
-      { data: { privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true, policyVersion: LEGAL_VERSION, successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/parent?checkout=cancelled` } },
-      {
-        onSuccess: (result) => { window.location.assign(result.url); },
-        onError: (err) => {
-          setError(isForbidden(err) ? tr(l, 'Your account agreements need to be confirmed first. Please reload the page to review them.', '請先確認帳戶同意事項，重新載入頁面即可查看。', '请先确认账户同意事项，重新加载页面即可查看。') : t.checkoutError);
-          setWorking(false);
-        },
-      },
-    );
-  };
-  const openPortal = () => {
-    setError('');
-    setWorking(true);
-    portal.mutate(
-      { data: { returnUrl: `${window.location.origin}/parent` } },
-      { onSuccess: (result) => { window.location.assign(result.url); }, onError: (err) => { setError(isForbidden(err) ? tr(l, 'Your account agreements need to be confirmed first.', '請先確認帳戶同意事項。', '请先确认账户同意事项。') : t.portalError); setWorking(false); } },
-    );
-  };
-  const date = status.data?.currentPeriodEnd ? new Intl.DateTimeFormat(l, { dateStyle: 'long' }).format(new Date(status.data.currentPeriodEnd)) : '';
+  const { user } = useUser();
+  const access = useAccountAccess();
   return (
     <main className="page-shell">
       <section className="page-title">
@@ -487,7 +441,10 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
           <section className="panel">
             <h2>{t.account}</h2>
             <Show when="signed-in">
-              <div className="setting-row"><div><div className="setting-name">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</div><div className="setting-detail">{user?.primaryEmailAddress?.emailAddress}</div></div><SignOutControl label={signOutLabels[l]} className="button-secondary" /></div>
+              <div className="setting-row"><div>
+                <div className="setting-name">{access.isAdmin ? tr(l, 'Management account', '管理團隊帳戶', '管理团队账户') : user?.fullName || user?.primaryEmailAddress?.emailAddress}</div>
+                {!access.isAdmin ? <div className="setting-detail">{user?.primaryEmailAddress?.emailAddress}</div> : null}
+              </div><SignOutControl label={signOutLabels[l]} className="button-secondary" /></div>
             </Show>
             <Show when="signed-out">
               <p className="panel-desc">{t.signedOut}</p>
@@ -496,37 +453,18 @@ function ParentPage({ preferences, t }: { preferences: ReturnType<typeof usePref
           </section>
         </div>
         <aside>
-          <section className="panel membership-card">
-            <h2><Leaf size={18} /> {t.membership}</h2>
-            <p className="panel-desc">{checking ? t.loading : status.isError && isSignedIn ? t.failed : active ? t.premiumActive : t.freePlan}</p>
-            {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()}>{t.retry}</button></div> : null}
-            {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
-            <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div>
-            {plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
-            {checkoutNotice ? <div className="membership-note" role="status">{checkoutNotice}{checkoutResult === 'success' && !active ? <button className="button-secondary" onClick={() => void status.refetch()}>{t.retry}</button> : null}</div> : null}
-            <ul className="benefit-list">{t.benefits.map((benefit) => <li key={benefit}><Check size={15} />{benefit}</li>)}</ul>
-            {error ? <div className="alert" role="alert">{error}</div> : null}
-            <Show when="signed-in">
-              {hasSubscription
-                ? <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={openPortal} disabled={busy} data-testid="button-manage-subscription">{busy ? t.loading : t.manage} <ArrowRight size={15} /></button>
-                : (
-                  <>
-                    <div className="consent-list compact" data-testid="checkout-consent">
-                      <ConsentCheck checked={privacyOk} onChange={setPrivacyOk} testId="check-checkout-privacy"><PrivacyAgreement l={l} /></ConsentCheck>
-                      <ConsentCheck checked={disclaimerOk} onChange={setDisclaimerOk} testId="check-checkout-disclaimer"><DisclaimerAgreement l={l} /></ConsentCheck>
-                      <ConsentCheck checked={noRefundOk} onChange={setNoRefundOk} testId="check-checkout-norefund">
-                        {tr(l, 'I understand membership renews monthly until cancelled, cancellation takes effect at the end of the paid period, and payments are non-refundable except where mandatory law requires a refund or I was charged in error (see the ', '我了解會員每月自動續訂直至取消，取消於已付費期間結束時生效，且費用恕不退還；但強制性法律規定須退款或錯誤收費者除外（詳見', '我了解会员每月自动续订直至取消，取消于已付费期间结束时生效，且费用恕不退还；但强制性法律规定须退款或错误收费者除外（详见')}<DocLink to="/disclaimer">{disclaimerName(l)}</DocLink>{tr(l, ').', '）。', '）。')}
-                      </ConsentCheck>
-                    </div>
-                    <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>
-                  </>
-                )}
-            </Show>
-            <Show when="signed-out">
-              <Link href="/sign-in" className="button-primary" data-testid="button-sign-in-to-upgrade">{t.signIn} · {t.upgrade} <ArrowRight size={15} /></Link>
-            </Show>
-            <p className="membership-note">{t.paymentNote}</p>
-          </section>
+          <MembershipPanel l={l} />
+          <Show when="signed-in">
+            <section className="panel help-panel" data-testid="panel-parent-help">
+              <h2>{tr(l, 'Help and account', '協助與帳戶', '协助与账户')}</h2>
+              <p className="panel-desc">{tr(l, 'Write to the team, or manage and delete your account.', '聯絡團隊，或管理、刪除您的帳戶。', '联系团队，或管理、删除您的账户。')}</p>
+              <div className="entry-links">
+                <Link href="/messages" className="entry-link" data-testid="link-parent-messages"><MessageCircle size={16} /><span>{tr(l, 'Messages with the team', '與團隊的訊息', '与团队的消息')}</span><ChevronRight size={14} /></Link>
+                <Link href="/account" className="entry-link" data-testid="link-parent-account"><UserX size={16} /><span>{tr(l, 'Account and deletion', '帳戶與刪除', '账户与删除')}</span><ChevronRight size={14} /></Link>
+                {access.isAdmin ? <Link href="/admin/messages" className="entry-link admin" data-testid="link-parent-admin"><ShieldAlert size={16} /><span>{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</span><Inbox size={14} /></Link> : null}
+              </div>
+            </section>
+          </Show>
         </aside>
       </div>
     </main>

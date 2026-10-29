@@ -10,5 +10,5 @@ export type LegalConsentInputPolicyVersion = typeof LegalConsentInputPolicyVersi
 
 
 export const LegalConsentInputPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;

@@ -20,3 +20,9 @@ Do not infer scheduled cancellation solely from Stripe's legacy `cancel_at_perio
 **Why:** the sandbox portal confirmed period-end cancellation while the API's legacy flag remained false; relying on it alone misreported renewal status.
 
 **How to apply:** consider the cancellation timestamp alongside the current period end, and preserve active access until the paid period actually ends.
+
+Checkout idempotency must distinguish a retry from a new purchase after a completed or expired session. Customer plus a time bucket alone is insufficient: Stripe can replay the old completed checkout URL even after the subscription has been canceled.
+
+**Why:** a sandbox cancellation followed by immediate renewal returned the first, already-completed payment page instead of a new checkout.
+
+**How to apply:** include the latest known checkout lifecycle and stable request inputs in the idempotency scope. Reuse genuinely open sessions, but let closed sessions start a new purchase.

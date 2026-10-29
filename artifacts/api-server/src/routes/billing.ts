@@ -22,7 +22,8 @@ import {
   type StripePrice,
   type StripeSubscription,
 } from "../stripeClient";
-import { cancellationAtPeriodEnd } from "../subscription-state";
+import { cancellationAtPeriodEnd, checkoutIdempotencyKey } from "../subscription-state";
+import { withAccountWrite } from "../account-lifecycle";
 
 const PREMIUM_LOOKUP_KEY = "mandarin_garden_premium_monthly";
 const PREMIUM_AMOUNT = 999;
@@ -152,7 +153,8 @@ async function getPremiumPrice(): Promise<StripePrice> {
 }
 
 async function getOrCreateCustomer(userId: string) {
-  const [existing] = await db
+  return withAccountWrite(userId, async (tx) => {
+  const [existing] = await tx
     .select()
     .from(billingCustomersTable)
     .where(eq(billingCustomersTable.clerkUserId, userId))
@@ -166,18 +168,19 @@ async function getOrCreateCustomer(userId: string) {
     form,
     idempotencyKey: `mandarin-garden-customer-${userId}`,
   });
-  await db
+  await tx
     .insert(billingCustomersTable)
     .values({ clerkUserId: userId, stripeCustomerId: customer.id })
     .onConflictDoNothing();
 
-  const [saved] = await db
+  const [saved] = await tx
     .select()
     .from(billingCustomersTable)
     .where(eq(billingCustomersTable.clerkUserId, userId))
     .limit(1);
   if (!saved) throw new Error("Could not save the Stripe customer mapping.");
   return saved;
+  });
 }
 
 async function getCustomer(userId: string) {
@@ -362,10 +365,13 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Manage the existing subscription in the billing portal." });
       return;
     }
-    const [consent] = await db.insert(checkoutConsentsTable).values({
+    const consent = await withAccountWrite(userId, async (tx) => {
+      const [saved] = await tx.insert(checkoutConsentsTable).values({
       clerkUserId: userId, policyVersion: POLICY_VERSION,
       privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true,
-    }).returning();
+      }).returning();
+      return saved;
+    });
 
     const openSessions = await stripeRequest<{
       data: Array<{
@@ -430,9 +436,7 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       {
         method: "POST",
         form,
-        idempotencyKey: `mandarin-garden-checkout-usd-only-${POLICY_VERSION}-${account.stripeCustomerId}-${Math.floor(
-          Date.now() / 1_800_000,
-        )}`,
+        idempotencyKey: checkoutIdempotencyKey(account.stripeCustomerId, openSessions.data[0]?.id, form),
       },
     );
 

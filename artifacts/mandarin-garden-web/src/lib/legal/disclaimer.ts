@@ -49,6 +49,10 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       { h: '13. Changes', p: [
         'We may update these terms. When we make material changes we will update the version date and ask you to accept the new version before you continue using account features.',
       ] },
+      { h: "Membership, expiry and account deletion", p: [
+        "Signed-in use requires a parent account and an active paid membership; registering alone does not activate membership. If you cancel, access continues until the end of the period you have already paid for. When a membership expires, member features are blocked, but renewing, contacting the team and deleting the account remain available.",
+        "Deleting your account is permanent and irreversible. It cancels any ongoing subscription immediately and ends access at once, with no refund for unused time except where mandatory law requires a refund or you were charged in error. Records Stripe must retain by law and a minimal hashed security record are not erased.",
+      ] },
     ],
   },
   'zh-Hant': {
@@ -98,6 +102,10 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       { h: '13. 條款變更', p: [
         '我們可能更新本條款。如有重大變更，我們會更新版本日期，並請您在繼續使用帳戶功能前接受新版本。',
       ] },
+      { h: "會員、到期與刪除帳戶", p: [
+        "登入後使用須具備家長帳戶及有效的付費會員；僅註冊不會開通會員。取消後，使用權持續至已付費期間結束。會員到期後，會員功能將無法使用，但續訂、聯絡團隊及刪除帳戶仍可使用。",
+        "刪除帳戶為永久且不可逆的操作，會立即取消進行中的訂閱並即刻終止使用權，未使用期間不予退款；但強制性法律規定須退款或錯誤收費者除外。Stripe 依法須保留的紀錄及最少量雜湊安全紀錄不會被刪除。",
+      ] },
     ],
   },
   'zh-Hans': {
@@ -146,6 +154,10 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
       { h: '13. 条款变更', p: [
         '我们可能更新本条款。如有重大变更，我们会更新版本日期，并请您在继续使用账户功能前接受新版本。',
+      ] },
+      { h: "会员、到期与删除账户", p: [
+        "登录后使用须具备家长账户及有效的付费会员；仅注册不会开通会员。取消后，使用权持续至已付费期间结束。会员到期后，会员功能将无法使用，但续订、联系团队及删除账户仍可使用。",
+        "删除账户为永久且不可逆的操作，会立即取消进行中的订阅并即刻终止使用权，未使用期间不予退款；但强制性法律规定须退款或错误收费者除外。Stripe 依法须保留的记录及最少量哈希安全记录不会被删除。",
       ] },
     ],
   },

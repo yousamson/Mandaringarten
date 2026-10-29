@@ -57,13 +57,13 @@ export const CreateBillingCheckoutBody = zod.union([zod.object({
   "privacyAccepted": zod.literal(true),
   "disclaimerAccepted": zod.literal(true),
   "noRefundAccepted": zod.literal(true),
-  "policyVersion": zod.enum(['2026-10-29']),
+  "policyVersion": zod.enum(['2026-10-29.1']),
   "returnUrl": zod.url()
 }),zod.object({
   "privacyAccepted": zod.literal(true),
   "disclaimerAccepted": zod.literal(true),
   "noRefundAccepted": zod.literal(true),
-  "policyVersion": zod.enum(['2026-10-29']),
+  "policyVersion": zod.enum(['2026-10-29.1']),
   "successUrl": zod.url(),
   "cancelUrl": zod.url()
 })])
@@ -169,12 +169,119 @@ export const AcceptLegalConsentBody = zod.object({
   "privacyAccepted": zod.literal(true),
   "disclaimerAccepted": zod.literal(true),
   "adultConfirmed": zod.literal(true),
-  "policyVersion": zod.enum(['2026-10-29'])
+  "policyVersion": zod.enum(['2026-10-29.1'])
 })
 
 export const AcceptLegalConsentResponse = zod.object({
   "accepted": zod.boolean(),
   "policyVersion": zod.string()
+})
+
+
+export const GetAccountAccessResponse = zod.object({
+  "isAdmin": zod.boolean(),
+  "isPremium": zod.boolean(),
+  "access": zod.enum(['active', 'subscription_required', 'deleting'])
+})
+
+
+export const DeleteAccountBody = zod.object({
+  "dataDeletionAccepted": zod.literal(true),
+  "noRefundAccepted": zod.literal(true),
+  "subscriptionCancellationAccepted": zod.literal(true),
+  "confirmation": zod.enum(['DELETE'])
+})
+
+export const DeleteAccountResponse = zod.object({
+  "deleted": zod.literal(true)
+})
+
+
+export const GetSupportThreadsResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "lastMessagePreview": zod.string()
+})
+export const GetSupportThreadsResponse = zod.array(GetSupportThreadsResponseItem)
+
+
+export const createSupportThreadBodySubjectMax = 120;
+
+export const createSupportThreadBodyTextMax = 5000;
+
+
+
+export const CreateSupportThreadBody = zod.object({
+  "subject": zod.string().min(1).max(createSupportThreadBodySubjectMax),
+  "text": zod.string().min(1).max(createSupportThreadBodyTextMax)
+})
+
+export const CreateSupportThreadResponse = zod.object({
+  "thread": zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "lastMessagePreview": zod.string()
+}),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.enum(['parent', 'team']),
+  "text": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+export const GetSupportConversationParams = zod.object({
+  "threadId": zod.uuid()
+})
+
+export const GetSupportConversationResponse = zod.object({
+  "thread": zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "lastMessagePreview": zod.string()
+}),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.enum(['parent', 'team']),
+  "text": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+export const SendSupportMessageParams = zod.object({
+  "threadId": zod.uuid()
+})
+
+export const sendSupportMessageBodyTextMax = 5000;
+
+
+
+export const SendSupportMessageBody = zod.object({
+  "text": zod.string().min(1).max(sendSupportMessageBodyTextMax)
+})
+
+export const SendSupportMessageResponse = zod.object({
+  "thread": zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "lastMessagePreview": zod.string()
+}),
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.enum(['parent', 'team']),
+  "text": zod.string(),
+  "createdAt": zod.string()
+}))
 })
 
 

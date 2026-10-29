@@ -205,6 +205,86 @@ paths:
               schema: { $ref: "#/components/schemas/LegalConsentStatus" }
         "400": { description: Every acknowledgment is required }
         "401": { description: Authentication required }
+  /account/access:
+    get:
+      operationId: getAccountAccess
+      responses:
+        "200":
+          description: Server-verified account access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountAccess" }
+  /account:
+    delete:
+      operationId: deleteAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountDeletionInput" }
+      responses:
+        "200":
+          description: Account deleted without a refund
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountDeletionResult" }
+  /support/threads:
+    get:
+      operationId: getSupportThreads
+      responses:
+        "200":
+          description: Own conversations, or all conversations for a verified administrator
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportThread" }
+    post:
+      operationId: createSupportThread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportThreadInput" }
+      responses:
+        "201":
+          description: Conversation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportConversation" }
+  /support/threads/{threadId}:
+    parameters:
+      - name: threadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getSupportConversation
+      responses:
+        "200":
+          description: Authorized conversation with messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportConversation" }
+  /support/threads/{threadId}/messages:
+    parameters:
+      - name: threadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: sendSupportMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportMessageInput" }
+      responses:
+        "201":
+          description: Reply saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportConversation" }
 components:
   securitySchemes:
     bearerAuth:
@@ -265,7 +345,7 @@ components:
         privacyAccepted: { type: boolean, enum: [true] }
         disclaimerAccepted: { type: boolean, enum: [true] }
         noRefundAccepted: { type: boolean, enum: [true] }
-        policyVersion: { type: string, enum: ["2026-10-29"] }
+        policyVersion: { type: string, enum: ["2026-10-29.1"] }
         returnUrl:
           type: string
           format: uri
@@ -276,7 +356,7 @@ components:
         privacyAccepted: { type: boolean, enum: [true] }
         disclaimerAccepted: { type: boolean, enum: [true] }
         noRefundAccepted: { type: boolean, enum: [true] }
-        policyVersion: { type: string, enum: ["2026-10-29"] }
+        policyVersion: { type: string, enum: ["2026-10-29.1"] }
         successUrl:
           type: string
           format: uri
@@ -349,4 +429,60 @@ components:
         privacyAccepted: { type: boolean, enum: [true] }
         disclaimerAccepted: { type: boolean, enum: [true] }
         adultConfirmed: { type: boolean, enum: [true] }
-        policyVersion: { type: string, enum: ["2026-10-29"] }
+        policyVersion: { type: string, enum: ["2026-10-29.1"] }
+    AccountAccess:
+      type: object
+      required: [isAdmin, isPremium, access]
+      properties:
+        isAdmin: { type: boolean }
+        isPremium: { type: boolean }
+        access: { type: string, enum: [active, subscription_required, deleting] }
+    AccountDeletionInput:
+      type: object
+      required: [dataDeletionAccepted, noRefundAccepted, subscriptionCancellationAccepted, confirmation]
+      properties:
+        dataDeletionAccepted: { type: boolean, enum: [true] }
+        noRefundAccepted: { type: boolean, enum: [true] }
+        subscriptionCancellationAccepted: { type: boolean, enum: [true] }
+        confirmation: { type: string, enum: ["DELETE"] }
+    AccountDeletionResult:
+      type: object
+      required: [deleted]
+      properties:
+        deleted: { type: boolean, enum: [true] }
+    SupportThread:
+      type: object
+      required: [id, subject, createdAt, updatedAt, lastMessagePreview]
+      properties:
+        id: { type: string }
+        subject: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        lastMessagePreview: { type: string }
+    SupportMessage:
+      type: object
+      required: [id, author, text, createdAt]
+      properties:
+        id: { type: string }
+        author: { type: string, enum: [parent, team] }
+        text: { type: string }
+        createdAt: { type: string }
+    SupportConversation:
+      type: object
+      required: [thread, messages]
+      properties:
+        thread: { $ref: "#/components/schemas/SupportThread" }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/SupportMessage" }
+    SupportThreadInput:
+      type: object
+      required: [subject, text]
+      properties:
+        subject: { type: string, minLength: 1, maxLength: 120 }
+        text: { type: string, minLength: 1, maxLength: 5000 }
+    SupportMessageInput:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 5000 }

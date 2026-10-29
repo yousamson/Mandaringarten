@@ -8,7 +8,7 @@ const checkout = {
   successUrl: "https://example.com/parent?checkout=success",
   cancelUrl: "https://example.com/parent?checkout=cancelled",
   privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true,
-  policyVersion: "2026-10-29",
+  policyVersion: "2026-10-29.1",
 };
 
 test("checkout requires every acknowledgment, explicitly true, for the current policy", () => {
@@ -21,7 +21,7 @@ test("checkout requires every acknowledgment, explicitly true, for the current p
 });
 
 test("account consent requires adulthood and both document acknowledgments", () => {
-  const consent = { privacyAccepted: true, disclaimerAccepted: true, adultConfirmed: true, policyVersion: "2026-10-29" };
+  const consent = { privacyAccepted: true, disclaimerAccepted: true, adultConfirmed: true, policyVersion: "2026-10-29.1" };
   assert.equal(AcceptLegalConsentBody.safeParse(consent).success, true);
   for (const field of ["privacyAccepted", "disclaimerAccepted", "adultConfirmed"]) {
     assert.equal(AcceptLegalConsentBody.safeParse({ ...consent, [field]: false }).success, false);

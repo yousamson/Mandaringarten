@@ -6,19 +6,20 @@ import { LEGAL_VERSION } from '@/lib/legal-config';
 const AUTH_CONSENT_KEY = 'mg-auth-consent';
 
 /** Consent given on the gate before Clerk renders; valid only for this tab's current auth attempt. */
-export function readAuthConsent(): boolean {
+export function readAuthConsent(forRegistration = false): boolean {
   try {
     const raw = sessionStorage.getItem(AUTH_CONSENT_KEY);
     if (!raw) return false;
-    const parsed = JSON.parse(raw) as { version?: string; privacy?: boolean; disclaimer?: boolean; adult?: boolean };
-    return parsed.version === LEGAL_VERSION && parsed.privacy === true && parsed.disclaimer === true && parsed.adult === true;
+    const parsed = JSON.parse(raw) as { version?: string; privacy?: boolean; disclaimer?: boolean; adult?: boolean; subscription?: boolean };
+    return parsed.version === LEGAL_VERSION && parsed.privacy === true && parsed.disclaimer === true && parsed.adult === true &&
+      (!forRegistration || parsed.subscription === true);
   } catch {
     return false;
   }
 }
-export function writeAuthConsent() {
+export function writeAuthConsent(subscription = false) {
   try {
-    sessionStorage.setItem(AUTH_CONSENT_KEY, JSON.stringify({ version: LEGAL_VERSION, privacy: true, disclaimer: true, adult: true, at: new Date().toISOString() }));
+    sessionStorage.setItem(AUTH_CONSENT_KEY, JSON.stringify({ version: LEGAL_VERSION, privacy: true, disclaimer: true, adult: true, subscription, at: new Date().toISOString() }));
   } catch { /* if storage is blocked the gate simply shows again */ }
 }
 export function clearAuthConsent() {

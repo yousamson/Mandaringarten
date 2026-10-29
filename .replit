@@ -25,6 +25,7 @@ timeoutMs = 20000
 EXPO_PUBLIC_REVENUECAT_TEST_API_KEY = "test_CkakWBpfjKTigwdSheCZLbgCQOP"
 EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY = "goog_czotNhxjAbFRRgfVUenAPnjVkGE"
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = "appl_TCRBkFbqKVEzBQJHMtCwcECtFcn"
+MANDARIN_ADMIN_EMAILS = "yousamson@gmail.com"
 
 [nix]
 channel = "stable-25_05"

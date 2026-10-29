@@ -37,7 +37,7 @@ export type BillingReturnUrlRequestPolicyVersion = typeof BillingReturnUrlReques
 
 
 export const BillingReturnUrlRequestPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;
 
 export interface BillingReturnUrlRequest {
@@ -52,7 +52,7 @@ export type CheckoutInputPolicyVersion = typeof CheckoutInputPolicyVersion[keyof
 
 
 export const CheckoutInputPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;
 
 export interface CheckoutInput {
@@ -148,7 +148,7 @@ export type LegalConsentInputPolicyVersion = typeof LegalConsentInputPolicyVersi
 
 
 export const LegalConsentInputPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;
 
 export interface LegalConsentInput {
@@ -156,5 +156,87 @@ export interface LegalConsentInput {
   disclaimerAccepted: true;
   adultConfirmed: true;
   policyVersion: LegalConsentInputPolicyVersion;
+}
+
+export type AccountAccessAccess = typeof AccountAccessAccess[keyof typeof AccountAccessAccess];
+
+
+export const AccountAccessAccess = {
+  active: 'active',
+  subscription_required: 'subscription_required',
+  deleting: 'deleting',
+} as const;
+
+export interface AccountAccess {
+  isAdmin: boolean;
+  isPremium: boolean;
+  access: AccountAccessAccess;
+}
+
+export type AccountDeletionInputConfirmation = typeof AccountDeletionInputConfirmation[keyof typeof AccountDeletionInputConfirmation];
+
+
+export const AccountDeletionInputConfirmation = {
+  DELETE: 'DELETE',
+} as const;
+
+export interface AccountDeletionInput {
+  dataDeletionAccepted: true;
+  noRefundAccepted: true;
+  subscriptionCancellationAccepted: true;
+  confirmation: AccountDeletionInputConfirmation;
+}
+
+export interface AccountDeletionResult {
+  deleted: true;
+}
+
+export interface SupportThread {
+  id: string;
+  subject: string;
+  createdAt: string;
+  updatedAt: string;
+  lastMessagePreview: string;
+}
+
+export type SupportMessageAuthor = typeof SupportMessageAuthor[keyof typeof SupportMessageAuthor];
+
+
+export const SupportMessageAuthor = {
+  parent: 'parent',
+  team: 'team',
+} as const;
+
+export interface SupportMessage {
+  id: string;
+  author: SupportMessageAuthor;
+  text: string;
+  createdAt: string;
+}
+
+export interface SupportConversation {
+  thread: SupportThread;
+  messages: SupportMessage[];
+}
+
+export interface SupportThreadInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  subject: string;
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  text: string;
+}
+
+export interface SupportMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  text: string;
 }
 

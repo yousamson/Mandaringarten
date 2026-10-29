@@ -31,7 +31,7 @@ type StripeResponse = {
 export async function stripeRequest<T>(
   path: string,
   options: {
-    method?: "GET" | "POST";
+    method?: "GET" | "POST" | "DELETE";
     form?: URLSearchParams;
     idempotencyKey?: string;
   } = {},

@@ -5,6 +5,8 @@ import { db, learningProgressTable, learningRoundsTable, legalConsentsTable } fr
 import { AcceptLegalConsentBody, RecordLearningRoundBody, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
 import { hasCurrentConsent, POLICY_VERSION } from "../legal";
 import { hasPremiumMembership } from "./billing";
+import { withAccountWrite } from "../account-lifecycle";
+import { isAdministrator } from "../admin";
 
 const router: IRouter = Router();
 router.use(["/learning", "/legal"], (req, res, next) => {
@@ -15,10 +17,6 @@ router.use(["/learning", "/legal"], (req, res, next) => {
   }
   next();
 });
-
-async function ensureProgress(userId: string) {
-  await db.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
-}
 
 function output(row: typeof learningProgressTable.$inferSelect) {
   return GetLearningProgressResponse.parse({ selectedStage: row.selectedStage, xpByStage: row.xpByStage });
@@ -35,16 +33,23 @@ router.post("/legal/consent", async (req, res) => {
     res.status(400).json({ error: "Read and acknowledge both documents and confirm adult supervision." });
     return;
   }
-  await db.insert(legalConsentsTable).values({
-    clerkUserId: getAuth(req).userId!, policyVersion: POLICY_VERSION,
-  }).onConflictDoNothing();
+  const userId = getAuth(req).userId!;
+  await withAccountWrite(userId, async (tx) => {
+    await tx.insert(legalConsentsTable).values({ clerkUserId: userId, policyVersion: POLICY_VERSION }).onConflictDoNothing();
+  });
   res.json({ accepted: true, policyVersion: POLICY_VERSION });
 });
 
 router.get("/learning/progress", async (req, res) => {
   const userId = getAuth(req).userId!;
-  await ensureProgress(userId);
-  const [progress] = await db.select().from(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
+  if (!await hasPremiumMembership(userId) && !await isAdministrator(userId)) {
+    res.status(403).json({ error: "Renew your subscription to access member data.", code: "SUBSCRIPTION_REQUIRED" }); return;
+  }
+  const progress = await withAccountWrite(userId, async (tx) => {
+    await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
+    const [row] = await tx.select().from(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
+    return row;
+  });
   res.json(output(progress));
 });
 
@@ -66,8 +71,8 @@ router.put("/learning/progress", async (req, res) => {
   const parsed = UpdateLearningProgressBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid learning stage or legacy progress." }); return; }
   const userId = getAuth(req).userId!;
-  await ensureProgress(userId);
-  const saved = await db.transaction(async (tx) => {
+  const saved = await withAccountWrite(userId, async (tx) => {
+    await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
     const [current] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
     let xpByStage = [...current.xpByStage];
@@ -92,8 +97,8 @@ router.post("/learning/round", async (req, res) => {
   const parsed = RecordLearningRoundBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid game round." }); return; }
   const userId = getAuth(req).userId!;
-  await ensureProgress(userId);
-  const saved = await db.transaction(async (tx) => {
+  const saved = await withAccountWrite(userId, async (tx) => {
+    await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
     const [current] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
     const [existing] = await tx.select().from(learningRoundsTable).where(and(

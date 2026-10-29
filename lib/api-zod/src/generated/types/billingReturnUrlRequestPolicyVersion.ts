@@ -10,5 +10,5 @@ export type BillingReturnUrlRequestPolicyVersion = typeof BillingReturnUrlReques
 
 
 export const BillingReturnUrlRequestPolicyVersion = {
-  '2026-10-29': '2026-10-29',
+  '2026-10-291': '2026-10-29.1',
 } as const;
