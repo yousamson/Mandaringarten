@@ -14,3 +14,9 @@ Keep the workspace's minimum package release age enabled during security updates
 **Why:** The newest upstream release may be less than one day old even when an older patched release already fixes the advisory. Package maturity and vulnerability remediation can both be satisfied without weakening the supply-chain safeguard.
 
 **How to apply:** Choose the newest eligible patched release rather than adding release-age exceptions merely to use the latest package.
+
+When an Expo SDK release is so new that its matching `expo-auth-session` package is still blocked by the release-age safeguard, use the newest eligible compatible version rather than disabling the safeguard.
+
+**Why:** Clerk Expo can work with the previous SDK's auth-session version, while Expo's compatibility checker warns that the SDK-matched version is preferred.
+
+**How to apply:** Keep the warning visible, verify the app on its target platforms, and re-check for an eligible SDK-matched release before production.

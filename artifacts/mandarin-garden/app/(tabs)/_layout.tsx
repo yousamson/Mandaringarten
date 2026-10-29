@@ -7,6 +7,8 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { SymbolView } from 'expo-symbols';
+import { Redirect } from 'expo-router';
+import { useAuth } from '@clerk/expo';
 import { useLanguage } from '@/context/LanguageContext';
 import { translate } from '@/lib/i18n';
 
@@ -154,6 +156,9 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect href="/(auth)/welcome" />;
   if (Platform.OS === 'ios' && isLiquidGlassAvailable()) {
     return <NativeTabLayout />;
   }

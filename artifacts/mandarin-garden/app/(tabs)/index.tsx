@@ -64,7 +64,7 @@ export default function HomeScreen() {
             </View>
             <View>
               <Text style={[styles.brandName, { color: colors.foreground }]}>
-                字字樂園
+                {t('app.name')}
               </Text>
               <Text
                 style={[

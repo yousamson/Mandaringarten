@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useClerk, useUser } from '@clerk/expo';
 import { ActionButton, PageTitle, ProgressBar, Screen, Surface } from '@/components/LearningUI';
 import { useLearning } from '@/context/LearningContext';
 import { ageBandNote, ageBands } from '@/data/vocabulary';
@@ -25,6 +26,8 @@ export default function ParentScreen() {
     translate(language, key, values);
   const learning = useLearning();
   const subscription = useSubscription();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [confirmPurchase, setConfirmPurchase] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -79,6 +82,26 @@ export default function ParentScreen() {
           title={t('parent.title')}
           subtitle={t('parent.subtitle')}
         />
+
+        <Surface style={styles.accountCard}>
+          <View style={styles.accountIdentity}>
+            <Ionicons name="person-circle-outline" size={27} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.accountTitle, { color: colors.foreground }]}>
+                {t('auth.account')}
+              </Text>
+              <Text style={[styles.accountEmail, { color: colors.mutedForeground }]}>
+                {user?.primaryEmailAddress?.emailAddress ?? user?.username ?? ''}
+              </Text>
+            </View>
+          </View>
+          <ActionButton
+            label={t('auth.signOut')}
+            tone="outline"
+            onPress={() => void signOut()}
+            testID="sign-out"
+          />
+        </Surface>
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
@@ -612,6 +635,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 11,
     top: 11,
+  },
+  accountCard: {
+    gap: 12,
+  },
+  accountIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  accountTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  accountEmail: {
+    fontSize: 12,
+    marginTop: 2,
   },
   membershipCard: {
     gap: 13,
