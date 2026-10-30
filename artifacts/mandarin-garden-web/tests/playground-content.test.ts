@@ -1,9 +1,55 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { playgroundStages } from "@workspace/learning-content";
-import { buildRound } from "../src/lib/playground-games";
+import { buildRound, PACK_COUNT, PACK_SIZE, packsForStage } from "../src/lib/playground-games";
+import { pathTheme } from "../src/lib/playground-copy";
 
 const stages = playgroundStages;
+const expectedPathThemes = [
+  [
+    "Numbers & family", "People, body & colours", "Colours, animals & fruit", "Fruit, food & actions",
+    "Actions & describing words", "Toys, transport & home", "Nature, greetings & home",
+    "Routines, play & transport", "People, feelings & care", "Describing & doing words",
+  ],
+  [
+    "Meals & ingredients", "Fruit, places & weather", "Weather, feelings & shapes",
+    "Transport, routines & questions", "Communication, play & creativity", "Nature, plants & animals",
+    "Family, jobs & calendar", "Position, frequency & describing", "Comparisons, school & home items",
+    "Clothes, questions & wellbeing",
+  ],
+  [
+    "Nature, Earth & places", "Community & school", "Learning skills & choices",
+    "Helping, travel & daily life", "Qualities & feelings", "Relationships, time & festivals",
+    "Weather, nature & the body", "Health, people & media", "Arts, sport & travel",
+    "Time, frequency & connecting ideas",
+  ],
+  [
+    "Environment, society & technology", "Research, progress & aspirations",
+    "Character, reasoning & expression", "Discussion, community & civic life",
+    "Teams, literature & media", "Money, society & science", "Science, measurement & data",
+    "Logic, connections & life skills", "Emotions, qualities & idioms", "Chinese idioms",
+  ],
+];
+
+test("each stage has ten localized topic names for its 20-word paths", () => {
+  const languages = ["en", "zh-Hant", "zh-Hans"] as const;
+  for (let stage = 1; stage <= 4; stage++) {
+    const packs = packsForStage(stage);
+    assert.equal(packs.length, PACK_COUNT, `stage ${stage}`);
+    assert.ok(packs.every((pack) => pack.words.length === PACK_SIZE), `stage ${stage} pack size`);
+    assert.deepEqual(
+      packs.map((pack) => pathTheme("en", stage, pack.index)),
+      expectedPathThemes[stage - 1],
+      `stage ${stage} English topics`,
+    );
+    for (const language of languages) {
+      const themes = packs.map((pack) => pathTheme(language, stage, pack.index));
+      assert.ok(themes.every((theme) => theme.trim()), `${stage}/${language} has a blank topic`);
+      assert.equal(new Set(themes).size, PACK_COUNT, `${stage}/${language} has duplicate topics`);
+    }
+  }
+});
+
 for (const stage of stages) {
   test(`stage ${stage.stage} has 200 distinct complete vocabulary entries and 10 original stories`, () => {
     assert.equal(stage.words.length, 200);
