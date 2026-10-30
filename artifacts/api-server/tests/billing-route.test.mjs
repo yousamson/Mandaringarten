@@ -54,13 +54,17 @@ const stubs = {
         state.priceLookups.push(price.id);
         return { data: [price] };
       }
-      if (url.pathname === "/v1/subscriptions") return { data: [] };
+      if (url.pathname === "/v1/subscriptions") return { data: state.subscriptions };
       if (url.pathname === "/v1/checkout/sessions" && (options.method ?? "GET") === "GET") {
-        return { data: [] };
+        return { data: state.sessions };
       }
       if (url.pathname === "/v1/checkout/sessions" && options.method === "POST") {
         state.checkoutForms.push(options.form);
-        return { id: "cs_test_fixture", url: "https://checkout.stripe.test/session" };
+        return { id: "cs_test_fixture_" + state.checkoutForms.length, url: "https://checkout.stripe.test/session" };
+      }
+      if (url.pathname.startsWith("/v1/subscriptions/") && options.method === "DELETE") {
+        state.cancelledSubscriptions.push(url.pathname.split("/").at(-1));
+        return { id: url.pathname.split("/").at(-1), status: "canceled" };
       }
       throw new Error("Unexpected Stripe fixture request: " + endpoint);
     }
@@ -146,6 +150,9 @@ function setFixture(price) {
     prices: [price],
     priceLookups: [],
     checkoutForms: [],
+    subscriptions: [],
+    sessions: [],
+    cancelledSubscriptions: [],
   };
 }
 
@@ -244,6 +251,85 @@ test("checkout submits the exact test price returned by successful plan validati
       globalThis.__billingRouteTestState.checkoutForms[0].get("line_items[0][price]"),
       "price_checkout_validation",
     );
+  } finally {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  }
+});
+
+test("declined incomplete checkout can be retried and activates only after Stripe reports success", async () => {
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+  setFixture(fixturePrice);
+  const state = globalThis.__billingRouteTestState;
+  state.subscriptions = [{
+    id: "sub_declined",
+    status: "incomplete",
+    items: { data: [{ price: { id: fixturePrice.id } }] },
+  }];
+
+  try {
+    const declinedStatus = await fetch(`${baseUrl}/api/billing/status`);
+    assert.equal(declinedStatus.status, 200);
+    assert.equal((await declinedStatus.json()).isPremium, false);
+
+    const createCheckout = () => fetch(`${baseUrl}/api/billing/checkout`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost:3000",
+      },
+      body: JSON.stringify({
+        returnUrl: "http://localhost:3000/parent",
+        privacyAccepted: true,
+        disclaimerAccepted: true,
+        noRefundAccepted: true,
+        policyVersion: "2026-10-29.1",
+      }),
+    });
+
+    const retryResponse = await createCheckout();
+    assert.equal(retryResponse.status, 200);
+    assert.deepEqual(state.cancelledSubscriptions, ["sub_declined"]);
+    assert.equal(state.checkoutForms.length, 1);
+
+    // A still-open session can be retried directly rather than replaced.
+    state.subscriptions = [{
+      id: "sub_retry_incomplete",
+      status: "incomplete",
+      items: { data: [{ price: { id: fixturePrice.id } }] },
+    }];
+    state.sessions = [{
+      id: "cs_retry_open",
+      client_reference_id: "parent_test_fixture",
+      mode: "subscription",
+      status: "open",
+      url: "https://checkout.stripe.test/retry",
+      metadata: { currencyPolicy: "usd-only-v1", policyVersion: "test-policy" },
+    }];
+
+    const reuseResponse = await createCheckout();
+    assert.equal(reuseResponse.status, 200);
+    assert.equal((await reuseResponse.json()).url, "https://checkout.stripe.test/retry");
+    assert.equal(state.checkoutForms.length, 1);
+    assert.deepEqual(state.cancelledSubscriptions, ["sub_declined"]);
+
+    // Stripe's confirmed active subscription is the sole source of entitlement;
+    // another checkout attempt is rejected instead of creating a duplicate.
+    state.sessions = [];
+    state.subscriptions = [{
+      id: "sub_successful_retry",
+      status: "active",
+      items: { data: [{ price: { id: fixturePrice.id } }] },
+    }];
+    const statusResponse = await fetch(`${baseUrl}/api/billing/status`);
+    assert.equal(statusResponse.status, 200);
+    assert.equal((await statusResponse.json()).isPremium, true);
+
+    const duplicateResponse = await createCheckout();
+    assert.equal(duplicateResponse.status, 409);
+    assert.equal(state.checkoutForms.length, 1);
+    assert.equal(state.subscriptions.filter((subscription) => subscription.status === "active").length, 1);
   } finally {
     if (previousMode === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousMode;

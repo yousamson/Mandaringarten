@@ -324,7 +324,7 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
     const account = await getOrCreateCustomer(userId);
     const subscriptions = await listSubscriptions(account.stripeCustomerId);
     const managedSubscription = subscriptions.find((subscription) =>
-      ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(
+      ["active", "trialing", "past_due", "unpaid"].includes(
         subscription.status,
       ),
     );
@@ -378,6 +378,21 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
         .where(eq(checkoutConsentsTable.id, consent.id));
       res.json(CreateBillingCheckoutResponse.parse({ url: openSession.url }));
       return;
+    }
+
+    // A declined first payment can leave a subscription in `incomplete`.
+    // It does not grant access and cannot be managed in the billing portal.
+    // Retire it only after confirming there is no still-open Checkout session
+    // to reuse, so a parent can safely retry without creating duplicate plans.
+    for (const subscription of subscriptions) {
+      if (subscription.status !== "incomplete") continue;
+      await stripeRequest(
+        `/v1/subscriptions/${encodeURIComponent(subscription.id)}`,
+        {
+          method: "DELETE",
+          form: new URLSearchParams({ prorate: "false", invoice_now: "false" }),
+        },
+      );
     }
 
     const price = await getPremiumPrice();

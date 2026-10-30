@@ -34,7 +34,7 @@ export function MembershipPanel({ l }: { l: Language }) {
   const [noRefundOk, setNoRefundOk] = useState(false);
   const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
   const active = isAdmin || (status.data?.isPremium ?? false);
-  const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'].includes(status.data?.subscriptionStatus ?? '');
+  const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid'].includes(status.data?.subscriptionStatus ?? '');
   const checking = Boolean(isSignedIn && (account.query.isLoading || (!account.data && !account.query.isError) || (!isAdmin && status.isLoading)));
   const statusReady = Boolean(isSignedIn && status.data && !status.isError);
   const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && (status.isError || account.query.isError));
@@ -134,7 +134,7 @@ export function MembershipPanel({ l }: { l: Language }) {
                   {tr(l, 'I understand membership renews monthly until cancelled, cancellation takes effect at the end of the paid period, and payments are non-refundable except where mandatory law requires a refund or I was charged in error (see the ', '我了解會員每月自動續訂直至取消，取消於已付費期間結束時生效，且費用恕不退還；但強制性法律規定須退款或錯誤收費者除外（詳見', '我了解会员每月自动续订直至取消，取消于已付费期间结束时生效，且费用恕不退还；但强制性法律规定须退款或错误收费者除外（详见')}<DocLink to="/disclaimer">{disclaimerName(l)}</DocLink>{tr(l, ').', '）。', '）。')}
                 </ConsentCheck>
               </div>
-              <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>
+              <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : checkoutResult === 'cancelled' ? t.retry : t.upgrade} <ArrowRight size={15} /></button>
             </>
           )}
       </Show> : null}
