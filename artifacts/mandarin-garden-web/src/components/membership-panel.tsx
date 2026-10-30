@@ -107,7 +107,7 @@ export function MembershipPanel({ l }: { l: Language }) {
       <p className="panel-desc" data-testid="text-membership-state">{checking ? t.loading : status.isError && isSignedIn ? t.failed : active ? t.premiumActive : tr(l, 'No active membership', '尚無有效會員', '尚无有效会员')}</p>
       {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()} data-testid="button-retry-billing">{t.retry}</button></div> : null}
       {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${status.data.cancelAtPeriodEnd ? tr(l, 'Access until', '可使用至', '可使用至') : t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
-      <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div>
+      {!plan.isError ? <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div> : null}
       {plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
       {checkoutNotice ? (
         <div className="membership-note" role="status" data-testid="status-checkout">
