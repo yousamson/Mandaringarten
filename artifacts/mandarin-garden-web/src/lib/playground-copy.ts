@@ -1,6 +1,11 @@
 import type { Language } from './garden-data';
 import { ageStages } from './age-stages';
 import { cleanProductText } from './product-language';
+import { GAME_MODES } from './playground-modes';
+import type { GameMode } from './playground-modes';
+
+export { GAME_MODES };
+export type { GameMode };
 
 export const tr = (l: Language, en: string, hant: string, hans: string) => cleanProductText(l === 'en' ? en : l === 'zh-Hant' ? hant : hans);
 export const pick = (l: Language, v: readonly [string, string, string]) => tr(l, v[0], v[1], v[2]);
@@ -77,9 +82,6 @@ export const stageNotes: [string, string, string][] = [
 ];
 export const stageLabel = (l: Language, stage: number) => tr(l, `Stage ${stage}`, `第 ${stage} 階段`, `第 ${stage} 阶段`);
 
-export type { GameMode } from '@workspace/learning-content/games';
-import type { GameMode } from '@workspace/learning-content/games';
-export const GAME_MODES: GameMode[] = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order'];
 export const modeCopy: Record<GameMode, { name: [string, string, string]; hint: [string, string, string] }> = {
   match: { name: ['Meaning match', '詞義配對', '词义配对'], hint: ['Read the meaning, find the word.', '看意思，找出詞語。', '看意思，找出词语。'] },
   pinyin: { name: ['Pinyin match', '拼音配對', '拼音配对'], hint: ['Pick the pinyin that fits the characters.', '選出和漢字相配的拼音。', '选出和汉字相配的拼音。'] },

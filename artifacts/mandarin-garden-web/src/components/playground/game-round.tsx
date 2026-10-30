@@ -60,6 +60,9 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
     setCorrect(0);
     setSavedAnswers(0);
     void issueRef.current({ stage, mode, script }).then((round) => {
+      if (round.stage !== stage || round.mode !== mode) {
+        throw new Error('The issued round does not match the selected stage and game.');
+      }
       if (!cancelled) setChallenge(round);
     }).catch(() => {
       if (!cancelled) setIssueFailed(true);
@@ -133,7 +136,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   }
 
   return (
-    <section className="game-card" data-testid={`game-${mode}`}>
+    <section className="game-card" data-testid={`game-${mode}`} data-stage={stage} data-round-id={challenge.roundId}>
       <div className="game-head">
         <div>
           <div className="eyebrow">{pick(l, modeCopy[mode].name)}</div>

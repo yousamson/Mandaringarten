@@ -7,7 +7,8 @@ import { StoryReader } from '@/components/playground/story-reader';
 import { VocabBoard } from '@/components/playground/vocab-board';
 import { useLearningProgress, useMembership, useSelectStage, XP_COMPLETE, XP_PER_CORRECT, type NormalizedProgress } from '@/hooks/use-learning';
 import type { Language } from '@/lib/garden-data';
-import { GAME_MODES, modeCopy, pick, playgroundName, stageLabel, stageNames, tr, type GameMode } from '@/lib/playground-copy';
+import { GAME_MODES, modeCopy, pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
+import { initialPlaygroundMode, type GameMode } from '@/lib/playground-modes';
 
 export function PlaygroundSkeleton() {
   return (
@@ -102,8 +103,7 @@ function LockedPlayground({ l, signedIn }: { l: Language; signedIn: boolean }) {
 
 function PlaygroundBody({ uid, progress, l }: { uid: string; progress: NormalizedProgress; l: Language }) {
   const [mode, setMode] = useState<GameMode>(() => {
-    const requested = new URLSearchParams(window.location.search).get('mode');
-    return GAME_MODES.includes(requested as GameMode) ? requested as GameMode : 'match';
+    return initialPlaygroundMode(window.location.search);
   });
   const [selectError, setSelectError] = useState(false);
   const stageSelect = useSelectStage(uid);

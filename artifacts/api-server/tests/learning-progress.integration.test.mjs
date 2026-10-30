@@ -171,11 +171,13 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   await acceptConsent(createBrowser(lapsedFamily));
   assert.equal((await request('/learning/progress', { token: lapsedFamily.token })).status, 403,
     'consent must not replace the active membership requirement');
-  assert.equal((await request('/learning/rounds', {
-    token: lapsedFamily.token,
-    method: 'POST',
-    body: { stage: 1, mode: 'match', script: 'trad' },
-  })).status, 403, 'lapsed memberships cannot obtain answer challenges');
+  for (const mode of ['match', 'pinyin', 'listen', 'word-order', 'sentence-order']) {
+    assert.equal((await request('/learning/rounds', {
+      token: lapsedFamily.token,
+      method: 'POST',
+      body: { stage: 1, mode, script: 'trad' },
+    })).status, 403, `lapsed memberships cannot obtain ${mode} challenges through a direct request`);
+  }
 
   // Two independent browser stores belong to the same synthetic family.
   browserOne.storage.setItem(`mg-curriculum-progress:${familyA.userId}`, JSON.stringify({ xp: 150 }));
@@ -224,7 +226,7 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   };
   const duplicateResponses = await Promise.all(Array.from({ length: 8 }, () => postAnswer(browserOne, duplicateAnswer)));
   for (const result of duplicateResponses) {
-    assert.deepEqual(result, { correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 0] });
+    assert.deepEqual(result, { correct: true, selectedStage: 1, xpByStage: [100, 105, 35, 0] });
   }
 
   const otherChallenge = await issueRound(browserOne, { stage: 3, mode: 'listen' });
@@ -234,17 +236,17 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
     answer: duplicateAnswer.answer,
   })).status, 404, 'a question identity cannot be moved to a different issued round');
   assert.deepEqual(await getProgress(browserTwo), {
-    selectedStage: 1, xpByStage: [100, 105, 5, 0],
+    selectedStage: 1, xpByStage: [100, 105, 35, 0],
   }, 'invalid answer identities must not mutate saved progress');
 
   // A fresh request after reload and after logout/login observes server state.
   assert.deepEqual(await getProgress(browserTwo), {
-    selectedStage: 1, xpByStage: [100, 105, 5, 0],
+    selectedStage: 1, xpByStage: [100, 105, 35, 0],
   }, 'a separate browser context must see the shared account progress');
   assert.equal((await request('/learning/progress', { token: null })).status, 401,
     'logout removes the browser session');
   assert.deepEqual(await getProgress(browserOne), {
-    selectedStage: 1, xpByStage: [100, 105, 5, 0],
+    selectedStage: 1, xpByStage: [100, 105, 35, 0],
   }, 'logging back in restores the same account progress');
 
   // Persist a pending round in one browser, reload its storage module, replay
@@ -265,12 +267,12 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
     'pending rounds stay in their own browser context');
   useBrowserStorage(browserOne);
   assert.deepEqual(await postAnswer(browserOne, reloadedOutbox.pendingRounds(familyA.userId)[0]), {
-    correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 5],
+    correct: true, selectedStage: 1, xpByStage: [100, 105, 35, 5],
   });
   reloadedOutbox.acknowledgeRound(familyA.userId, pending.roundId, pending.questionId);
   assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), []);
   assert.deepEqual(await postAnswer(browserOne, pending), {
-    correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 5],
+    correct: true, selectedStage: 1, xpByStage: [100, 105, 35, 5],
   }, 'replaying an acknowledged or retried round remains idempotent on the server');
 
   // Account B has independent storage and progress, even if a round identifier
@@ -285,8 +287,37 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
     answer: otherRound.questions[0].word.trad,
   }), { correct: true, selectedStage: 1, xpByStage: [5, 0, 0, 0] });
   assert.deepEqual(await getProgress(browserOne), {
-    selectedStage: 1, xpByStage: [100, 105, 5, 5],
+    selectedStage: 1, xpByStage: [100, 105, 35, 5],
   }, 'another account cannot read or change this family’s XP');
+
+  const selectedStageResponse = await request('/learning/progress', {
+    token: browserOne.token,
+    method: 'PUT',
+    body: { selectedStage: 4 },
+  });
+  assert.deepEqual(selectedStageResponse.body, {
+    selectedStage: 4, xpByStage: [100, 105, 35, 5],
+  }, 'the selected stage remains account-owned before starting a game');
+  const expectedXp = [100, 105, 35, 5];
+  for (const mode of ['match', 'pinyin', 'listen', 'word-order', 'sentence-order']) {
+    const round = await issueRound(browserOne, { stage: selectedStageResponse.body.selectedStage, mode });
+    assert.equal(round.stage, 4, `${mode} uses the selected fourth-stage word bank`);
+    assert.equal(round.mode, mode, `${mode} is selected as soon as its round opens`);
+    assert.equal(round.questions.length, 5);
+    const question = round.questions[0];
+    assert.equal(question.mode, mode);
+    assert.equal(Object.hasOwn(question, 'answer'), false, 'answer keys remain server-side');
+    const answer = question.kind === 'order'
+      ? question.speakText
+      : mode === 'pinyin' ? question.word.pinyin : question.word.trad;
+    expectedXp[3] += 5;
+    assert.deepEqual(await postAnswer(browserOne, {
+      roundId: round.roundId,
+      questionId: question.id,
+      answer,
+    }), { correct: true, selectedStage: 4, xpByStage: [...expectedXp] },
+    `${mode} awards XP only to the selected fourth stage`);
+  }
 });
 
 async function createSyntheticAccount(subscriptionStatus) {

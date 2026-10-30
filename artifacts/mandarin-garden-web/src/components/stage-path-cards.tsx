@@ -4,6 +4,7 @@ import { useLearningProgress, useMembership } from '@/hooks/use-learning';
 import type { Language } from '@/lib/garden-data';
 import { packsForStage } from '@/lib/playground-games';
 import { GAME_MODES, modeCopy, pathTheme, pick, playgroundName, stageAges, stageLabel, stageNames, tr } from '@/lib/playground-copy';
+import { playgroundModeHref } from '@/lib/playground-modes';
 import { scriptFor } from '@/lib/speech';
 
 /** Premium word paths, generated from the parent-selected stage's 200-word bank. */
@@ -55,7 +56,7 @@ export function StagePathCards({ l }: { l: Language }) {
         </div>
         <div className="stage-games-grid">
           {GAME_MODES.map((mode) => (
-            <Link key={mode} href={`/playground?mode=${mode}`} className="stage-game-card" data-testid={`link-stage-game-${mode}`}>
+            <Link key={mode} href={playgroundModeHref(mode)} className="stage-game-card" data-testid={`link-stage-game-${mode}`}>
               <span className="stage-game-icon"><Sparkles size={16} /></span>
               <span className="stage-game-copy">
                 <strong>{pick(l, modeCopy[mode].name)}</strong>
