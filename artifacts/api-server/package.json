@@ -8,6 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:billing": "node --test tests/billing-route.test.mjs",
     "test:progress": "node --test tests/learning-progress.test.mjs",
     "test:progress:integration": "NODE_ENV=test node --test tests/learning-progress.integration.test.mjs"
   },
