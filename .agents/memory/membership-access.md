@@ -3,11 +3,11 @@ name: Membership access and account controls
 description: Paid membership activation, expiry restrictions, platform messages and account deletion requirements.
 ---
 
-Registration includes acknowledging the monthly paid subscription; creating a login identity does not itself activate membership. A confirmed payment is required for member access. Non-renewed accounts must not access normal member pages until payment succeeds again.
+Registration includes acknowledging the monthly paid subscription; creating a login identity does not itself activate membership. A confirmed payment is required for ordinary member access. The verified administrator remains entitled without payment or renewal; all other non-renewed accounts must pay again before accessing member pages.
 
 **Why:** the user requested「付費會員一旦未續訂閱，即被限制登入，並提供付費訂閱頁面，確認付費後才可登入，註冊同時確認付費訂閱才能成為會員」.
 
-**How to apply:** authenticate the parent but keep the account restricted to renewal, platform messages, deletion and legal information. Billing needs an authenticated identity, and parents must not be trapped behind payment when seeking help or deleting data. Preserve public free material for signed-out visitors. Scheduled cancellation does not remove already-paid access before its end date.
+**How to apply:** authenticate the parent but keep ordinary lapsed accounts restricted to renewal, platform messages, deletion and legal information. The verified administrator is the sole no-charge, continuously entitled exception and must never be sent through checkout or subscription management. Billing needs an authenticated identity, and parents must not be trapped behind payment when seeking help or deleting data. Preserve public free material for signed-out visitors. Scheduled cancellation does not remove already-paid access before its end date.
 
 Parents contact the management team through platform messages. Only the server-authorized administrator can see the team inbox navigation and contents; other members can see only their own conversations. The administrator login email is never shown on the website or inbox.
 
@@ -15,9 +15,9 @@ Parents contact the management team through platform messages. Only the server-a
 
 **How to apply:** gate administrator UI and inbox APIs using verified server-side administrator identity. Keep conversations private to their parent and authorized management. Do not expose the administrator login email in UI or legal contact details.
 
-Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts, while preserving mandatory legal exceptions.
+Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts. Keep the deletion-page acknowledgement aligned with the user's latest wording; do not restore removed exception wording unless requested.
 
-**Why:** the user requested self-service deletion and explicitly requires policy and no-refund acknowledgements before deletion.
+**Why:** the user requested self-service deletion and explicitly requires policy and no-refund acknowledgements before deletion, then specifically asked to remove the legal-refund/error-charge exception from the deletion-page checkbox.
 
 **How to apply:** require the deletion acknowledgements before accepting the request, then stop future billing, remove login/learning/messages, and clearly disclose unavoidable processor financial retention and minimal security records. Never claim that deleting the app account erases all third-party financial records.
 

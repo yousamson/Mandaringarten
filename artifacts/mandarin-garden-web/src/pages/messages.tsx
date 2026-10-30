@@ -58,7 +58,7 @@ function Inbox_({ l, uid, admin }: { l: Language; uid: string | null; admin: boo
       <section className="page-title">
         <div className="eyebrow">{admin ? <><ShieldAlert size={14} /> {tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</> : <><MessageCircle size={14} /> {tr(l, 'Messages', '訊息', '消息')}</>}</div>
         <h1>{admin ? tr(l, 'Every family conversation.', '所有家庭的對話。', '所有家庭的对话。') : tr(l, 'Talk with the garden team.', '與樂園團隊聊聊。', '与乐园团队聊聊。')}</h1>
-        <p>{admin ? tr(l, 'Replies are sent as the Mandarin Garden team. Families never see each other’s threads.', '回覆會以漢語樂園團隊身分送出。家庭之間看不到彼此的對話。', '回复会以汉语乐园团队身份发送。家庭之间看不到彼此的对话。') : tr(l, 'Questions about billing, your account or the lessons. Replies appear here, usually within a few days. Please do not share a child’s personal details.', '關於帳單、帳戶或課程的問題都可以留言，回覆會顯示在這裡，通常需要幾天。請勿提供孩子的個人資料。', '关于账单、账户或课程的问题都可以留言，回复会显示在这里，通常需要几天。请勿提供孩子的个人信息。')}</p>
+        <p>{admin ? tr(l, 'Replies are sent as the Mandarin Garden team. Families never see each other’s threads.', '回覆會以漢語樂園團隊身分送出。家庭之間看不到彼此的對話。', '回复会以汉语乐园团队身份发送。家庭之间看不到彼此的对话。') : tr(l, 'Questions about paid subscriptions, your account or the lessons. Replies appear here, usually within a few days. Please do not share a child’s personal details.', '關於付費訂閱、帳戶或課程的問題都可以留言，回覆會顯示在這裡，通常需要幾天。請勿提供孩子的個人資料。', '关于付费订阅、账户或课程的问题都可以留言，回复会显示在这里，通常需要几天。请勿提供孩子的个人信息。')}</p>
       </section>
       <div className={`inbox ${showDetail ? 'has-detail' : ''}`}>
         <aside className="inbox-list panel">

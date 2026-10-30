@@ -13,6 +13,7 @@ import {
 import type { LearningProgress, LearningRound, LearningRoundInput, LearningRoundRequest } from '@workspace/api-client-react';
 import { acknowledgeRound, OUTBOX_EVENT, pendingRounds, queueRound } from '@/lib/progress-outbox';
 import { toStage, type StageNumber } from '@/lib/playground-content';
+import { useAccountAccess } from '@/hooks/use-account';
 
 export const XP_COMPLETE = 100;
 export const XP_PER_CORRECT = 5;
@@ -30,10 +31,11 @@ export function normalizeProgress(data: { selectedStage: number; xpByStage: numb
 
 export function useMembership() {
   const { isSignedIn, isLoaded, user } = useUser();
+  const account = useAccountAccess();
   const uid = user?.id ?? null;
   const billing = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn), queryKey: [...getGetBillingStatusQueryKey(), uid], retry: false } });
-  const premium = Boolean(isSignedIn && billing.data?.isPremium === true);
-  const checking = !isLoaded || Boolean(isSignedIn && billing.isLoading);
+  const premium = Boolean(isSignedIn && (billing.data?.isPremium === true || account.isAdmin));
+  const checking = !isLoaded || Boolean(isSignedIn && (billing.isLoading || account.query.isLoading));
   return { isLoaded, isSignedIn: Boolean(isSignedIn), user, uid, billing, premium, checking };
 }
 

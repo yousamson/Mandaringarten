@@ -5,7 +5,7 @@ import { getGetBillingStatusQueryKey, useCreateBillingCheckout, useCreateBilling
 import { ArrowRight, Check, Leaf } from 'lucide-react';
 import { Link } from 'wouter';
 import { ConsentCheck, DisclaimerAgreement, DocLink, PrivacyAgreement, disclaimerName } from '@/components/legal/consent-check';
-import { accessQueryKey } from '@/hooks/use-account';
+import { accessQueryKey, useAccountAccess } from '@/hooks/use-account';
 import { billingCopy } from '@/lib/billing-copy';
 import { copy, type Language } from '@/lib/garden-data';
 import { LEGAL_VERSION } from '@/lib/legal-config';
@@ -18,9 +18,11 @@ export function MembershipPanel({ l }: { l: Language }) {
   const t = copy[l];
   const client = useQueryClient();
   const { isSignedIn, user } = useUser();
+  const account = useAccountAccess();
+  const isAdmin = account.isAdmin;
   const uid = user?.id ?? null;
   const statusKey = [...getGetBillingStatusQueryKey(), uid];
-  const status = useGetBillingStatus({ query: { enabled: isSignedIn ?? false, queryKey: statusKey, retry: false, refetchOnWindowFocus: true } });
+  const status = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn && !isAdmin), queryKey: statusKey, retry: false, refetchOnWindowFocus: true } });
   const plan = useGetBillingPlan({ query: { retry: false, staleTime: 300_000 } });
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
@@ -31,13 +33,13 @@ export function MembershipPanel({ l }: { l: Language }) {
   const [disclaimerOk, setDisclaimerOk] = useState(false);
   const [noRefundOk, setNoRefundOk] = useState(false);
   const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
-  const active = status.data?.isPremium ?? false;
+  const active = isAdmin || (status.data?.isPremium ?? false);
   const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'].includes(status.data?.subscriptionStatus ?? '');
-  const checking = Boolean(isSignedIn && status.isLoading);
+  const checking = Boolean(isSignedIn && (account.query.isLoading || (!account.data && !account.query.isError) || (!isAdmin && status.isLoading)));
   const statusReady = Boolean(isSignedIn && status.data && !status.isError);
-  const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && status.isError);
+  const busy = checkout.isPending || portal.isPending || working || checking || plan.isLoading || Boolean(isSignedIn && (status.isError || account.query.isError));
   const allAccepted = privacyOk && disclaimerOk && noRefundOk;
-  const canCheckout = statusReady && Boolean(plan.data) && !plan.isError && allAccepted && !busy;
+  const canCheckout = !isAdmin && statusReady && Boolean(plan.data) && !plan.isError && allAccepted && !busy;
   const priceLabel = plan.data?.priceLabel ?? billingCopy[l].priceUnavailable;
   const [pollExpired, setPollExpired] = useState(false);
   const pending = checkoutResult === 'success' && Boolean(isSignedIn) && !active;
@@ -79,7 +81,7 @@ export function MembershipPanel({ l }: { l: Language }) {
 
   const initiateCheckout = () => {
     setError('');
-    if (!isSignedIn || !plan.data || !allAccepted) return;
+    if (!isSignedIn || isAdmin || !plan.data || !allAccepted) return;
     setWorking(true);
     checkout.mutate(
       { data: { privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true, policyVersion: LEGAL_VERSION, successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/membership?checkout=cancelled` } },
@@ -93,6 +95,7 @@ export function MembershipPanel({ l }: { l: Language }) {
     );
   };
   const openPortal = () => {
+    if (isAdmin) return;
     setError('');
     setWorking(true);
     portal.mutate(
@@ -104,11 +107,12 @@ export function MembershipPanel({ l }: { l: Language }) {
   return (
     <section className="panel membership-card" data-testid="panel-membership">
       <h2><Leaf size={18} /> {t.membership}</h2>
-      <p className="panel-desc" data-testid="text-membership-state">{checking ? t.loading : status.isError && isSignedIn ? t.failed : active ? t.premiumActive : tr(l, 'No active membership', '尚無有效會員', '尚无有效会员')}</p>
-      {status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()} data-testid="button-retry-billing">{t.retry}</button></div> : null}
-      {status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${status.data.cancelAtPeriodEnd ? tr(l, 'Access until', '可使用至', '可使用至') : t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
-      {!plan.isError ? <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div> : null}
-      {plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
+      <p className="panel-desc" data-testid="text-membership-state">{checking ? t.loading : account.query.isError && isSignedIn ? tr(l, 'We could not confirm account access. Please try again.', '目前無法確認帳戶權限，請重試。', '目前无法确认账户权限，请重试。') : !isAdmin && status.isError && isSignedIn ? t.failed : isAdmin ? tr(l, 'Administrator membership is complimentary and stays active without payment or renewal.', '管理員會員免費並持續有效，無需付款或續訂。', '管理员会员免费并持续有效，无需付款或续订。') : active ? t.premiumActive : tr(l, 'No active membership', '尚無有效會員', '尚无有效会员')}</p>
+      {account.query.isError && isSignedIn ? <div className="alert"><p>{tr(l, 'We could not confirm account access.', '目前無法確認帳戶權限。', '目前无法确认账户权限。')}</p><button className="button-secondary" onClick={() => void account.query.refetch()} data-testid="button-retry-access">{t.retry}</button></div> : null}
+      {!isAdmin && status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()} data-testid="button-retry-billing">{t.retry}</button></div> : null}
+      {!isAdmin && status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${status.data.cancelAtPeriodEnd ? tr(l, 'Access until', '可使用至', '可使用至') : t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
+      {!isAdmin && !plan.isError ? <div className="plan-price">{plan.isLoading ? t.loading : priceLabel} <small>{t.perMonth}</small></div> : null}
+      {!isAdmin && plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
       {checkoutNotice ? (
         <div className="membership-note" role="status" data-testid="status-checkout">
           {checkoutNotice}
@@ -118,7 +122,7 @@ export function MembershipPanel({ l }: { l: Language }) {
       ) : null}
       <ul className="benefit-list">{t.benefits.map((benefit) => <li key={benefit}><Check size={15} />{benefit}</li>)}</ul>
       {error ? <div className="alert" role="alert">{error}</div> : null}
-      <Show when="signed-in">
+      {!isAdmin ? <Show when="signed-in">
         {hasSubscription
           ? <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={openPortal} disabled={busy} data-testid="button-manage-subscription">{busy ? t.loading : t.manage} <ArrowRight size={15} /></button>
           : (
@@ -133,7 +137,7 @@ export function MembershipPanel({ l }: { l: Language }) {
               <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : t.upgrade} <ArrowRight size={15} /></button>
             </>
           )}
-      </Show>
+      </Show> : null}
       <Show when="signed-out">
         <Link href="/sign-in" className="button-primary" data-testid="button-sign-in-to-upgrade">{t.signIn} · {t.upgrade} <ArrowRight size={15} /></Link>
       </Show>

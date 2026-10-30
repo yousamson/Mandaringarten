@@ -25,6 +25,7 @@ import {
 } from "../stripeClient";
 import { cancellationAtPeriodEnd, checkoutIdempotencyKey } from "../subscription-state";
 import { withAccountWrite } from "../account-lifecycle";
+import { isAdministrator } from "../admin";
 
 const PREMIUM_LOOKUP_KEY = "mandarin_garden_premium_monthly";
 const PREMIUM_AMOUNT = 999;
@@ -305,6 +306,10 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
     res.status(403).json({ error: "Accept the current privacy policy and legal disclaimer for your account first." });
     return;
   }
+  if (await isAdministrator(userId)) {
+    res.status(403).json({ error: "Administrator access does not require a paid subscription." });
+    return;
+  }
 
   const returnUrls = buildCheckoutReturnUrls(
     parsedBody.data,
@@ -422,6 +427,10 @@ router.post("/billing/portal", async (req, res): Promise<void> => {
   const parsedBody = CreateBillingPortalBody.safeParse(req.body);
   if (!parsedBody.success) {
     res.status(400).json({ error: "A valid return URL is required." });
+    return;
+  }
+  if (await isAdministrator(userId)) {
+    res.status(403).json({ error: "Administrator access does not require subscription management." });
     return;
   }
 

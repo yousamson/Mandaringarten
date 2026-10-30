@@ -63,7 +63,7 @@ router.use("/learning", async (req, res, next) => {
     res.status(403).json({ error: "Current privacy policy and disclaimer consent is required." });
     return;
   }
-  if (!await hasPremiumMembership(userId)) {
+  if (!await hasPremiumMembership(userId) && !await isAdministrator(userId)) {
     res.status(403).json({ error: "Active membership is required to choose a stage and save game rounds." });
     return;
   }
