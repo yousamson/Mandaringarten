@@ -9,11 +9,11 @@ Registration includes acknowledging the monthly paid subscription; creating a lo
 
 **How to apply:** authenticate the parent but keep the account restricted to renewal, platform messages, deletion and legal information. Billing needs an authenticated identity, and parents must not be trapped behind payment when seeking help or deleting data. Preserve public free material for signed-out visitors. Scheduled cancellation does not remove already-paid access before its end date.
 
-Parents contact the management team through platform messages, with a management-only inbox for replies. Administrator identity is configuration, not a public privacy-contact address.
+Parents contact the management team through platform messages. Only the server-authorized administrator can see the team inbox navigation and contents; other members can see only their own conversations. The administrator login email is never shown on the website or inbox.
 
-**Why:** the user requested a platform messaging feature and designated a management login. They did not authorize publishing that login email as a privacy contact.
+**Why:** the user requested a platform messaging feature and designated an administrator account, then reiterated that the team inbox must be hidden from members and free pages. They did not authorize publishing the login email.
 
-**How to apply:** keep conversations private to their parent and authorized management. Do not automatically convert the administrator login into public legal contact details.
+**How to apply:** gate administrator UI and inbox APIs using verified server-side administrator identity. Keep conversations private to their parent and authorized management. Do not expose the administrator login email in UI or legal contact details.
 
 Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts, while preserving mandatory legal exceptions.
 

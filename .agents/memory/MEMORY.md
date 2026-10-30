@@ -3,5 +3,5 @@
 - [Membership progression](membership-progression.md) — paid parents freely choose stages; 100 XP marks stage completion, not an unlock gate; never charge per-stage fees.
 - [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
 - [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.
-- [Membership access and account controls](membership-access.md) — payment activates access; lapsed accounts retain renewal/support/deletion; current members do not repeat policy consent at sign-in.
+- [Membership access and account controls](membership-access.md) — payment gates access; lapsed accounts retain renewal/support/deletion; consent is not repeated; team inbox stays administrator-only.
 - [Legacy progress migration](progress-migration.md) — overlapping browser snapshots are high-water baselines; reconcile them with distinct server rounds rather than importing once.

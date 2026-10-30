@@ -66,7 +66,7 @@ export default function AccountPage({ language: l }: { language: Language }) {
           <p className="panel-desc">{tr(l, 'This signs you out everywhere and cannot be undone.', '此操作會讓您在所有裝置登出，且無法復原。', '此操作会让您在所有设备退出登录，且无法恢复。')}</p>
           <ul className="fine-list">
             <li>{tr(l, 'Deleted: your sign-in identity, saved learning progress and XP, stage choice, policy agreements and all support messages.', '將刪除：登入身分、已儲存的學習進度與經驗值、階段選擇、政策同意紀錄及所有客服訊息。', '将删除：登录身份、已保存的学习进度与经验值、阶段选择、政策同意记录及所有客服消息。')}</li>
-            <li>{tr(l, 'Any ongoing subscription is cancelled immediately and access ends now, even if paid time remains.', '進行中的訂閱會立即取消，使用權即刻結束，即使仍有已付費的期間。', '进行中的订阅会立即取消，使用权即刻结束，即使仍有已付费的期间。')}</li>
+            <li>{tr(l, 'Any ongoing subscription is cancelled immediately and access ends now.', '進行中的訂閱會立即取消，使用權即刻結束。', '进行中的订阅会立即取消，使用权即刻结束。')}</li>
             <li>{tr(l, 'Not erased: payment and transaction records our payment processor, Stripe, must keep by law, and a minimal one-way (hashed) security record used to stop a deleted account being misused.', '不會刪除：付款處理商 Stripe 依法須保留的付款與交易紀錄，以及用於防止已刪除帳戶遭濫用的最少量單向雜湊安全紀錄。', '不会删除：付款处理商 Stripe 依法须保留的付款与交易记录，以及用于防止已删除账户遭滥用的最少量单向哈希安全记录。')}</li>
           </ul>
           <div className="consent-list">
