@@ -22,7 +22,7 @@ export function MembershipPanel({ l }: { l: Language }) {
   const isAdmin = account.isAdmin;
   const uid = user?.id ?? null;
   const statusKey = [...getGetBillingStatusQueryKey(), uid];
-  const status = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn && !isAdmin), queryKey: statusKey, retry: false, refetchOnWindowFocus: true } });
+  const status = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn && !isAdmin), queryKey: statusKey, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true } });
   const plan = useGetBillingPlan({ query: { retry: false, staleTime: 300_000 } });
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
@@ -33,6 +33,7 @@ export function MembershipPanel({ l }: { l: Language }) {
   const [disclaimerOk, setDisclaimerOk] = useState(false);
   const [noRefundOk, setNoRefundOk] = useState(false);
   const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
+  const returnedFromPortal = new URLSearchParams(window.location.search).get('billing') === 'returned';
   const active = isAdmin || (status.data?.isPremium ?? false);
   const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid'].includes(status.data?.subscriptionStatus ?? '');
   const checking = Boolean(isSignedIn && (account.query.isLoading || (!account.data && !account.query.isError) || (!isAdmin && status.isLoading)));
@@ -53,6 +54,22 @@ export function MembershipPanel({ l }: { l: Language }) {
     void client.invalidateQueries({ queryKey: statusKey });
     void client.invalidateQueries({ queryKey: accessQueryKey(uid) });
   };
+
+  // Stripe returns to this page after subscription changes. Recheck the
+  // authenticated status and entitlement before showing the current state.
+  useEffect(() => {
+    if (!returnedFromPortal || !isSignedIn || isAdmin || !uid) return;
+    void client.invalidateQueries({
+      queryKey: [...getGetBillingStatusQueryKey(), uid],
+      exact: true,
+      refetchType: 'active',
+    });
+    void client.invalidateQueries({
+      queryKey: accessQueryKey(uid),
+      exact: true,
+      refetchType: 'active',
+    });
+  }, [returnedFromPortal, isSignedIn, isAdmin, client, uid]);
 
   // After returning from Stripe: refetch now, then poll briefly while the payment is being confirmed.
   useEffect(() => {

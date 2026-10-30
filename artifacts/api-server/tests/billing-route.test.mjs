@@ -62,6 +62,10 @@ const stubs = {
         state.checkoutForms.push(options.form);
         return { id: "cs_test_fixture_" + state.checkoutForms.length, url: "https://checkout.stripe.test/session" };
       }
+      if (url.pathname === "/v1/billing_portal/sessions" && options.method === "POST") {
+        state.portalForms.push(options.form);
+        return { url: "https://billing.stripe.test/session" };
+      }
       if (url.pathname.startsWith("/v1/subscriptions/") && options.method === "DELETE") {
         state.cancelledSubscriptions.push(url.pathname.split("/").at(-1));
         return { id: url.pathname.split("/").at(-1), status: "canceled" };
@@ -70,7 +74,10 @@ const stubs = {
     }
   `,
   subscriptionState: `
-    export function cancellationAtPeriodEnd() { return false; }
+    export function cancellationAtPeriodEnd(subscription, periodEnd) {
+      return subscription?.cancel_at_period_end === true ||
+        (periodEnd !== null && subscription?.cancel_at === periodEnd);
+    }
     export function checkoutIdempotencyKey() { return "billing-route-test-key"; }
   `,
   accountLifecycle: `
@@ -150,6 +157,7 @@ function setFixture(price) {
     prices: [price],
     priceLookups: [],
     checkoutForms: [],
+    portalForms: [],
     subscriptions: [],
     sessions: [],
     cancelledSubscriptions: [],
@@ -210,6 +218,66 @@ test("development rejects a live-mode price", async () => {
   setFixture({ ...fixturePrice, id: "price_live_mismatch", livemode: true });
   try {
     assert.equal((await getPlan()).status, 503);
+  } finally {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  }
+});
+
+test("parent can return to the billing portal and sees renewal restored", async () => {
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+  setFixture(fixturePrice);
+  const state = globalThis.__billingRouteTestState;
+  const currentPeriodEnd = 1_800_000_000;
+  state.subscriptions = [{
+    id: "sub_scheduled_cancel",
+    status: "active",
+    current_period_end: currentPeriodEnd,
+    cancel_at_period_end: false,
+    cancel_at: currentPeriodEnd,
+    items: { data: [{ price: { id: fixturePrice.id }, current_period_end: currentPeriodEnd }] },
+  }];
+
+  try {
+    const beforeResume = await fetch(`${baseUrl}/api/billing/status`);
+    assert.equal(beforeResume.status, 200);
+    assert.deepEqual(await beforeResume.json(), {
+      isPremium: true,
+      subscriptionStatus: "active",
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      cancelAtPeriodEnd: true,
+    });
+
+    const portalResponse = await fetch(`${baseUrl}/api/billing/portal`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost:3000",
+      },
+      body: JSON.stringify({ returnUrl: "http://localhost:3000/parent" }),
+    });
+    assert.equal(portalResponse.status, 200);
+    assert.equal((await portalResponse.json()).url, "https://billing.stripe.test/session");
+    assert.equal(state.portalForms.length, 1);
+    assert.equal(state.portalForms[0].get("customer"), "cus_test_fixture");
+    assert.equal(
+      state.portalForms[0].get("return_url"),
+      "http://localhost:3000/parent?billing=returned",
+    );
+
+    // Model Stripe applying the portal's resume action before the parent
+    // page reloads and requests its authenticated billing status again.
+    state.subscriptions[0].cancel_at_period_end = false;
+    state.subscriptions[0].cancel_at = null;
+    const afterResume = await fetch(`${baseUrl}/api/billing/status`);
+    assert.equal(afterResume.status, 200);
+    assert.deepEqual(await afterResume.json(), {
+      isPremium: true,
+      subscriptionStatus: "active",
+      currentPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      cancelAtPeriodEnd: false,
+    });
   } finally {
     if (previousMode === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousMode;
