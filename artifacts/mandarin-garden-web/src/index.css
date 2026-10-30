@@ -793,3 +793,109 @@ a { color: inherit; text-decoration: none; }
   .home-pinyin-placement { margin-top: 16px; }
   .home-pinyin-card { width: 100%; }
 }
+
+/* Small-screen reading and game layout: contain content without disabling the
+   story picker’s intentional, touch-friendly horizontal scroll. */
+@media (max-width: 767px) {
+  .page-shell:has(.cur-grid),
+  .free-reading-page {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .cur-grid,
+  .cur-grid > *,
+  .game-card,
+  .story-card,
+  .stage-banner,
+  .stage-banner > div:first-child,
+  .banner-cheer {
+    min-width: 0;
+  }
+
+  .stage-banner {
+    gap: 14px;
+    padding: 19px 18px;
+  }
+  .stage-banner > div:first-child,
+  .banner-cheer {
+    flex-basis: 100%;
+    overflow-wrap: anywhere;
+  }
+  .banner-xp { line-height: 1.55; }
+
+  .game-card,
+  .story-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .game-head {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .game-head > div:first-child { min-width: 0; }
+  .game-hint,
+  .order-clue { overflow-wrap: anywhere; }
+  .game-pips { max-width: 100%; flex-wrap: wrap; }
+  .quiz-options,
+  .chunk-row { max-width: 100%; }
+  .quiz-feedback {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    line-height: 1.55;
+  }
+  .quiz-feedback > span { min-width: 0; overflow-wrap: anywhere; }
+  .answer-line { overflow-wrap: anywhere; }
+
+  .practice-heading { min-width: 0; align-items: flex-start; }
+  .practice-heading > div { min-width: 0; }
+  .story-title,
+  .story-title span,
+  .story-en {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .story-title span {
+    display: inline-block;
+    margin-left: 6px;
+  }
+  .story-picker {
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .story-tools { min-width: 0; }
+  .story-text { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 430px) {
+  .free-reading-page { padding-right: 0; padding-left: 0; }
+  .reading-listen-card {
+    min-width: 0;
+    padding: 22px 18px;
+    border-radius: 18px;
+  }
+  .reading-listen-card h1,
+  .reading-age-label,
+  .reading-listen-text {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .reading-listen-text {
+    font-size: clamp(18px, 5.5vw, 22px);
+    line-height: 1.9;
+  }
+  .reading-listen-actions {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+  .reading-listen-actions .button-primary {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+}
