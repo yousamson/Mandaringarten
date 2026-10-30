@@ -110,10 +110,20 @@ export interface LearningProgressInput {
   legacyXpTotal?: number;
 }
 
-export type LearningRoundInputMode = typeof LearningRoundInputMode[keyof typeof LearningRoundInputMode];
+export interface LearningRoundInput {
+  roundId: string;
+  questionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  answer: string;
+}
+
+export type LearningRoundRequestMode = typeof LearningRoundRequestMode[keyof typeof LearningRoundRequestMode];
 
 
-export const LearningRoundInputMode = {
+export const LearningRoundRequestMode = {
   match: 'match',
   pinyin: 'pinyin',
   listen: 'listen',
@@ -121,23 +131,102 @@ export const LearningRoundInputMode = {
   'sentence-order': 'sentence-order',
 } as const;
 
-export interface LearningRoundInput {
+export type LearningRoundRequestScript = typeof LearningRoundRequestScript[keyof typeof LearningRoundRequestScript];
+
+
+export const LearningRoundRequestScript = {
+  trad: 'trad',
+  simp: 'simp',
+} as const;
+
+export interface LearningRoundRequest {
   /**
      * @minimum 1
      * @maximum 4
      */
   stage: number;
-  mode: LearningRoundInputMode;
-  /**
-     * @minLength 8
-     * @maxLength 100
-     */
+  mode: LearningRoundRequestMode;
+  script: LearningRoundRequestScript;
+}
+
+export type LearningQuestionKind = typeof LearningQuestionKind[keyof typeof LearningQuestionKind];
+
+
+export const LearningQuestionKind = {
+  choice: 'choice',
+  order: 'order',
+} as const;
+
+export type LearningQuestionMode = typeof LearningQuestionMode[keyof typeof LearningQuestionMode];
+
+
+export const LearningQuestionMode = {
+  match: 'match',
+  pinyin: 'pinyin',
+  listen: 'listen',
+  'word-order': 'word-order',
+  'sentence-order': 'sentence-order',
+} as const;
+
+export type LearningQuestionWord = {
+  id: string;
+  trad: string;
+  simp: string;
+  pinyin: string;
+  en: string;
+};
+
+export interface LearningQuestion {
+  id: string;
+  kind: LearningQuestionKind;
+  mode: LearningQuestionMode;
+  prompt?: string;
+  speakText: string;
+  options?: string[];
+  word?: LearningQuestionWord;
+  chunks?: string[];
+  clue?: string;
+}
+
+export type LearningRoundMode = typeof LearningRoundMode[keyof typeof LearningRoundMode];
+
+
+export const LearningRoundMode = {
+  match: 'match',
+  pinyin: 'pinyin',
+  listen: 'listen',
+  'word-order': 'word-order',
+  'sentence-order': 'sentence-order',
+} as const;
+
+export interface LearningRound {
   roundId: string;
   /**
-     * @minimum 0
-     * @maximum 5
+     * @minimum 1
+     * @maximum 4
      */
-  correctCount: number;
+  stage: number;
+  mode: LearningRoundMode;
+  /**
+     * @minItems 1
+     * @maxItems 5
+     */
+  questions: LearningQuestion[];
+}
+
+export interface LearningAnswerResult {
+  correct: boolean;
+  /**
+     * @minimum 1
+     * @maximum 4
+     */
+  selectedStage: number;
+  /**
+     * @minItems 4
+     * @maxItems 4
+     * @items.minimum 0
+     */
+  xpByStage: number[];
 }
 
 export interface LegalConsentStatus {

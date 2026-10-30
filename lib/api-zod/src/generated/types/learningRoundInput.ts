@@ -5,23 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { LearningRoundInputMode } from './learningRoundInputMode';
 
 export interface LearningRoundInput {
-  /**
-     * @minimum 1
-     * @maximum 4
-     */
-  stage: number;
-  mode: LearningRoundInputMode;
-  /**
-     * @minLength 8
-     * @maxLength 100
-     */
   roundId: string;
+  questionId: string;
   /**
-     * @minimum 0
-     * @maximum 5
+     * @minLength 1
+     * @maxLength 500
      */
-  correctCount: number;
+  answer: string;
 }

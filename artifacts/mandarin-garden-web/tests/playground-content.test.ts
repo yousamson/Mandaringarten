@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { stage1 } from "../src/lib/playground-content/stage-1";
-import { stage2 } from "../src/lib/playground-content/stage-2";
-import { stage3 } from "../src/lib/playground-content/stage-3";
-import { stage4 } from "../src/lib/playground-content/stage-4";
+import { playgroundStages } from "@workspace/learning-content";
 import { buildRound } from "../src/lib/playground-games";
 
-const stages = [stage1, stage2, stage3, stage4];
+const stages = playgroundStages;
 for (const stage of stages) {
   test(`stage ${stage.stage} has 200 distinct complete vocabulary entries and 10 original stories`, () => {
     assert.equal(stage.words.length, 200);

@@ -3,7 +3,7 @@ import { clerkClient, getAuth } from "@clerk/express";
 import { eq, inArray, desc } from "drizzle-orm";
 import {
   db, accountDeletionsTable, billingAccountsTable, billingCustomersTable, billingCustomerScopesTable,
-  learningProgressTable, learningRoundsTable, legalConsentsTable, checkoutConsentsTable,
+  learningChallengesTable, learningProgressTable, learningRoundsTable, legalConsentsTable, checkoutConsentsTable,
   supportThreadsTable, supportMessagesTable,
 } from "@workspace/db";
 import { DeleteAccountBody } from "@workspace/api-zod";
@@ -92,6 +92,7 @@ router.delete("/account", async (req, res) => {
         .where(eq(supportThreadsTable.id, thread.id));
     }
     await tx.delete(learningRoundsTable).where(eq(learningRoundsTable.clerkUserId, userId));
+    await tx.delete(learningChallengesTable).where(eq(learningChallengesTable.clerkUserId, userId));
     await tx.delete(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
     await tx.delete(legalConsentsTable).where(eq(legalConsentsTable.clerkUserId, userId));
     await tx.delete(checkoutConsentsTable).where(eq(checkoutConsentsTable.clerkUserId, userId));

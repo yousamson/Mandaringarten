@@ -127,21 +127,14 @@ export const UpdateLearningProgressResponse = zod.object({
 })
 
 
-export const recordLearningRoundBodyStageMax = 4;
-
-export const recordLearningRoundBodyRoundIdMin = 8;
-export const recordLearningRoundBodyRoundIdMax = 100;
-
-export const recordLearningRoundBodyCorrectCountMin = 0;
-export const recordLearningRoundBodyCorrectCountMax = 5;
+export const recordLearningRoundBodyAnswerMax = 500;
 
 
 
 export const RecordLearningRoundBody = zod.object({
-  "stage": zod.int().min(1).max(recordLearningRoundBodyStageMax),
-  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
-  "roundId": zod.string().min(recordLearningRoundBodyRoundIdMin).max(recordLearningRoundBodyRoundIdMax),
-  "correctCount": zod.int().min(recordLearningRoundBodyCorrectCountMin).max(recordLearningRoundBodyCorrectCountMax)
+  "roundId": zod.uuid(),
+  "questionId": zod.uuid(),
+  "answer": zod.string().min(1).max(recordLearningRoundBodyAnswerMax)
 })
 
 export const recordLearningRoundResponseSelectedStageMax = 4;
@@ -154,8 +147,49 @@ export const recordLearningRoundResponseXpByStageMax = 4;
 
 
 export const RecordLearningRoundResponse = zod.object({
+  "correct": zod.boolean(),
   "selectedStage": zod.int().min(1).max(recordLearningRoundResponseSelectedStageMax),
   "xpByStage": zod.array(zod.int().min(recordLearningRoundResponseXpByStageItemMin)).min(recordLearningRoundResponseXpByStageMin).max(recordLearningRoundResponseXpByStageMax)
+})
+
+
+export const issueLearningRoundBodyStageMax = 4;
+
+
+
+export const IssueLearningRoundBody = zod.object({
+  "stage": zod.int().min(1).max(issueLearningRoundBodyStageMax),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "script": zod.enum(['trad', 'simp'])
+})
+
+export const issueLearningRoundResponseStageMax = 4;
+
+export const issueLearningRoundResponseQuestionsMax = 5;
+
+
+
+export const IssueLearningRoundResponse = zod.object({
+  "roundId": zod.uuid(),
+  "stage": zod.int().min(1).max(issueLearningRoundResponseStageMax),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "questions": zod.array(zod.object({
+  "id": zod.uuid(),
+  "kind": zod.enum(['choice', 'order']),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "prompt": zod.string().optional(),
+  "speakText": zod.string(),
+  "options": zod.array(zod.string()).optional(),
+  "word": zod.object({
+  "id": zod.string(),
+  "trad": zod.string(),
+  "simp": zod.string(),
+  "pinyin": zod.string(),
+  "en": zod.string()
+}).optional(),
+  "chunks": zod.array(zod.string()).optional(),
+  "clue": zod.string().optional()
+})).min(1).max(issueLearningRoundResponseQuestionsMax)
 })
 
 

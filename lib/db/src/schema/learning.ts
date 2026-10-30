@@ -11,9 +11,20 @@ export const learningProgressTable = pgTable("learning_progress", {
 export const learningRoundsTable = pgTable("learning_rounds", {
   clerkUserId: text("clerk_user_id").notNull(),
   roundId: text("round_id").notNull(),
+  challengeId: text("challenge_id"),
+  submittedAnswer: text("submitted_answer"),
   stage: integer("stage").notNull(),
   mode: text("mode").notNull(),
   correctCount: integer("correct_count").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.clerkUserId, table.roundId] })]);
+
+export const learningChallengesTable = pgTable("learning_challenges", {
+  clerkUserId: text("clerk_user_id").notNull(),
+  roundId: text("round_id").notNull(),
+  stage: integer("stage").notNull(),
+  mode: text("mode").notNull(),
+  answers: jsonb("answers").$type<Record<string, string>>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [primaryKey({ columns: [table.clerkUserId, table.roundId] })]);
 

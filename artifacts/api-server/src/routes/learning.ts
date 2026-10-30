@@ -1,8 +1,10 @@
 import { Router, type IRouter, type ErrorRequestHandler } from "express";
+import { randomUUID } from "node:crypto";
 import { getAuth } from "@clerk/express";
 import { and, eq, sql } from "drizzle-orm";
-import { db, learningProgressTable, learningRoundsTable, legalConsentsTable } from "@workspace/db";
-import { AcceptLegalConsentBody, RecordLearningRoundBody, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
+import { db, learningChallengesTable, learningProgressTable, learningRoundsTable, legalConsentsTable } from "@workspace/db";
+import { AcceptLegalConsentBody, IssueLearningRoundBody, IssueLearningRoundResponse, RecordLearningRoundBody, RecordLearningRoundResponse, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
+import { buildRound, type GameMode, type Script } from "@workspace/learning-content/games";
 import { hasCurrentConsent, POLICY_VERSION } from "../legal";
 import { hasPremiumMembership } from "./billing";
 import { withAccountWrite } from "../account-lifecycle";
@@ -100,31 +102,79 @@ router.put("/learning/progress", async (req, res) => {
   res.json(output(saved));
 });
 
+router.post("/learning/rounds", async (req, res): Promise<void> => {
+  const parsed = IssueLearningRoundBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Invalid game round." }); return; }
+  const userId = getAuth(req).userId!;
+  const roundId = randomUUID();
+  const questions = buildRound(parsed.data.stage, parsed.data.mode as GameMode, parsed.data.script as Script)
+    .map((question) => ({ ...question, id: randomUUID() }));
+  const answers = Object.fromEntries(questions.map(({ id, answer }) => [id, answer]));
+  await withAccountWrite(userId, async (tx) => {
+    await tx.insert(learningChallengesTable).values({
+      clerkUserId: userId,
+      roundId,
+      stage: parsed.data.stage,
+      mode: parsed.data.mode,
+      answers,
+    });
+  });
+  res.status(201).json(IssueLearningRoundResponse.parse({
+    roundId,
+    stage: parsed.data.stage,
+    mode: parsed.data.mode,
+    questions: questions.map(({ answer: _answer, ...question }) => question),
+  }));
+});
+
 router.post("/learning/round", async (req, res) => {
   const parsed = RecordLearningRoundBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: "Invalid game round." }); return; }
+  if (!parsed.success) { res.status(400).json({ error: "Invalid answer submission." }); return; }
   const userId = getAuth(req).userId!;
   const saved = await withAccountWrite(userId, async (tx) => {
     await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
     const [current] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
+    const [challenge] = await tx.select().from(learningChallengesTable).where(and(
+      eq(learningChallengesTable.clerkUserId, userId),
+      eq(learningChallengesTable.roundId, parsed.data.roundId),
+    )).limit(1);
+    if (!challenge || !Object.hasOwn(challenge.answers, parsed.data.questionId)) return null;
+    if (challenge.answers[parsed.data.questionId] !== parsed.data.answer) {
+      return { progress: current, correct: false };
+    }
     const [existing] = await tx.select().from(learningRoundsTable).where(and(
-      eq(learningRoundsTable.clerkUserId, userId), eq(learningRoundsTable.roundId, parsed.data.roundId),
+      eq(learningRoundsTable.clerkUserId, userId), eq(learningRoundsTable.roundId, parsed.data.questionId),
     )).limit(1);
     if (existing) {
-      return existing.stage === parsed.data.stage && existing.mode === parsed.data.mode &&
-        existing.correctCount === parsed.data.correctCount ? current : null;
+      return existing.challengeId === parsed.data.roundId &&
+        existing.submittedAnswer === parsed.data.answer &&
+        existing.stage === challenge.stage && existing.mode === challenge.mode &&
+        existing.correctCount === 1
+        ? { progress: current, correct: true }
+        : null;
     }
-    // Save to the stage actually played, even if another device changed the parent selection.
-    await tx.insert(learningRoundsTable).values({ clerkUserId: userId, ...parsed.data });
+    // Award only a server-checked correct answer to the stage recorded at issue time.
+    await tx.insert(learningRoundsTable).values({
+      clerkUserId: userId,
+      roundId: parsed.data.questionId,
+      challengeId: challenge.roundId,
+      submittedAnswer: parsed.data.answer,
+      stage: challenge.stage,
+      mode: challenge.mode,
+      correctCount: 1,
+    });
     const xpByStage = [...current.xpByStage];
-    xpByStage[parsed.data.stage - 1] += parsed.data.correctCount * 5;
+    xpByStage[challenge.stage - 1] += 5;
     const [updated] = await tx.update(learningProgressTable).set({ xpByStage, updatedAt: new Date() })
       .where(eq(learningProgressTable.clerkUserId, userId)).returning();
-    return updated;
+    return { progress: updated, correct: true };
   });
-  if (!saved) { res.status(409).json({ error: "This round identifier was already used for a different result." }); return; }
-  res.json(output(saved));
+  if (!saved) {
+    res.status(404).json({ error: "This round or question was not issued to this account." });
+    return;
+  }
+  res.json(RecordLearningRoundResponse.parse({ ...output(saved.progress), correct: saved.correct }));
 });
 
 const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {

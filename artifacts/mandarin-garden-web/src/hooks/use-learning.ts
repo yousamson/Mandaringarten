@@ -6,12 +6,12 @@ import {
   getGetLearningProgressQueryKey,
   useGetBillingStatus,
   useGetLearningProgress,
+  issueLearningRound,
   recordLearningRound,
   useUpdateLearningProgress,
 } from '@workspace/api-client-react';
-import type { LearningProgress, LearningRoundInput } from '@workspace/api-client-react';
+import type { LearningProgress, LearningRound, LearningRoundInput, LearningRoundRequest } from '@workspace/api-client-react';
 import { acknowledgeRound, OUTBOX_EVENT, pendingRounds, queueRound } from '@/lib/progress-outbox';
-import type { GameMode } from '@/lib/playground-copy';
 import { toStage, type StageNumber } from '@/lib/playground-content';
 
 export const XP_COMPLETE = 100;
@@ -79,20 +79,21 @@ export function useRecordRound(uid: string | null) {
       const token = await getToken();
       if (!token || currentUser.current !== uid) throw new Error('Sign in to save progress.');
       const result = await recordLearningRound(data, { headers: { Authorization: `Bearer ${token}` } });
-      try { acknowledgeRound(uid, data.roundId); } catch { /* replay is server-idempotent */ }
+      if (!result.correct) throw new Error('The answer was not confirmed by the server.');
+      try { acknowledgeRound(uid, data.roundId, data.questionId); } catch { /* replay is server-idempotent */ }
       if (currentUser.current === uid) {
         client.setQueryData<LearningProgress>(progressQueryKey(uid), (current) => current ? {
           selectedStage: current.selectedStage,
           xpByStage: result.xpByStage.map((xp, index) => Math.max(xp, current.xpByStage[index] ?? 0)),
-        } : result);
+        } : { selectedStage: result.selectedStage, xpByStage: result.xpByStage });
         void client.invalidateQueries({ queryKey: progressQueryKey(uid) });
       }
-      return result;
+      return { selectedStage: result.selectedStage, xpByStage: result.xpByStage };
     },
   });
-  const record = (input: { stage: number; mode: GameMode; roundId: string; correctCount: number }, callbacks?: { onSuccess?: () => void; onError?: () => void }) => {
+  const record = (input: LearningRoundInput, callbacks?: { onSuccess?: () => void; onError?: () => void }) => {
     mutation.mutate(
-      { stage: toStage(input.stage), mode: input.mode, roundId: input.roundId, correctCount: Math.max(0, Math.min(5, Math.floor(input.correctCount))) },
+      input,
       {
         onSuccess: () => callbacks?.onSuccess?.(),
         onError: () => callbacks?.onError?.(),
@@ -100,6 +101,21 @@ export function useRecordRound(uid: string | null) {
     );
   };
   return { record, replay: mutation.mutateAsync, isPending: mutation.isPending };
+}
+
+export function useIssueLearningRound(uid: string | null) {
+  const { getToken, userId } = useAuth();
+  const currentUser = useRef(userId);
+  currentUser.current = userId;
+  const mutation = useMutation({
+    mutationFn: async (data: LearningRoundRequest): Promise<LearningRound> => {
+      if (!uid || currentUser.current !== uid) throw new Error('Account changed.');
+      const token = await getToken();
+      if (!token || currentUser.current !== uid) throw new Error('Sign in to start a game.');
+      return issueLearningRound(data, { headers: { Authorization: `Bearer ${token}` } });
+    },
+  });
+  return { issue: mutation.mutateAsync, isPending: mutation.isPending, isError: mutation.isError };
 }
 
 /** Resume only this signed-in account's unacknowledged rounds, including after reload. */

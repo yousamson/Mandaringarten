@@ -55,6 +55,7 @@ await build({
 const {
   billingCustomerScopesTable,
   db,
+  learningChallengesTable,
   learningProgressTable,
   learningRoundsTable,
   legalConsentsTable,
@@ -131,6 +132,11 @@ after(async () => {
   }
   for (const userId of testUsers) {
     await db.delete(learningRoundsTable).where(eq(learningRoundsTable.clerkUserId, userId));
+    try {
+      await db.delete(learningChallengesTable).where(eq(learningChallengesTable.clerkUserId, userId));
+    } catch (error) {
+      if (error?.cause?.code !== '42P01') throw error;
+    }
     await db.delete(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
     await db.delete(legalConsentsTable).where(eq(legalConsentsTable.clerkUserId, userId));
     await db.delete(billingCustomerScopesTable).where(eq(billingCustomerScopesTable.clerkUserId, userId));
@@ -165,6 +171,11 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   await acceptConsent(createBrowser(lapsedFamily));
   assert.equal((await request('/learning/progress', { token: lapsedFamily.token })).status, 403,
     'consent must not replace the active membership requirement');
+  assert.equal((await request('/learning/rounds', {
+    token: lapsedFamily.token,
+    method: 'POST',
+    body: { stage: 1, mode: 'match', script: 'trad' },
+  })).status, 403, 'lapsed memberships cannot obtain answer challenges');
 
   // Two independent browser stores belong to the same synthetic family.
   browserOne.storage.setItem(`mg-curriculum-progress:${familyA.userId}`, JSON.stringify({ xp: 150 }));
@@ -173,53 +184,78 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
     selectedStage: 1, xpByStage: [100, 50, 0, 0],
   });
 
-  const firstRound = {
-    stage: 2, mode: 'match', roundId: 'browser-one-round-01', correctCount: 4,
+  const firstRound = await issueRound(browserOne, { stage: 2, mode: 'match' });
+  const firstQuestion = firstRound.questions[0];
+  assert.equal(typeof firstRound.roundId, 'string');
+  assert.equal(typeof firstQuestion.id, 'string');
+  assert.equal(Object.hasOwn(firstQuestion, 'answer'), false, 'answer keys must stay server-side');
+  assert.deepEqual(await postAnswer(browserOne, {
+    roundId: firstRound.roundId, questionId: firstQuestion.id, answer: 'client-invented-answer',
+  }), { correct: false, selectedStage: 1, xpByStage: [100, 50, 0, 0] },
+  'a made-up correct answer must not award XP');
+  const firstAnswer = {
+    roundId: firstRound.roundId, questionId: firstQuestion.id, answer: firstQuestion.word.trad,
   };
-  assert.deepEqual(await postRound(browserOne, firstRound), {
-    selectedStage: 1, xpByStage: [100, 70, 0, 0],
+  assert.deepEqual(await postAnswer(browserOne, firstAnswer), {
+    correct: true, selectedStage: 1, xpByStage: [100, 55, 0, 0],
   });
-  assert.deepEqual(await importLegacySnapshot(browserTwo), {
-    selectedStage: 1, xpByStage: [100, 120, 30, 0],
-  }, 'a higher second-browser snapshot merges without removing the server-earned round');
-  assert.deepEqual(await sendLegacySnapshot(browserOne, 150), {
-    selectedStage: 1, xpByStage: [100, 120, 30, 0],
-  }, 'a stale snapshot must not duplicate or reduce XP');
-
-  const duplicateRound = {
-    stage: 3, mode: 'listen', roundId: 'concurrent-round-01', correctCount: 3,
-  };
-  const duplicateResponses = await Promise.all(
-    Array.from({ length: 8 }, () => postRound(browserOne, duplicateRound)),
-  );
-  assert.ok(duplicateResponses.every((result) =>
-    JSON.stringify(result) === JSON.stringify({ selectedStage: 1, xpByStage: [100, 120, 45, 0] })),
-  'concurrent retries of one round must award XP exactly once');
-
-  const conflict = await request('/learning/round', {
+  assert.equal((await request('/learning/round', {
     token: browserOne.token,
     method: 'POST',
-    body: { ...duplicateRound, correctCount: 4 },
-  });
-  assert.equal(conflict.status, 409, 'reusing a round ID with changed results must conflict');
+    body: { stage: 2, mode: 'match', roundId: 'client-made-round-01', correctCount: 5 },
+  })).status, 400, 'client-provided scores and round IDs are no longer accepted');
+  assert.equal((await postAnswer(browserOne, {
+    roundId: '00000000-0000-4000-8000-000000000001',
+    questionId: '00000000-0000-4000-8000-000000000002',
+    answer: '一',
+  })).status, 404, 'new client-generated identities must not be accepted');
+  assert.deepEqual(await importLegacySnapshot(browserTwo), {
+    selectedStage: 1, xpByStage: [100, 105, 30, 0],
+  }, 'a higher second-browser snapshot merges without removing the server-earned round');
+  assert.deepEqual(await sendLegacySnapshot(browserOne, 150), {
+    selectedStage: 1, xpByStage: [100, 105, 30, 0],
+  }, 'a stale snapshot must not duplicate or reduce XP');
+
+  const duplicateRound = await issueRound(browserOne, { stage: 3, mode: 'listen' });
+  const duplicateAnswer = {
+    roundId: duplicateRound.roundId,
+    questionId: duplicateRound.questions[0].id,
+    answer: duplicateRound.questions[0].word.trad,
+  };
+  const duplicateResponses = await Promise.all(Array.from({ length: 8 }, () => postAnswer(browserOne, duplicateAnswer)));
+  for (const result of duplicateResponses) {
+    assert.deepEqual(result, { correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 0] });
+  }
+
+  const otherChallenge = await issueRound(browserOne, { stage: 3, mode: 'listen' });
+  assert.equal((await postAnswer(browserOne, {
+    roundId: otherChallenge.roundId,
+    questionId: duplicateAnswer.questionId,
+    answer: duplicateAnswer.answer,
+  })).status, 404, 'a question identity cannot be moved to a different issued round');
   assert.deepEqual(await getProgress(browserTwo), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 0],
-  }, 'a changed payload conflict must not mutate saved progress');
+    selectedStage: 1, xpByStage: [100, 105, 5, 0],
+  }, 'invalid answer identities must not mutate saved progress');
 
   // A fresh request after reload and after logout/login observes server state.
   assert.deepEqual(await getProgress(browserTwo), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 0],
+    selectedStage: 1, xpByStage: [100, 105, 5, 0],
   }, 'a separate browser context must see the shared account progress');
   assert.equal((await request('/learning/progress', { token: null })).status, 401,
     'logout removes the browser session');
   assert.deepEqual(await getProgress(browserOne), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 0],
+    selectedStage: 1, xpByStage: [100, 105, 5, 0],
   }, 'logging back in restores the same account progress');
 
   // Persist a pending round in one browser, reload its storage module, replay
   // through the authenticated API, and acknowledge only after server success.
   const outbox = await loadOutbox();
-  const pending = { stage: 4, mode: 'word-order', roundId: 'pending-replay-01', correctCount: 2 };
+  const pendingRound = await issueRound(browserOne, { stage: 4, mode: 'word-order' });
+  const pending = {
+    roundId: pendingRound.roundId,
+    questionId: pendingRound.questions[0].id,
+    answer: pendingRound.questions[0].speakText,
+  };
   useBrowserStorage(browserOne);
   outbox.queueRound(familyA.userId, pending);
   const reloadedOutbox = await loadOutbox();
@@ -228,13 +264,13 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), [],
     'pending rounds stay in their own browser context');
   useBrowserStorage(browserOne);
-  assert.deepEqual(await postRound(browserOne, reloadedOutbox.pendingRounds(familyA.userId)[0]), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 10],
+  assert.deepEqual(await postAnswer(browserOne, reloadedOutbox.pendingRounds(familyA.userId)[0]), {
+    correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 5],
   });
-  reloadedOutbox.acknowledgeRound(familyA.userId, pending.roundId);
+  reloadedOutbox.acknowledgeRound(familyA.userId, pending.roundId, pending.questionId);
   assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), []);
-  assert.deepEqual(await postRound(browserOne, pending), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 10],
+  assert.deepEqual(await postAnswer(browserOne, pending), {
+    correct: true, selectedStage: 1, xpByStage: [100, 105, 5, 5],
   }, 'replaying an acknowledged or retried round remains idempotent on the server');
 
   // Account B has independent storage and progress, even if a round identifier
@@ -242,11 +278,14 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   assert.deepEqual(await getProgress(otherFamilyBrowser), {
     selectedStage: 1, xpByStage: [0, 0, 0, 0],
   });
-  assert.deepEqual(await postRound(otherFamilyBrowser, {
-    ...duplicateRound, stage: 1, correctCount: 1,
-  }), { selectedStage: 1, xpByStage: [5, 0, 0, 0] });
+  const otherRound = await issueRound(otherFamilyBrowser, { stage: 1, mode: 'match' });
+  assert.deepEqual(await postAnswer(otherFamilyBrowser, {
+    roundId: otherRound.roundId,
+    questionId: otherRound.questions[0].id,
+    answer: otherRound.questions[0].word.trad,
+  }), { correct: true, selectedStage: 1, xpByStage: [5, 0, 0, 0] });
   assert.deepEqual(await getProgress(browserOne), {
-    selectedStage: 1, xpByStage: [100, 120, 45, 10],
+    selectedStage: 1, xpByStage: [100, 105, 5, 5],
   }, 'another account cannot read or change this family’s XP');
 });
 
@@ -316,14 +355,24 @@ async function sendLegacySnapshot(browser, legacyXpTotal) {
   return response.body;
 }
 
-async function postRound(browser, round) {
+async function issueRound(browser, { stage, mode, script = 'trad' }) {
+  const response = await request('/learning/rounds', {
+    token: browser.token,
+    method: 'POST',
+    body: { stage, mode, script },
+  });
+  assert.equal(response.status, 201, `round issue failed: ${JSON.stringify(response.body)}`);
+  return response.body;
+}
+
+async function postAnswer(browser, answer) {
   const response = await request('/learning/round', {
     token: browser.token,
     method: 'POST',
-    body: round,
+    body: answer,
   });
-  assert.equal(response.status, 200, `round request failed: ${JSON.stringify(response.body)}`);
-  return response.body;
+  if (response.status === 200) return response.body;
+  return response;
 }
 
 async function getProgress(browser) {

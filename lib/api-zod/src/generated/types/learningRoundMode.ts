@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LearningRoundInputMode = typeof LearningRoundInputMode[keyof typeof LearningRoundInputMode];
+export type LearningRoundMode = typeof LearningRoundMode[keyof typeof LearningRoundMode];
 
 
-export const LearningRoundInputMode = {
+export const LearningRoundMode = {
   match: 'match',
   pinyin: 'pinyin',
   listen: 'listen',

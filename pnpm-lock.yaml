@@ -192,6 +192,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/learning-content':
+        specifier: workspace:*
+        version: link:../../lib/learning-content
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -513,6 +516,9 @@ importers:
       '@workspace/api-client-react':
         specifier: workspace:*
         version: link:../../lib/api-client-react
+      '@workspace/learning-content':
+        specifier: workspace:*
+        version: link:../../lib/learning-content
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -817,6 +823,8 @@ importers:
       '@fastify/deepmerge':
         specifier: ^3.2.4
         version: 3.2.4
+
+  lib/learning-content: {}
 
   scripts:
     dependencies:

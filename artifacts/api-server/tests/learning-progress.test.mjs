@@ -35,7 +35,7 @@ test('a higher snapshot from a second browser merges, but an older one never dou
   assert.deepEqual(mergeLegacyProgress(higher, 230, earned), higher);
 });
 
-const { questionAwardId, queueRound, pendingRounds, acknowledgeRound } = await load('../../mandarin-garden-web/src/lib/progress-outbox.ts');
+const { queueRound, pendingRounds, acknowledgeRound } = await load('../../mandarin-garden-web/src/lib/progress-outbox.ts');
 const storage = new Map();
 globalThis.localStorage = {
   get length() { return storage.size; },
@@ -48,9 +48,9 @@ globalThis.window = new EventTarget();
 
 test('pending rounds survive reload, stay account-isolated and acknowledge only that round', async () => {
   storage.clear();
-  const round = { stage: 1, mode: 'match', roundId: 'test-round-1', correctCount: 5 };
+  const round = { roundId: 'server-round-1', questionId: 'server-question-1', answer: '一' };
   queueRound('family-a', round);
-  queueRound('family-a', { ...round, roundId: 'test-round-2', stage: 4 });
+  queueRound('family-a', { ...round, questionId: 'server-question-2', answer: '二' });
   queueRound('family-b', round);
   // Loading a fresh copy represents a reload with the same browser storage.
   const reloaded = await load('../../mandarin-garden-web/src/lib/progress-outbox.ts');
@@ -58,27 +58,20 @@ test('pending rounds survive reload, stay account-isolated and acknowledge only 
   assert.equal(pendingRounds('family-b').length, 1);
   queueRound('family-a', round);
   assert.equal(pendingRounds('family-a').length, 2);
-  acknowledgeRound('family-a', round.roundId);
+  acknowledgeRound('family-a', round.roundId, round.questionId);
   assert.equal(pendingRounds('family-a').length, 1);
   assert.equal(pendingRounds('family-b').length, 1);
 });
 
-test('per-question XP event IDs are stable for retries and distinct across questions', () => {
-  const first = questionAwardId('game-round-123', 0);
-  assert.equal(first, questionAwardId('game-round-123', 0));
-  assert.notEqual(first, questionAwardId('game-round-123', 1));
-  assert.throws(() => questionAwardId('game-round-123', -1), RangeError);
-});
-
-test('pending per-question XP awards remain distinct and idempotent in the outbox', () => {
+test('server-issued question identities keep per-answer retries distinct in the outbox', () => {
   storage.clear();
-  const answer0 = { stage: 2, mode: 'match', roundId: questionAwardId('game-round-123', 0), correctCount: 1 };
-  const answer1 = { ...answer0, roundId: questionAwardId('game-round-123', 1) };
+  const answer0 = { roundId: 'server-round', questionId: 'server-question-0', answer: '一' };
+  const answer1 = { ...answer0, questionId: 'server-question-1', answer: '二' };
   queueRound('family-a', answer0);
   queueRound('family-a', answer1);
   queueRound('family-a', answer0);
   assert.deepEqual(pendingRounds('family-a'), [answer0, answer1]);
-  acknowledgeRound('family-a', answer0.roundId);
+  acknowledgeRound('family-a', answer0.roundId, answer0.questionId);
   assert.deepEqual(pendingRounds('family-a'), [answer1]);
 });
 

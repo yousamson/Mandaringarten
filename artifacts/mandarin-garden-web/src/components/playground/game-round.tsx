@@ -1,20 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Check, CloudOff, RotateCcw, Undo2, Volume2 } from 'lucide-react';
+import type { LearningQuestion, LearningRound, LearningRoundInput } from '@workspace/api-client-react';
 import type { Language } from '@/lib/garden-data';
-import { buildRound, newRoundId, type Question } from '@/lib/playground-games';
+import type { Question } from '@/lib/playground-games';
 import { modeCopy, pick, tr, type GameMode } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
-import { useRecordRound, XP_PER_CORRECT } from '@/hooks/use-learning';
-import { questionAwardId } from '@/lib/progress-outbox';
-import type { LearningRoundInput } from '@workspace/api-client-react';
+import { useIssueLearningRound, useRecordRound, XP_PER_CORRECT } from '@/hooks/use-learning';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type DisplayQuestion = Question & { id: string };
+
+function withLocalAnswer(question: LearningQuestion, script: 'trad' | 'simp'): DisplayQuestion {
+  if (question.kind === 'choice' && question.word && question.options) {
+    const answer = question.mode === 'pinyin'
+      ? question.word.pinyin
+      : question.mode === 'listen'
+        ? question.speakText
+        : script === 'simp' ? question.word.simp : question.word.trad;
+    return { ...question, answer } as DisplayQuestion;
+  }
+  return { ...question, answer: question.speakText } as DisplayQuestion;
+}
 
 export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMode; l: Language; uid: string }) {
   const script = scriptFor(l);
   const [seed, setSeed] = useState(0);
-  const questions = useMemo(() => buildRound(stage, mode, script), [stage, mode, script, seed]);
-  const roundId = useMemo(() => newRoundId(), [stage, mode, seed]);
+  const [challenge, setChallenge] = useState<LearningRound | null>(null);
+  const [issueFailed, setIssueFailed] = useState(false);
+  const { issue } = useIssueLearningRound(uid);
+  const issueRef = useRef(issue);
+  issueRef.current = issue;
+  const questions = useMemo(
+    () => challenge?.questions.map((question) => withLocalAnswer(question, script)) ?? [],
+    [challenge, script],
+  );
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [built, setBuilt] = useState<number[]>([]);
@@ -27,63 +46,88 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   replayRef.current = replay;
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const savingIds = useRef(new Set<string>());
-  const activeRoundId = useRef(roundId);
-  activeRoundId.current = roundId;
+  const activeRoundId = challenge?.roundId ?? null;
+  const activeRoundIdRef = useRef(activeRoundId);
+  activeRoundIdRef.current = activeRoundId;
 
-  const q: Question | undefined = questions[idx];
-  const done = idx >= questions.length;
+  useEffect(() => {
+    let cancelled = false;
+    setChallenge(null);
+    setIssueFailed(false);
+    setIdx(0);
+    setPicked(null);
+    setBuilt([]);
+    setCorrect(0);
+    setSavedAnswers(0);
+    void issueRef.current({ stage, mode, script }).then((round) => {
+      if (!cancelled) setChallenge(round);
+    }).catch(() => {
+      if (!cancelled) setIssueFailed(true);
+    });
+    return () => { cancelled = true; };
+  }, [stage, mode, script, seed, uid]);
+
+  const done = Boolean(challenge && idx >= questions.length);
   const save: SaveState = pendingSaves > 0 ? 'saving' : failedAnswers.length ? 'error' : savedAnswers > 0 ? 'saved' : 'idle';
+  const q: DisplayQuestion | undefined = questions[idx];
 
   const saveAnswer = (input: LearningRoundInput, ownerRoundId: string) => {
-    if (savingIds.current.has(input.roundId)) return;
-    savingIds.current.add(input.roundId);
+    if (savingIds.current.has(input.questionId)) return;
+    savingIds.current.add(input.questionId);
     setPendingSaves((count) => count + 1);
     const request = saveQueue.current.then(async () => { await replayRef.current(input); });
     saveQueue.current = request.then(() => undefined, () => undefined);
     const finish = () => {
-      savingIds.current.delete(input.roundId);
+      savingIds.current.delete(input.questionId);
       setPendingSaves((count) => Math.max(0, count - 1));
     };
     void request.then(
       () => {
-        if (activeRoundId.current === ownerRoundId) setSavedAnswers((count) => count + 1);
-        setFailedAnswers((items) => items.filter((item) => item.roundId !== input.roundId));
+        if (activeRoundIdRef.current === ownerRoundId) setSavedAnswers((count) => count + 1);
+        setFailedAnswers((items) => items.filter((item) => item.questionId !== input.questionId));
         finish();
       },
       () => {
-        if (activeRoundId.current === ownerRoundId) {
-          setFailedAnswers((items) => items.some((item) => item.roundId === input.roundId) ? items : [...items, input]);
-        }
+        setFailedAnswers((items) => items.some((item) => item.questionId === input.questionId) ? items : [...items, input]);
         finish();
       },
     );
   };
   const retryFailedAnswers = () => {
-    for (const input of failedAnswers) saveAnswer(input, activeRoundId.current);
+    if (!activeRoundId) return;
+    for (const input of failedAnswers) saveAnswer(input, activeRoundId);
   };
 
-  // Listen mode plays each new word once; replay is always available.
   useEffect(() => {
     if (q && q.kind === 'choice' && q.mode === 'listen') speakMandarin(q.speakText, script);
   }, [q, script]);
   useEffect(() => () => stopSpeech(), []);
 
   const answer = (value: string) => {
-    if (picked || !q) return;
+    if (picked || !q || !challenge) return;
     setPicked(value);
     if (value === q.answer) {
-      setCorrect((c) => c + 1);
+      setCorrect((count) => count + 1);
       saveAnswer({
-        stage,
-        mode,
-        roundId: questionAwardId(roundId, idx),
-        correctCount: 1,
-      }, roundId);
+        roundId: challenge.roundId,
+        questionId: q.id,
+        answer: value,
+      }, challenge.roundId);
     }
   };
   const next = () => { setIdx((i) => i + 1); setPicked(null); setBuilt([]); };
-  const restart = () => { setSeed((s) => s + 1); setIdx(0); setPicked(null); setBuilt([]); setCorrect(0); setSavedAnswers(0); };
+  const restart = () => { setSeed((value) => value + 1); setIdx(0); setPicked(null); setBuilt([]); setCorrect(0); setSavedAnswers(0); };
 
+  if (!challenge) {
+    return (
+      <div className="game-card" role="status">
+        <p className="panel-desc">{issueFailed
+          ? tr(l, 'This round could not start. Please try again.', '目前無法開始新的一輪，請重試。', '目前无法开始新的一轮，请重试。')
+          : tr(l, 'Preparing your questions…', '正在準備題目…', '正在准备题目…')}</p>
+        {issueFailed ? <button className="button-secondary" onClick={restart} data-testid="button-retry-round-start">{tr(l, 'Retry', '重試', '重试')}</button> : null}
+      </div>
+    );
+  }
   if (questions.length === 0) {
     return <div className="game-card"><p className="panel-desc">{tr(l, 'No questions available for this stage yet.', '此階段暫時沒有題目。', '此阶段暂时没有题目。')}</p></div>;
   }
@@ -123,8 +167,8 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
             )}
           </div>
           <div className={`quiz-options ${q.mode === 'pinyin' ? 'pinyin-options' : ''}`}>
-            {q.options.map((o, i) => (
-              <button key={o} className={`quiz-option ${picked && o === q.answer ? 'correct' : picked === o ? 'incorrect' : ''}`} disabled={Boolean(picked)} onClick={() => answer(o)} data-testid={`button-option-${i}`}>{o}</button>
+            {q.options.map((option, i) => (
+              <button key={option} className={`quiz-option ${picked && option === q.answer ? 'correct' : picked === option ? 'incorrect' : ''}`} disabled={Boolean(picked)} onClick={() => answer(option)} data-testid={`button-option-${i}`}>{option}</button>
             ))}
           </div>
           {picked ? (
@@ -143,17 +187,17 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
           </div>
           <div className={`answer-line ${picked ? (picked === q.answer ? 'good' : 'bad') : ''}`} data-testid="text-built">{built.map((i) => q.chunks[i]).join('') || '\u00a0'}</div>
           <div className="chunk-row">
-            {q.chunks.map((c, i) => (
+            {q.chunks.map((chunk, i) => (
               <button key={i} className={`quiz-option chunk ${q.mode === 'word-order' ? 'char' : ''}`} disabled={Boolean(picked) || built.includes(i)} onClick={() => {
-                const nb = [...built, i];
-                setBuilt(nb);
-                if (nb.length === q.chunks.length) answer(nb.map((j) => q.chunks[j]).join(''));
-              }} data-testid={`button-chunk-${i}`}>{c}</button>
+                const nextBuilt = [...built, i];
+                setBuilt(nextBuilt);
+                if (nextBuilt.length === q.chunks.length) answer(nextBuilt.map((j) => q.chunks[j]).join(''));
+              }} data-testid={`button-chunk-${i}`}>{chunk}</button>
             ))}
           </div>
           {!picked && built.length ? (
             <div className="order-tools">
-              <button className="text-next" onClick={() => setBuilt((b) => b.slice(0, -1))} data-testid="button-undo-chunk"><Undo2 size={12} /> {tr(l, 'Undo', '退一步', '退一步')}</button>
+              <button className="text-next" onClick={() => setBuilt((items) => items.slice(0, -1))} data-testid="button-undo-chunk"><Undo2 size={12} /> {tr(l, 'Undo', '退一步', '退一步')}</button>
               <button className="text-next" onClick={() => setBuilt([])} data-testid="button-clear-chunks"><RotateCcw size={12} /> {tr(l, 'Clear', '重來', '重来')}</button>
             </div>
           ) : null}
