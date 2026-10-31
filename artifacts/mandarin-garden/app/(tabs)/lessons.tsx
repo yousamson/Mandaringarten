@@ -282,7 +282,28 @@ export default function LessonsScreen() {
               </Pressable>
             ))}
           </View>
-        ) : null}
+        ) : (
+          <Surface style={styles.lockedCard}>
+            <Ionicons name="book-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                {localized(language, freeReading.title)}
+              </Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {tr(language, 'Read the free story now. Membership includes 10 stories in each stage.', '可先閱讀免費短文；會員可閱讀每個階段的 10 篇故事。', '可先阅读免费短文；会员可阅读每个阶段的 10 篇故事。')}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={tr(language, 'Open free story', '開啟免費短文', '打开免费短文')}
+              testID="open-free-story"
+              onPress={() => setShowFreeReading(true)}
+              style={[styles.smallButton, { backgroundColor: colors.secondary }]}
+            >
+              <Ionicons name="play-circle-outline" size={24} color={colors.primary} />
+            </Pressable>
+          </Surface>
+        )}
       </ScrollView>
 
       <Modal visible={selectedPath !== null} animationType="slide" onRequestClose={() => setSelectedPath(null)}>

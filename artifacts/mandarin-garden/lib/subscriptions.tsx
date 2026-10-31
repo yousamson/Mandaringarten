@@ -41,7 +41,7 @@ export function getWebsiteOrigin(): string {
 function useSubscriptionValue() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
-  setAuthTokenGetter(getToken);
+  setAuthTokenGetter(isLoaded && isSignedIn ? getToken : null);
 
   const siteOrigin = getWebsiteOrigin();
   const request = Platform.OS === 'web'
@@ -50,6 +50,7 @@ function useSubscriptionValue() {
   const userId = user?.id ?? 'signed-out';
 
   const plan = useGetBillingPlan({
+    request: { skipAuth: true },
     query: {
       staleTime: 300_000,
       retry: 2,
@@ -156,6 +157,8 @@ function useSubscriptionValue() {
     isPremium,
     hasBillingCustomer,
     isPlanLoading: plan.isLoading,
+    planError: plan.error,
+    accountError: status.error ?? access.error ?? null,
     canPurchase: Boolean(
       plan.data &&
         status.isSuccess &&

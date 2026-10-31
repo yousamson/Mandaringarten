@@ -5,3 +5,4 @@
 - [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.
 - [Membership access and account controls](membership-access.md) — payment gates ordinary access; verified admin membership is free; lapsed members retain renewal/support/deletion.
 - [Legacy progress migration](progress-migration.md) — overlapping browser snapshots are high-water baselines; reconcile them with distinct server rounds rather than importing once.
+- [Expo browser test sessions](expo-test-sessions.md) — a Clerk test login on the website host does not establish a signed-in session on the separate Expo preview host.

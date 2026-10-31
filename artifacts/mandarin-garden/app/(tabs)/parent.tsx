@@ -190,7 +190,7 @@ export default function ParentScreen() {
                 </View>
               ) : (
                 <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
-                  {subscription.error
+                  {subscription.planError
                     ? t('parent.planLoadError')
                     : t('parent.planSetupPendingWeb')}
                 </Text>
@@ -211,7 +211,13 @@ export default function ParentScreen() {
                 >
                   <Ionicons name="refresh" size={16} color={colors.destructive} />
                   <Text style={[styles.retryText, { color: colors.destructive }]}>
-                    {t('parent.planLoadError')}
+                    {subscription.planError
+                      ? t('parent.planLoadError')
+                      : language === 'en'
+                        ? 'Could not verify account access. Tap to retry.'
+                        : language === 'zh-Hans'
+                          ? '未能確認帳戶權限，點此重試。'
+                          : '未能確認帳戶權限，點此重試。'}
                   </Text>
                 </Pressable>
               ) : !subscription.isLoading && !subscription.isSignedIn ? (

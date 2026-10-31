@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/expo';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, PageTitle, Surface } from '@/components/LearningUI';
 import { useLearning, XP_PER_CORRECT } from '@/context/LearningContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -32,6 +34,7 @@ import { shuffle } from '@workspace/learning-content/games';
 type DisplayQuestion = LearningQuestion & { answer: string };
 
 const allModes: GameMode[] = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order'];
+const freeModes: GameMode[] = ['pinyin'];
 
 function getAnswer(question: LearningQuestion, script: 'trad' | 'simp'): string {
   if (question.kind === 'order') return question.speakText;
@@ -63,6 +66,8 @@ function displayQuestion(question: LearningQuestion, script: 'trad' | 'simp'): D
 }
 
 export default function GamesScreen() {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = Platform.OS === 'web' ? 84 : 64 + insets.bottom;
   const colors = useColors();
   const { language } = useLanguage();
   const t = (en: string, hant: string, hans: string) =>
@@ -74,7 +79,7 @@ export default function GamesScreen() {
   const queryClient = useQueryClient();
   const script = language === 'zh-Hans' ? 'simp' : 'trad';
   const stage = subscription.isPremium ? learning.selectedStage : 1;
-  const availableModes = subscription.isPremium ? allModes : ['pinyin' as const];
+  const availableModes = subscription.isPremium ? allModes : freeModes;
   const [mode, setMode] = useState<GameMode>('pinyin');
   const [round, setRound] = useState<LearningRound | null>(null);
   const [freeQuestions, setFreeQuestions] = useState<DisplayQuestion[]>([]);
@@ -93,6 +98,8 @@ export default function GamesScreen() {
   } | null>(null);
 
   const issueRound = useIssueLearningRound();
+  const issueRoundRef = useRef(issueRound.mutateAsync);
+  issueRoundRef.current = issueRound.mutateAsync;
   const recordAnswer = useRecordLearningRound();
   const questions = useMemo(() => {
     if (subscription.isPremium) {
@@ -132,8 +139,7 @@ export default function GamesScreen() {
         active = false;
       };
     }
-    void issueRound
-      .mutateAsync({ data: { stage, mode, script } })
+    void issueRoundRef.current({ data: { stage, mode, script } })
       .then((nextRound) => {
         if (active) setRound(nextRound);
       })
@@ -143,7 +149,7 @@ export default function GamesScreen() {
     return () => {
       active = false;
     };
-  }, [issueRound.mutateAsync, mode, script, seed, stage, subscription.isPremium]);
+  }, [mode, script, seed, stage, subscription.isPremium]);
 
   useEffect(() => {
     if (question?.kind === 'choice' && question.mode === 'listen') {
@@ -246,6 +252,7 @@ export default function GamesScreen() {
             <Pressable
               key={`${option}-${optionIndex}`}
               accessibilityRole="button"
+              testID={`game-option-${optionIndex + 1}`}
               disabled={picked !== null}
               onPress={() => answer(option)}
               style={[
@@ -317,7 +324,11 @@ export default function GamesScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarHeight + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
         <PageTitle
           eyebrow={t('PLAY & PRACTISE', '遊戲練習', '游戏练习')}
           title={t('Learning games', '學習遊戲', '学习游戏')}
