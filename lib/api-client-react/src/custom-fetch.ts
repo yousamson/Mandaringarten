@@ -362,7 +362,24 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  let response = await fetch(input, { ...init, method, headers });
+
+  // A conditional 304 has no representation for this client to reuse. Some
+  // proxies still return one even for a no-store request, so retry a GET once
+  // without validators rather than surfacing an empty-response parse failure.
+  if (method === "GET" && response.status === 304) {
+    const retryHeaders = new Headers(headers);
+    retryHeaders.delete("if-none-match");
+    retryHeaders.delete("if-modified-since");
+    retryHeaders.set("cache-control", "no-cache");
+    retryHeaders.set("pragma", "no-cache");
+    response = await fetch(input, {
+      ...init,
+      cache: "no-store",
+      method,
+      headers: retryHeaders,
+    });
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

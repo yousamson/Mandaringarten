@@ -193,6 +193,9 @@ export async function hasPremiumMembership(userId: string): Promise<boolean> {
 }
 
 router.get("/billing/plan", async (req, res): Promise<void> => {
+  // The plan is public but must be fetched as a complete JSON response.
+  // Conditional 304 responses are treated as errors by the shared API client.
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
     const price = await getPremiumPrice();
     res.json(

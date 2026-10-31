@@ -140,6 +140,7 @@ export default function HomeScreen() {
                 key={band.value}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
+                testID={`home-age-${band.value}`}
                 onPress={() => learning.setAgeBand(band.value)}
                 style={[
                   styles.ageChip,
@@ -265,7 +266,34 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </View>
-        ) : null}
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${freeReading.title[language]} · ${tr(l, 'Open free story', '開啟免費短文', '打开免费短文')}`}
+            testID="home-free-story"
+            onPress={() => openLesson({ story: 'free' })}
+            style={[styles.freeStoryCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <View style={styles.freeStoryHeading}>
+              <Ionicons name="headset-outline" size={19} color={colors.primary} />
+              <Text style={[styles.storyTitle, { color: colors.foreground }]}>
+                {freeReading.title[language]}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+            </View>
+            <Text
+              style={[styles.freeStoryPreview, { color: colors.mutedForeground }]}
+              numberOfLines={3}
+            >
+              {freeReading.text[language]}
+            </Text>
+            <Text style={[styles.freeStoryAge, { color: colors.primary }]}>
+              {t(ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.2-3.label')}
+              {' · '}
+              {tr(l, 'Free story · tap to listen', '免費短篇 · 點擊聆聽', '免费短篇 · 点击聆听')}
+            </Text>
+          </Pressable>
+        )}
 
         <Text style={[styles.footer, { color: colors.mutedForeground }]}>
           {tr(l, 'A learning playground that grows with your child.', '陪孩子一起長大的學習樂園。', '陪孩子一起长大的学习乐园。')}
@@ -276,7 +304,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 48, gap: 16 },
+  content: { padding: 20, paddingBottom: 112, gap: 16 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brandMark: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
@@ -318,5 +346,9 @@ const styles = StyleSheet.create({
   storyList: { gap: 7 },
   storyRow: { minHeight: 48, borderWidth: 1, borderRadius: 13, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
   storyTitle: { flex: 1, fontSize: 12, fontWeight: '700' },
+  freeStoryCard: { borderWidth: 1, borderRadius: 16, padding: 14, gap: 9 },
+  freeStoryHeading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  freeStoryPreview: { fontSize: 12, lineHeight: 18 },
+  freeStoryAge: { fontSize: 10, fontWeight: '700' },
   footer: { textAlign: 'center', fontSize: 11, lineHeight: 17, paddingVertical: 8 },
 });

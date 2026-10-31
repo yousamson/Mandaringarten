@@ -170,8 +170,8 @@ function setFixture(price) {
   };
 }
 
-async function getPlan() {
-  return fetch(`${baseUrl}/api/billing/plan`);
+async function getPlan(headers = {}) {
+  return fetch(`${baseUrl}/api/billing/plan`, { headers });
 }
 
 test("production rejects a Stripe test-mode price", async () => {
@@ -212,6 +212,27 @@ test("development accepts a matching Stripe test-mode price", async () => {
     const response = await getPlan();
     assert.equal(response.status, 200);
     assert.equal((await response.json()).priceLabel, "US$9.99");
+  } finally {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  }
+});
+
+test("plan endpoint bypasses conditional caching and always returns its JSON body", async () => {
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+  setFixture(fixturePrice);
+  try {
+    const first = await getPlan();
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get("cache-control"), "no-store, no-cache, must-revalidate");
+    const etag = first.headers.get("etag");
+    assert.ok(etag);
+    assert.equal((await first.json()).priceLabel, "US$9.99");
+
+    const conditional = await getPlan({ "If-None-Match": etag });
+    assert.equal(conditional.status, 200);
+    assert.equal((await conditional.json()).priceLabel, "US$9.99");
   } finally {
     if (previousMode === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousMode;

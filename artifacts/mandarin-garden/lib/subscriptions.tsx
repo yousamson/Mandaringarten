@@ -50,7 +50,7 @@ function useSubscriptionValue() {
   const userId = user?.id ?? 'signed-out';
 
   const plan = useGetBillingPlan({
-    request: { skipAuth: true },
+    request: { skipAuth: true, cache: 'no-store' },
     query: {
       staleTime: 300_000,
       retry: 2,

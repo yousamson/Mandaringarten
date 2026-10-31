@@ -36,6 +36,7 @@ export default function ParentScreen() {
     : routeParams.billing;
   const [confirmPurchase, setConfirmPurchase] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [openingWebsite, setOpeningWebsite] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [noRefundAccepted, setNoRefundAccepted] = useState(false);
@@ -93,6 +94,22 @@ export default function ParentScreen() {
       await subscription.manageSubscription();
     } catch {
       setNotice(t('parent.manageSubscriptionFailed'));
+    }
+  };
+
+  const openWebsiteMembership = async () => {
+    setNotice(null);
+    setOpeningWebsite(true);
+    try {
+      await WebBrowser.openBrowserAsync(`${getWebsiteOrigin()}/membership`);
+    } catch {
+      setNotice(
+        language === 'en'
+          ? 'Could not open the website membership page.'
+          : '未能開啟網站會員頁面。',
+      );
+    } finally {
+      setOpeningWebsite(false);
     }
   };
 
@@ -199,10 +216,10 @@ export default function ParentScreen() {
           </View>
           {!subscription.isPremium ? (
             <>
-              {subscription.error ? (
+              {subscription.planError ? (
                 <Pressable
                   accessibilityRole="button"
-                  testID="retry-offering"
+                  testID="retry-plan"
                   onPress={() => {
                     setNotice(null);
                     void subscription.refresh();
@@ -211,13 +228,25 @@ export default function ParentScreen() {
                 >
                   <Ionicons name="refresh" size={16} color={colors.destructive} />
                   <Text style={[styles.retryText, { color: colors.destructive }]}>
-                    {subscription.planError
-                      ? t('parent.planLoadError')
-                      : language === 'en'
-                        ? 'Could not verify account access. Tap to retry.'
-                        : language === 'zh-Hans'
-                          ? '未能確認帳戶權限，點此重試。'
-                          : '未能確認帳戶權限，點此重試。'}
+                    {t('parent.planLoadError')}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {subscription.accountError ? (
+                <Pressable
+                  accessibilityRole="button"
+                  testID="retry-account-access"
+                  onPress={() => {
+                    setNotice(null);
+                    void subscription.refresh();
+                  }}
+                  style={styles.planRetry}
+                >
+                  <Ionicons name="refresh" size={16} color={colors.destructive} />
+                  <Text style={[styles.retryText, { color: colors.destructive }]}>
+                    {language === 'en'
+                      ? 'Could not verify account access. Tap to retry.'
+                      : '未能確認帳戶權限，點此重試。'}
                   </Text>
                 </Pressable>
               ) : !subscription.isLoading && !subscription.isSignedIn ? (
@@ -250,6 +279,22 @@ export default function ParentScreen() {
               <Text style={[styles.legal, { color: colors.mutedForeground }]}>
                 {t('parent.subscriptionLegalWeb')}
               </Text>
+              {(subscription.planError || subscription.accountError) ? (
+                <ActionButton
+                  label={
+                    openingWebsite
+                      ? (language === 'en' ? 'Opening…' : '正在開啟…')
+                      : (language === 'en' ? 'Continue on website to subscribe' : '前往網站訂閱')
+                  }
+                  onPress={() => void openWebsiteMembership()}
+                  tone="outline"
+                  testID="website-membership-fallback"
+                  loading={openingWebsite}
+                  icon={!openingWebsite ? (
+                    <Ionicons name="open-outline" size={18} color={colors.foreground} />
+                  ) : undefined}
+                />
+              ) : null}
             </>
           ) : subscription.hasBillingCustomer ? (
             <ActionButton
