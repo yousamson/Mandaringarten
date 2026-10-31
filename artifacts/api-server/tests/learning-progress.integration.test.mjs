@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -8,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import express from 'express';
 import { build } from 'esbuild';
 import { ReplitConnectors } from '@replit/connectors-sdk';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 if (process.env.NODE_ENV !== 'test') {
   throw new Error('Run the progress integration suite with NODE_ENV=test.');
@@ -320,6 +322,83 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   }
 });
 
+test('independent API processes award a retried answer once and reject changed payloads', async () => {
+  const family = await createSyntheticAccount('active');
+  const browser = createBrowser(family);
+  await acceptConsent(browser);
+  const round = await issueRound(browser, { stage: 2, mode: 'match' });
+  const question = round.questions[0];
+  const answer = {
+    roundId: round.roundId,
+    questionId: question.id,
+    answer: question.word.trad,
+  };
+
+  const workerResults = await Promise.allSettled([
+    startProgressWorker(family.customerId),
+    startProgressWorker(family.customerId),
+  ]);
+  const workers = workerResults
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => result.value);
+  const failedWorker = workerResults.find((result) => result.status === 'rejected');
+  if (failedWorker) {
+    await Promise.all(workers.map((worker) => worker.stop()));
+    throw failedWorker.reason;
+  }
+  assert.notEqual(workers[0].pid, workers[1].pid, 'requests must reach separate Node processes');
+  try {
+    const responses = await Promise.all(workers.map((worker) =>
+      requestAt(worker.baseUrl, '/learning/round', {
+        token: browser.token,
+        method: 'POST',
+        body: answer,
+      }),
+    ));
+    for (const response of responses) {
+      assert.equal(response.status, 200);
+      assert.deepEqual(response.body, {
+        correct: true,
+        selectedStage: 1,
+        xpByStage: [0, 5, 0, 0],
+      });
+    }
+
+    const [progress] = await db.select().from(learningProgressTable)
+      .where(eq(learningProgressTable.clerkUserId, family.userId));
+    const awards = await db.select().from(learningRoundsTable)
+      .where(eq(learningRoundsTable.clerkUserId, family.userId));
+    assert.deepEqual(progress.xpByStage, [0, 5, 0, 0]);
+    assert.equal(awards.length, 1, 'separate processes must share the round idempotency record');
+
+    const [challenge] = await db.select().from(learningChallengesTable).where(and(
+      eq(learningChallengesTable.clerkUserId, family.userId),
+      eq(learningChallengesTable.roundId, round.roundId),
+    ));
+    await db.update(learningChallengesTable).set({
+      answers: { ...challenge.answers, [question.id]: `${answer.answer} changed` },
+    }).where(and(
+      eq(learningChallengesTable.clerkUserId, family.userId),
+      eq(learningChallengesTable.roundId, round.roundId),
+    ));
+
+    const changedRetry = await requestAt(workers[1].baseUrl, '/learning/round', {
+      token: browser.token,
+      method: 'POST',
+      body: { ...answer, answer: `${answer.answer} changed` },
+    });
+    assert.equal(changedRetry.status, 404, 'a changed payload for an awarded question must conflict');
+    const [unchangedProgress] = await db.select().from(learningProgressTable)
+      .where(eq(learningProgressTable.clerkUserId, family.userId));
+    const unchangedAwards = await db.select().from(learningRoundsTable)
+      .where(eq(learningRoundsTable.clerkUserId, family.userId));
+    assert.deepEqual(unchangedProgress.xpByStage, [0, 5, 0, 0]);
+    assert.equal(unchangedAwards.length, 1);
+  } finally {
+    await Promise.all(workers.map((worker) => worker.stop()));
+  }
+});
+
 async function createSyntheticAccount(subscriptionStatus) {
   const userId = `progress-it-${randomUUID()}`;
   const customerId = `cus_progress_it_${randomUUID().replaceAll('-', '')}`;
@@ -413,15 +492,92 @@ async function getProgress(browser) {
 }
 
 async function request(route, { token, method = 'GET', body } = {}) {
+  return requestAt(baseUrl, route, { token, method, body });
+}
+
+async function requestAt(url, route, { token, method = 'GET', body } = {}) {
   const headers = {};
   if (token) headers.authorization = `Bearer ${token}`;
   if (body !== undefined) headers['content-type'] = 'application/json';
-  const response = await fetch(`${baseUrl}/api${route}`, {
+  const response = await fetch(`${url}/api${route}`, {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   return { status: response.status, body: await response.json() };
+}
+
+async function startProgressWorker(customerId) {
+  const child = spawn(process.execPath, [path.join(testDir, 'progress-test-server.mjs')], {
+    cwd: packageDir,
+    env: {
+      ...process.env,
+      PROGRESS_TEST_ROUTER_PATH: routerPath,
+      PROGRESS_TEST_DB_PATH: dbModulePath,
+      PROGRESS_TEST_AUTH_KEY: testAuthKey.toString('hex'),
+      PROGRESS_TEST_STRIPE_CUSTOMER_ID: customerId,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '';
+  let errors = '';
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => { output += chunk; });
+  child.stderr.on('data', (chunk) => { errors += chunk; });
+
+  let timer;
+  try {
+    const port = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error(
+        `Progress test server failed to start. ${errors}`,
+      )), 15000);
+      timer = timeout;
+      const findReadyPort = () => {
+        const match = output.match(/PROGRESS_TEST_READY:(\d+)/);
+        if (match) {
+          clearTimeout(timeout);
+          resolve(Number(match[1]));
+        }
+      };
+      child.stdout.on('data', findReadyPort);
+      child.once('error', (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+      child.once('exit', (code, signal) => {
+        clearTimeout(timeout);
+        reject(new Error(
+          `Progress test server exited before starting (${code ?? signal}). ${errors}`,
+        ));
+      });
+      findReadyPort();
+    });
+    return {
+      pid: child.pid,
+      baseUrl: `http://127.0.0.1:${port}`,
+      stop: async () => {
+        if (child.exitCode !== null || child.signalCode !== null) return;
+        await new Promise((resolve) => {
+          const forceStop = setTimeout(() => child.kill('SIGKILL'), 3000);
+          forceStop.unref();
+          child.once('exit', () => {
+            clearTimeout(forceStop);
+            resolve();
+          });
+          child.kill('SIGTERM');
+        });
+      },
+    };
+  } catch (error) {
+    if (timer) clearTimeout(timer);
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = once(child, 'exit');
+      child.kill('SIGKILL');
+      await exited;
+    }
+    throw error;
+  }
 }
 
 function issueTestSession(userId) {
