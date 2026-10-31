@@ -4,7 +4,7 @@ import worker from '../public/_worker.js';
 
 test('Worker preserves browser Origin and overwrites the public-origin carrier', async () => {
   const realFetch = globalThis.fetch;
-  const origin = 'https://mandarin-garden-mobile-pwa.pages.dev';
+  const origin = 'https://mandaringarden.asia';
   let forwarded;
   globalThis.fetch = async (request) => {
     forwarded = request;

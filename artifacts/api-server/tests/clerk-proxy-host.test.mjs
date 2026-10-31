@@ -3,37 +3,36 @@ import test from 'node:test';
 import { getClerkProxyHost } from '../src/middlewares/clerkProxyMiddleware.ts';
 
 const backendHost = 'mandarin-garden.replit.app';
-const pagesHost = 'mandarin-garden-mobile-pwa.pages.dev';
+const siteHost = 'mandaringarden.asia';
 const edgeHeaders = { host: backendHost, 'x-forwarded-host': backendHost };
 
-test('Pages origin survives the edge replacing forwarded host', () => {
-  for (const host of [pagesHost, `branch-name.${pagesHost}`]) {
-    assert.equal(getClerkProxyHost({ headers: {
-      ...edgeHeaders,
-      'x-mandarin-public-origin': `https://${host}`,
-      origin: `https://${host}`,
-    } }), host);
-  }
-});
-
-test('originless OAuth callbacks retain the Pages host', () => {
+test('registered site origin survives the edge replacing forwarded host', () => {
   assert.equal(getClerkProxyHost({ headers: {
     ...edgeHeaders,
-    'x-mandarin-public-origin': `https://${pagesHost}`,
-  } }), pagesHost);
+    'x-mandarin-public-origin': `https://${siteHost}`,
+    origin: `https://${siteHost}`,
+  } }), siteHost);
+});
+
+test('originless OAuth callbacks retain the registered site host', () => {
+  assert.equal(getClerkProxyHost({ headers: {
+    ...edgeHeaders,
+    'x-mandarin-public-origin': `https://${siteHost}`,
+  } }), siteHost);
 });
 
 test('untrusted or malformed public origins cannot override the edge host', () => {
   for (const value of [
     'https://attacker.example',
-    `https://${pagesHost}.attacker.example`,
-    `https://attacker-${pagesHost}`,
-    `http://${pagesHost}`,
-    `https://${pagesHost}:8443`,
-    `https://${pagesHost}/path`,
-    `https://user:pass@${pagesHost}`,
+    'https://mandaringarden.asia.attacker.example',
+    'https://attacker-mandaringarden.asia',
+    'http://mandaringarden.asia',
+    'https://mandaringarden.asia:8443',
+    'https://mandaringarden.asia/path',
+    'https://user:pass@mandaringarden.asia',
+    'https://mandarin-garden-mobile-pwa.pages.dev',
     'not-a-url',
-    [`https://${pagesHost}`, 'https://attacker.example'],
+    [`https://${siteHost}`, 'https://attacker.example'],
   ]) {
     assert.equal(getClerkProxyHost({ headers: {
       ...edgeHeaders,
@@ -50,6 +49,6 @@ test('existing custom domains and forwarded-host lists remain unchanged', () => 
   assert.equal(getClerkProxyHost({ headers: { host: 'localhost:8080' } }), 'localhost:8080');
   assert.equal(getClerkProxyHost({ headers: {
     host: 'mandaringarden.asia',
-    'x-mandarin-public-origin': `https://${pagesHost}`,
+    'x-mandarin-public-origin': `https://${backendHost}`,
   } }), 'mandaringarden.asia');
 });

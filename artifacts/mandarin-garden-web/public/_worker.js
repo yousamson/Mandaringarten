@@ -14,8 +14,8 @@ export default {
     );
     const upstreamRequest = new Request(upstreamUrl, request);
     const headers = new Headers(upstreamRequest.headers);
-    // Replit's edge replaces X-Forwarded-Host. Carry the original Pages
-    // origin separately; the API accepts only this project's Pages hosts.
+    // Replit's edge replaces X-Forwarded-Host. Carry the original site
+    // origin separately; the API accepts only the registered custom domain.
     headers.set('x-mandarin-public-origin', incomingUrl.origin);
     headers.set('x-forwarded-host', incomingUrl.host);
     headers.set('x-forwarded-proto', incomingUrl.protocol.slice(0, -1));

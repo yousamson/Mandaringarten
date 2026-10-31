@@ -53,8 +53,8 @@ export function getClerkProxyHost(req: {
 
   // Replit's deployment edge replaces X-Forwarded-Host with its own host.
   // The Pages Worker overwrites this separate header with its public origin.
-  // Accept only HTTPS origins owned by this Pages project, never arbitrary
-  // caller-supplied hosts. Leave Origin intact for Clerk's CSRF checks.
+  // Accept only the registered app domain, never arbitrary caller-supplied
+  // hosts. Leave Origin intact for Clerk's CSRF checks.
   const publicOrigin = req.headers['x-mandarin-public-origin'];
   if (
     effectiveHost === 'mandarin-garden.replit.app' &&
@@ -62,9 +62,7 @@ export function getClerkProxyHost(req: {
   ) {
     try {
       const url = new URL(publicOrigin);
-      const isProjectHost =
-        url.hostname === 'mandarin-garden-mobile-pwa.pages.dev' ||
-        /^[a-z0-9-]+\.mandarin-garden-mobile-pwa\.pages\.dev$/.test(url.hostname);
+      const isProjectHost = url.hostname === 'mandaringarden.asia';
       if (
         isProjectHost &&
         url.protocol === 'https:' &&
