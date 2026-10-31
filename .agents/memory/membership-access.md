@@ -15,6 +15,12 @@ Resolve the verified administrator entitlement before querying Stripe. The admin
 
 **How to apply:** return active administrator access directly from the server-side verified-admin check; do not use client email matching as authorization.
 
+Match the designated administrator against any verified email on the authenticated Clerk account, not only its primary email. Never grant admin access for an unverified address.
+
+**Why:** a verified administrator address can be attached to the right account as a secondary address; making it primary-only incorrectly removes the complimentary membership and admin permissions.
+
+**How to apply:** keep the server-side allowlist and verified-email requirement, but test every verified account email against it. Do not move this authorization decision to the mobile client.
+
 Use `/account/access` to settle the membership identity; `/billing/status` supplies renewal and cancellation dates. Do not keep the membership label in a loading state while waiting for both responses.
 
 **Why:** the account-access response can succeed while the separate billing-status query is delayed or disabled, otherwise members see “syncing” indefinitely despite a confirmed entitlement response.
@@ -38,3 +44,9 @@ Members who have accepted the current policy version must not be asked to repeat
 **Why:** the user explicitly said members do not need to reconfirm.
 
 **How to apply:** use the saved account consent for existing members; do not gate sign-in on per-session policy checkboxes. Preserve the separate checkout and account-deletion acknowledgements.
+
+Membership status labels have only two values: subscribed and not subscribed. The verified administrator counts as subscribed; a syncing indicator must not appear as a third status.
+
+**Why:** the user requested that the parent area stop showing data synchronization and show only the two membership states, without changing other behavior.
+
+**How to apply:** derive the label from account access, including the complimentary administrator entitlement. Load billing dates separately and do not turn their delay into a third membership state.
