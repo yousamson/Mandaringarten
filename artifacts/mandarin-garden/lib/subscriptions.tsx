@@ -48,10 +48,10 @@ function useSubscriptionValue() {
     query: {
       enabled: isLoaded && Boolean(isSignedIn),
       queryKey: accessKey,
-      refetchOnMount: 'always',
-      refetchOnWindowFocus: true,
-      refetchInterval: 30_000,
-      retry: 1,
+      staleTime: 60_000,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+      retry: 2,
     },
   });
   const status = useGetBillingStatus({
