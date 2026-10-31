@@ -25,7 +25,7 @@ router.get("/account/access", async (req, res) => {
     res.json({ isAdmin: false, isPremium: false, access: "deleting" }); return;
   }
   const isAdmin = await isAdministrator(userId);
-  req.log.info({ isAdmin }, "Account access entitlement checked");
+  req.log?.info({ isAdmin }, "Account access entitlement checked");
   if (isAdmin) {
     res.json({ isAdmin: true, isPremium: true, access: "active" });
     return;
