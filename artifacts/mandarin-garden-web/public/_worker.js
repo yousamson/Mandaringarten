@@ -1,11 +1,11 @@
 const API_ORIGIN = 'https://mandarin-garden.replit.app';
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const incomingUrl = new URL(request.url);
 
     if (!incomingUrl.pathname.startsWith('/api/')) {
-      return new Response('Not found', { status: 404 });
+      return env.ASSETS.fetch(request);
     }
 
     const upstreamUrl = new URL(
@@ -23,6 +23,26 @@ export default {
       redirect: 'manual',
     });
 
-    return fetch(forwardedRequest);
+    const response = await fetch(forwardedRequest);
+    const location = response.headers.get('location');
+    if (location) {
+      const target = new URL(location, upstreamUrl);
+      if (
+        target.origin === upstreamUrl.origin &&
+        target.pathname.startsWith('/api/')
+      ) {
+        target.protocol = incomingUrl.protocol;
+        target.host = incomingUrl.host;
+        const responseHeaders = new Headers(response.headers);
+        responseHeaders.set('location', target.toString());
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: responseHeaders,
+        });
+      }
+    }
+
+    return response;
   },
 };
