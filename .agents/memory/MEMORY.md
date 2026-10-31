@@ -4,7 +4,7 @@
 - [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
 - [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.
 - [Membership access and account controls](membership-access.md) — payment gates ordinary access; verified admin membership is free; lapsed members retain renewal/support/deletion.
-- [Cloudflare PWA hosting](cloudflare-pwa-hosting.md) — keep API and Clerk requests on the PWA origin through a Pages Function; static-only hosting breaks account flows.
+- [Cloudflare PWA hosting](cloudflare-pwa-hosting.md) — use the registered apex as Clerk proxy and `www` for Pages via external CNAME; avoid moving all DNS nameservers.
 - [Legacy progress migration](progress-migration.md) — overlapping browser snapshots are high-water baselines; reconcile them with distinct server rounds rather than importing once.
 - [Expo browser test sessions](expo-test-sessions.md) — a Clerk test login on the website host does not establish a signed-in session on the separate Expo preview host.
 - [Preview proxy caching](preview-proxy-caching.md) — direct route tests and the shared preview origin can differ on conditional responses; verify the full client path.
