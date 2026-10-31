@@ -12,6 +12,24 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+const allowedOrigins = new Set(
+  [
+    process.env.REPLIT_DEV_DOMAIN,
+    process.env.REPLIT_EXPO_DEV_DOMAIN,
+    ...(process.env.REPLIT_DOMAINS ?? "").split(","),
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value))
+    .flatMap((value) => {
+      try {
+        return [
+          new URL(value.match(/^https?:\/\//i) ? value : `https://${value}`).origin,
+        ];
+      } catch {
+        return [];
+      }
+    }),
+);
 
 app.use(
   pinoHttp({
@@ -42,7 +60,15 @@ app.use(
   })),
 );
 
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      callback(null, Boolean(origin && allowedOrigins.has(origin)));
+    },
+    credentials: true,
+    maxAge: 600,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
