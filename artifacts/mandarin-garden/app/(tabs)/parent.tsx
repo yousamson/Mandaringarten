@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,7 +16,6 @@ import { getWebsiteOrigin, useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { languageOptions, translate } from '@/lib/i18n';
-import { useLocalSearchParams } from 'expo-router';
 import { stageAges, stageNames } from '@workspace/learning-content';
 
 export default function ParentScreen() {
@@ -30,64 +27,8 @@ export default function ParentScreen() {
   const subscription = useSubscription();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const routeParams = useLocalSearchParams<{ billing?: string | string[] }>();
-  const billingReturn = Array.isArray(routeParams.billing)
-    ? routeParams.billing[0]
-    : routeParams.billing;
-  const [confirmPurchase, setConfirmPurchase] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [openingWebsite, setOpeningWebsite] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-  const [noRefundAccepted, setNoRefundAccepted] = useState(false);
-  useEffect(() => {
-    if (billingReturn === 'success') void subscription.refresh();
-  }, [billingReturn, subscription.refresh]);
-
-  useEffect(() => {
-    if (subscription.isLoading) return;
-    if (billingReturn === 'success') {
-      setNotice(
-        translate(
-          language,
-          subscription.isPremium
-            ? 'parent.purchaseComplete'
-            : 'parent.purchasePending',
-        ),
-      );
-    } else if (billingReturn === 'cancelled') {
-      setNotice(translate(language, 'parent.purchaseCancelled'));
-    } else if (billingReturn === 'returned') {
-      setNotice(null);
-    }
-  }, [
-    billingReturn,
-    language,
-    subscription.isLoading,
-    subscription.isPremium,
-    subscription.isWeb,
-  ]);
-
-  const purchase = async () => {
-    if (!subscription.canPurchase) {
-      setNotice(t('parent.purchaseUnavailable'));
-      return;
-    }
-    try {
-      setConfirmPurchase(false);
-      await subscription.purchase({
-        privacyAccepted,
-        disclaimerAccepted,
-        noRefundAccepted,
-      });
-      setNotice(t('parent.purchasePending'));
-      void subscription.refresh();
-    } catch (error) {
-      setNotice(t('parent.purchaseFailed'));
-      setConfirmPurchase(false);
-    }
-  };
-
   const manageSubscription = async () => {
     setNotice(null);
     try {
@@ -102,7 +43,7 @@ export default function ParentScreen() {
     setOpeningWebsite(true);
     try {
       await WebBrowser.openBrowserAsync(`${getWebsiteOrigin()}/membership`);
-      void subscription.refresh();
+      await subscription.refresh();
     } catch {
       setNotice(
         language === 'en'
@@ -126,26 +67,22 @@ export default function ParentScreen() {
       : language === 'zh-Hans'
         ? stageNames[learning.selectedStage - 1][2]
         : stageNames[learning.selectedStage - 1][1];
-  const openLegal = async (path: 'privacy' | 'disclaimer') => {
-    try {
-      await WebBrowser.openBrowserAsync(`${getWebsiteOrigin()}/${path}`);
-    } catch {
-      setNotice(
-        language === 'en'
-          ? 'Could not open the policy page.'
-          : language === 'zh-Hans'
-            ? '未能開啟政策頁面。'
-            : '未能開啟政策頁面。',
-      );
-    }
-  };
-  const openCheckoutConfirmation = () => {
-    setNotice(null);
-    setPrivacyAccepted(false);
-    setDisclaimerAccepted(false);
-    setNoRefundAccepted(false);
-    setConfirmPurchase(true);
-  };
+  const currentPeriodEnd = subscription.currentPeriodEnd
+    ? new Date(subscription.currentPeriodEnd)
+    : null;
+  const currentPeriodEndLabel =
+    currentPeriodEnd && !Number.isNaN(currentPeriodEnd.getTime())
+      ? new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(
+          currentPeriodEnd,
+        )
+      : null;
+  const membershipLabel = !subscription.isMembershipKnown
+    ? t('parent.membershipSyncing')
+    : subscription.isAdmin
+      ? t('parent.adminMember')
+      : subscription.isPremium
+        ? t('parent.premiumMember')
+        : t('parent.freeMember');
 
   return (
     <Screen>
@@ -185,7 +122,11 @@ export default function ParentScreen() {
             {t('parent.membership')}
           </Text>
           <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            {subscription.isPremium ? t('parent.premiumEnabled') : t('parent.freePlan')}
+            {subscription.isMembershipKnown
+              ? subscription.isPremium
+                ? t('parent.premiumEnabled')
+                : t('parent.freePlan')
+              : t('parent.membershipSyncing')}
           </Text>
         </View>
         <Surface style={styles.purchaseCard}>
@@ -193,115 +134,63 @@ export default function ParentScreen() {
             <View style={[styles.memberIcon, { backgroundColor: colors.secondary }]}>
               <Ionicons name="sparkles" size={22} color={colors.primary} />
             </View>
-            <View style={styles.purchasePriceCopy}>
-              <Text style={[styles.memberTitle, { color: colors.foreground }]}>
-                {subscription.isPremium ? t('parent.premiumMember') : t('parent.freeMember')}
+            <View style={styles.membershipCopy}>
+              <Text
+                style={[styles.memberTitle, { color: colors.foreground }]}
+                testID="membership-identity"
+              >
+                {membershipLabel}
               </Text>
-              {subscription.isPlanLoading ? (
-                <View style={styles.priceLoading}>
-                  <ActivityIndicator color={colors.primary} />
-                </View>
-              ) : subscription.priceLabel ? (
-                <View style={styles.priceInline}>
-                  <Text style={[styles.price, { color: colors.foreground }]}>{subscription.priceLabel}</Text>
-                  <Text style={[styles.pricePeriod, { color: colors.mutedForeground }]}>
-                    {t('parent.pricePeriodWeb')}
-                  </Text>
-                </View>
-              ) : (
-                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
-                  {subscription.planError
-                    ? t('parent.planLoadError')
-                    : t('parent.planSetupPendingWeb')}
-                </Text>
-              )}
             </View>
           </View>
+          {subscription.isPremium &&
+          !subscription.isAdmin &&
+          currentPeriodEndLabel ? (
+            <Text
+              style={[styles.memberSub, { color: colors.mutedForeground }]}
+              testID="membership-next-period"
+            >
+              {t(
+                subscription.cancelAtPeriodEnd
+                  ? 'parent.membershipAccessUntil'
+                  : 'parent.nextSubscriptionDate',
+                { date: currentPeriodEndLabel },
+              )}
+            </Text>
+          ) : null}
           {!subscription.isPremium ? (
             <>
-              {subscription.planError ? (
-                <Pressable
-                  accessibilityRole="button"
-                  testID="retry-plan"
-                  onPress={() => {
-                    setNotice(null);
-                    void subscription.refresh();
-                  }}
-                  style={styles.planRetry}
-                >
-                  <Ionicons name="refresh" size={16} color={colors.destructive} />
-                  <Text style={[styles.retryText, { color: colors.destructive }]}>
-                    {t('parent.planLoadError')}
-                  </Text>
-                </Pressable>
-              ) : null}
-              {subscription.accountError ? (
-                <Pressable
-                  accessibilityRole="button"
-                  testID="retry-account-access"
-                  onPress={() => {
-                    setNotice(null);
-                    void subscription.refresh();
-                  }}
-                  style={styles.planRetry}
-                >
-                  <Ionicons name="refresh" size={16} color={colors.destructive} />
-                  <Text style={[styles.retryText, { color: colors.destructive }]}>
-                    {language === 'en'
-                      ? 'Could not verify account access. Tap to retry.'
-                      : language === 'zh-Hans'
-                        ? '未能确认账户权限，点此重试。'
-                        : '未能確認帳戶權限，點此重試。'}
-                  </Text>
-                </Pressable>
-              ) : !subscription.isLoading && !subscription.isSignedIn ? (
-                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
-                  {language === 'en'
-                    ? 'Sign in before upgrading.'
-                    : language === 'zh-Hans'
-                      ? '登入後即可升級會員。'
-                      : '登入後即可升級會員。'}
-                </Text>
-              ) : subscription.isLoading && subscription.isSignedIn ? (
-                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
-                  {language === 'en'
-                    ? 'Checking your account before checkout…'
-                    : language === 'zh-Hans'
-                      ? '正在確認帳戶付款資格…'
-                      : '正在確認帳戶付款資格…'}
-                </Text>
-              ) : null}
               <ActionButton
-                label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
-                onPress={openCheckoutConfirmation}
-                testID="upgrade-premium"
-                disabled={!subscription.canPurchase || subscription.isPurchasing}
-                loading={subscription.isPurchasing}
-                icon={!subscription.isPurchasing ? (
-                  <Ionicons name="sparkles" size={18} color={colors.primaryForeground} />
-                ) : undefined}
+                label={
+                  openingWebsite
+                    ? t('parent.openingWebsite')
+                    : t('parent.websiteSubscribe')
+                }
+                onPress={() => void openWebsiteMembership()}
+                tone="outline"
+                testID="website-membership"
+                loading={openingWebsite}
+                icon={
+                  !openingWebsite ? (
+                    <Ionicons
+                      name="open-outline"
+                      size={18}
+                      color={colors.foreground}
+                    />
+                  ) : undefined
+                }
               />
-              <Text style={[styles.legal, { color: colors.mutedForeground }]}>
-                {t('parent.subscriptionLegalWeb')}
+              <Text
+                style={[
+                  styles.membershipHint,
+                  { color: colors.mutedForeground },
+                ]}
+                testID="membership-subscribe-hint"
+              >
+                {t('parent.websiteSubscribeHint')}
               </Text>
-              {(subscription.planError || subscription.accountError) ? (
-                <ActionButton
-                  label={
-                    openingWebsite
-                      ? (language === 'en' ? 'Opening…' : language === 'zh-Hans' ? '正在打开…' : '正在開啟…')
-                      : (language === 'en' ? 'Continue on website to subscribe' : language === 'zh-Hans' ? '前往网站订阅' : '前往網站訂閱')
-                  }
-                  onPress={() => void openWebsiteMembership()}
-                  tone="outline"
-                  testID="website-membership-fallback"
-                  loading={openingWebsite}
-                  icon={!openingWebsite ? (
-                    <Ionicons name="open-outline" size={18} color={colors.foreground} />
-                  ) : undefined}
-                />
-              ) : null}
             </>
-          ) : subscription.hasBillingCustomer ? (
+          ) : !subscription.isAdmin ? (
             <ActionButton
               label={t('parent.manageSubscription')}
               onPress={() => void manageSubscription()}
@@ -552,139 +441,6 @@ export default function ParentScreen() {
         </Text>
       </ScrollView>
 
-      <Modal
-        transparent
-        animationType="fade"
-        visible={confirmPurchase}
-        onRequestClose={() => setConfirmPurchase(false)}
-      >
-        <View
-          style={[
-            styles.confirmBackdrop,
-            { backgroundColor: colors.overlay },
-          ]}
-        >
-          <Surface style={styles.confirmCard}>
-            <ScrollView
-              style={styles.confirmScroll}
-              contentContainerStyle={styles.confirmScrollContent}
-              showsVerticalScrollIndicator
-              keyboardShouldPersistTaps="handled"
-            >
-            <View style={[styles.confirmIcon, { backgroundColor: colors.accent }]}>
-              <Ionicons
-                name="sparkles"
-                size={25}
-                color={colors.accentForeground}
-              />
-            </View>
-            <Text style={[styles.confirmTitle, { color: colors.foreground }]}>
-              {t('parent.confirmTitle')}
-            </Text>
-            <Text
-              style={[
-                styles.confirmCopy,
-                { color: colors.mutedForeground },
-              ]}
-            >
-              {subscription.priceLabel
-                ? t('parent.confirmWebPrice', { price: subscription.priceLabel })
-                : t('parent.planNotPublished')}
-            </Text>
-            <View style={styles.agreementList}>
-              <View style={styles.agreementRow}>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: privacyAccepted }}
-                  onPress={() => setPrivacyAccepted((value) => !value)}
-                  style={styles.agreementCheck}
-                >
-                  <Ionicons
-                    name={privacyAccepted ? 'checkbox' : 'square-outline'}
-                    size={21}
-                    color={privacyAccepted ? colors.primary : colors.mutedForeground}
-                  />
-                  <Text style={[styles.agreementText, { color: colors.foreground }]}>
-                    {language === 'en'
-                      ? 'I agree to and fully understand the privacy policy.'
-                      : language === 'zh-Hans'
-                        ? '我同意并完全理解个人隐私资料政策。'
-                        : '我同意並完全明白個人私隱資料政策。'}
-                  </Text>
-                </Pressable>
-                <Pressable onPress={() => void openLegal('privacy')}>
-                  <Text style={[styles.agreementLink, { color: colors.primary }]}>
-                    {language === 'en' ? 'Read' : language === 'zh-Hans' ? '查看' : '閱讀'}
-                  </Text>
-                </Pressable>
-              </View>
-              <View style={styles.agreementRow}>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: disclaimerAccepted }}
-                  onPress={() => setDisclaimerAccepted((value) => !value)}
-                  style={styles.agreementCheck}
-                >
-                  <Ionicons
-                    name={disclaimerAccepted ? 'checkbox' : 'square-outline'}
-                    size={21}
-                    color={disclaimerAccepted ? colors.primary : colors.mutedForeground}
-                  />
-                  <Text style={[styles.agreementText, { color: colors.foreground }]}>
-                    {language === 'en'
-                      ? 'I agree to and fully understand the legal disclaimer.'
-                      : language === 'zh-Hans'
-                        ? '我同意并完全理解法律免责声明。'
-                        : '我同意並完全明白法律免責聲明。'}
-                  </Text>
-                </Pressable>
-                <Pressable onPress={() => void openLegal('disclaimer')}>
-                  <Text style={[styles.agreementLink, { color: colors.primary }]}>
-                    {language === 'en' ? 'Read' : language === 'zh-Hans' ? '查看' : '閱讀'}
-                  </Text>
-                </Pressable>
-              </View>
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: noRefundAccepted }}
-                onPress={() => setNoRefundAccepted((value) => !value)}
-                style={styles.agreementCheck}
-              >
-                <Ionicons
-                  name={noRefundAccepted ? 'checkbox' : 'square-outline'}
-                  size={21}
-                  color={noRefundAccepted ? colors.primary : colors.mutedForeground}
-                />
-                <Text style={[styles.agreementText, { color: colors.foreground }]}>
-                  {language === 'en'
-                    ? 'I understand paid subscription fees are non-refundable.'
-                    : language === 'zh-Hans'
-                      ? '我明白已缴付的订阅月费不予退还。'
-                      : '我明白已繳付的訂閱月費不獲退還。'}
-                </Text>
-              </Pressable>
-            </View>
-            <View style={styles.confirmButtonWrap}>
-              <ActionButton
-                label={t('parent.confirmAndContinue')}
-                onPress={() => void purchase()}
-                testID="confirm-subscription"
-                loading={subscription.isPurchasing}
-                disabled={!privacyAccepted || !disclaimerAccepted || !noRefundAccepted}
-              />
-            </View>
-            <View style={styles.confirmButtonWrap}>
-              <ActionButton
-                label={t('parent.later')}
-                onPress={() => setConfirmPurchase(false)}
-                tone="soft"
-                testID="cancel-subscription"
-              />
-            </View>
-            </ScrollView>
-          </Surface>
-        </View>
-      </Modal>
     </Screen>
   );
 }
@@ -881,28 +637,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  purchasePriceCopy: {
+  membershipCopy: {
     flex: 1,
     minWidth: 0,
-    gap: 4,
-  },
-  priceInline: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    flexWrap: 'wrap',
-    gap: 5,
-  },
-  priceLoading: {
-    minHeight: 24,
-    justifyContent: 'center',
-  },
-  planRetry: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 40,
-    paddingHorizontal: 8,
   },
   membershipHead: {
     flexDirection: 'row',
@@ -924,6 +661,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 3,
   },
+  membershipHint: {
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
   benefitList: {
     gap: 9,
     paddingVertical: 4,
@@ -937,39 +679,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
   },
-  pricePanel: {
-    minHeight: 48,
-    borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  pricePeriod: {
-    fontSize: 12,
-  },
-  setupMessage: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  legal: {
-    textAlign: 'center',
-    fontSize: 10,
-    lineHeight: 15,
-    marginTop: -4,
-  },
   notice: {
     fontSize: 12,
     lineHeight: 18,
-    textAlign: 'center',
-  },
-  retryText: {
-    fontSize: 12,
     textAlign: 'center',
   },
   ageNoteFooter: {
@@ -977,76 +689,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     marginTop: 2,
-  },
-  agreementList: {
-    width: '100%',
-    gap: 12,
-    marginVertical: 12,
-  },
-  agreementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  agreementCheck: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    minHeight: 36,
-  },
-  agreementText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  agreementLink: {
-    fontSize: 12,
-    fontWeight: '800',
-    paddingHorizontal: 5,
-  },
-  confirmBackdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-  },
-  confirmCard: {
-    width: '100%',
-    maxWidth: 420,
-    maxHeight: '92%',
-    overflow: 'hidden',
-    alignItems: 'center',
-    padding: 14,
-  },
-  confirmScroll: {
-    width: '100%',
-  },
-  confirmScrollContent: {
-    alignItems: 'center',
-    gap: 12,
-    paddingBottom: 8,
-  },
-  confirmButtonWrap: {
-    width: '100%',
-  },
-  confirmIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  confirmCopy: {
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginBottom: 3,
   },
 });

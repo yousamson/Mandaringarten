@@ -5,22 +5,12 @@ import { useMutation } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import {
   setAuthTokenGetter,
-  useCreateBillingCheckout,
   useCreateBillingPortal,
   useGetAccountAccess,
-  useGetBillingPlan,
-  useGetBillingSubscription,
+  useGetBillingStatus,
   getGetAccountAccessQueryKey,
-  getGetBillingSubscriptionQueryKey,
+  getGetBillingStatusQueryKey,
 } from '@workspace/api-client-react';
-
-const POLICY_VERSION = '2026-10-29.1';
-
-export type CheckoutAcceptance = {
-  privacyAccepted: boolean;
-  disclaimerAccepted: boolean;
-  noRefundAccepted: boolean;
-};
 
 export function getWebsiteOrigin(): string {
   const configured =
@@ -52,17 +42,9 @@ function useSubscriptionValue() {
     : { headers: { Origin: siteOrigin } };
   const userId = user?.id ?? 'signed-out';
 
-  const plan = useGetBillingPlan({
-    request: { skipAuth: true, cache: 'no-store' },
-    query: {
-      staleTime: 300_000,
-      retry: 2,
-      retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 5_000),
-    },
-  });
-  const billingKey = [...getGetBillingSubscriptionQueryKey(), userId];
+  const billingKey = [...getGetBillingStatusQueryKey(), userId];
   const accessKey = [...getGetAccountAccessQueryKey(), userId];
-  const status = useGetBillingSubscription({
+  const status = useGetBillingStatus({
     query: {
       enabled: isLoaded && Boolean(isSignedIn),
       queryKey: billingKey,
@@ -78,49 +60,7 @@ function useSubscriptionValue() {
       refetchOnWindowFocus: true,
     },
   });
-  const checkoutRequest = useCreateBillingCheckout({ request });
   const portalRequest = useCreateBillingPortal({ request });
-
-  const checkout = useMutation({
-    mutationFn: async (acceptance: CheckoutAcceptance) => {
-      if (!isLoaded || !isSignedIn) {
-        throw new Error('Sign in before starting checkout.');
-      }
-      if (
-        !acceptance.privacyAccepted ||
-        !acceptance.disclaimerAccepted ||
-        !acceptance.noRefundAccepted
-      ) {
-        throw new Error('Confirm all subscription agreements before checkout.');
-      }
-      const origin = getBillingReturnOrigin();
-      const response = await checkoutRequest.mutateAsync({
-        data: {
-          privacyAccepted: true,
-          disclaimerAccepted: true,
-          noRefundAccepted: true,
-          policyVersion: POLICY_VERSION,
-          successUrl: `${origin}/parent?billing=success`,
-          cancelUrl: `${origin}/parent?billing=cancelled`,
-        },
-      });
-
-      if (Platform.OS === 'web') {
-        if (typeof window === 'undefined') {
-          throw new Error('Checkout is only available in a browser.');
-        }
-        window.location.assign(response.url);
-        return;
-      }
-
-      await WebBrowser.openBrowserAsync(response.url);
-    },
-    onSuccess: async () => {
-      if (Platform.OS !== 'web') {
-        await Promise.all([status.refetch(), access.refetch()]);
-      }
-    },
-  });
 
   const manage = useMutation({
     mutationFn: async () => {
@@ -148,46 +88,24 @@ function useSubscriptionValue() {
   });
 
   const isAdmin = access.data?.isAdmin ?? false;
-  const isPremium = isAdmin || (status.data?.isPremium ?? false);
-  const hasBillingCustomer = status.data?.hasBillingCustomer ?? false;
+  const isPremium =
+    isAdmin || Boolean(status.data?.isPremium || access.data?.isPremium);
+  const isMembershipKnown =
+    isAdmin || Boolean(status.data && access.data);
 
   return {
-    isWeb: Platform.OS === 'web',
     isAdmin,
-    isLoaded,
-    isSignedIn: Boolean(isSignedIn),
-    configured: Boolean(plan.data),
     isPremium,
-    hasBillingCustomer,
-    isPlanLoading: plan.isLoading,
-    planError: plan.error,
-    accountError: status.error ?? access.error ?? null,
-    canPurchase: Boolean(
-      plan.data &&
-        status.isSuccess &&
-        access.isSuccess &&
-        isLoaded &&
-        isSignedIn &&
-        !isPremium,
-    ),
-    priceLabel: plan.data?.priceLabel ?? null,
-    isLoading:
-      !isLoaded ||
-      plan.isLoading ||
-      (isLoaded && Boolean(isSignedIn) && (status.isLoading || access.isLoading)),
-    error:
-      plan.error ??
-      status.error ??
-      access.error ??
-      checkoutRequest.error ??
-      portalRequest.error ??
-      null,
+    isMembershipKnown,
+    currentPeriodEnd: status.data?.currentPeriodEnd ?? null,
+    cancelAtPeriodEnd: status.data?.cancelAtPeriodEnd ?? false,
+    isSignedIn: Boolean(isSignedIn),
+    hasBillingData: Boolean(status.data && access.data),
     refresh: async () => {
-      await Promise.all([plan.refetch(), status.refetch(), access.refetch()]);
+      if (!isLoaded || !isSignedIn) return;
+      await Promise.all([status.refetch(), access.refetch()]);
     },
-    purchase: checkout.mutateAsync,
     manageSubscription: manage.mutateAsync,
-    isPurchasing: checkout.isPending,
     isManagingSubscription: manage.isPending,
   };
 }

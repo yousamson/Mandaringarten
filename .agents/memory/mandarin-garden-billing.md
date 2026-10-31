@@ -15,6 +15,12 @@ Keep the presented checkout price in USD when advertising US$9.99/month. A USD-d
 
 **How to apply:** explicitly opt out of Adaptive Pricing per session and do not reuse previously converted open sessions. Verify a newly created sandbox checkout before claiming the USD price is correct.
 
+Mobile membership purchases must always start on the website; the app should display the signed-in user's server-confirmed membership and next renewal or access-end date.
+
+**Why:** the user requested a single website subscription path, no mobile plan-loading or account-verification error copy, and a reliable membership/date display after returning to the app.
+
+**How to apply:** keep consent and Stripe checkout on the website, use the authenticated mobile account to refresh entitlements when the browser closes, and never claim a different browser account's subscription belongs to the app user.
+
 Do not infer scheduled cancellation solely from Stripe's legacy `cancel_at_period_end` flag. Portal cancellation can instead set `cancel_at` equal to the subscription item's period end while leaving that flag false.
 
 **Why:** the sandbox portal confirmed period-end cancellation while the API's legacy flag remained false; relying on it alone misreported renewal status.
