@@ -15,6 +15,12 @@ Resolve the verified administrator entitlement before querying Stripe. The admin
 
 **How to apply:** return active administrator access directly from the server-side verified-admin check; do not use client email matching as authorization.
 
+Use `/account/access` to settle the membership identity; `/billing/status` supplies renewal and cancellation dates. Do not keep the membership label in a loading state while waiting for both responses.
+
+**Why:** the account-access response can succeed while the separate billing-status query is delayed or disabled, otherwise members see “syncing” indefinitely despite a confirmed entitlement response.
+
+**How to apply:** treat either a successful access response or a confirmed admin role as enough to display the member identity; render billing dates independently when available.
+
 Parents contact the management team through platform messages. Only the server-authorized administrator can see the team inbox navigation and contents; other members can see only their own conversations. The administrator login email is never shown on the website or inbox.
 
 **Why:** the user requested a platform messaging feature and designated an administrator account, then reiterated that the team inbox must be hidden from members and free pages. They did not authorize publishing the login email.

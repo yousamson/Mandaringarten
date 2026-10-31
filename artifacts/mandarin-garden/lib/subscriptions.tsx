@@ -104,7 +104,7 @@ function useSubscriptionValue() {
   const isPremium =
     isAdmin || Boolean(status.data?.isPremium || access.data?.isPremium);
   const isMembershipKnown =
-    isAdmin || Boolean(status.data && access.data);
+    isAdmin || Boolean(access.data || status.data);
 
   return {
     isAdmin,
