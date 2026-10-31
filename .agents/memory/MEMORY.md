@@ -1,5 +1,5 @@
 - [Expo preview startup](expo-preview-startup.md) — wait for Metro’s web route bundles before treating a cold-start blank capture as an app rendering failure.
-- [Product platform direction](platform-direction.md) — web with Stripe is primary; phone browsers need responsive games and reading; preserve native Expo separately.
+- [Product platform direction](platform-direction.md) — keep web and Expo content aligned; Stripe remains, and the user chose an installable PWA instead of app stores.
 - [Membership progression](membership-progression.md) — paid parents freely choose stages; 100 XP marks stage completion, not an unlock gate; never charge per-stage fees.
 - [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
 - [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.

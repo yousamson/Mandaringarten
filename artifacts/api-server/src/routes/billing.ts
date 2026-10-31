@@ -26,11 +26,13 @@ import {
 import { cancellationAtPeriodEnd, checkoutIdempotencyKey } from "../subscription-state";
 import { withAccountWrite } from "../account-lifecycle";
 import { isAdministrator } from "../admin";
+import { createReadCache } from "../in-flight-requests";
 
 const PREMIUM_LOOKUP_KEY = "mandarin_garden_premium_monthly";
 const PREMIUM_AMOUNT = 999;
 const PREMIUM_CURRENCY = "usd";
 const PREMIUM_INTERVAL = "month";
+const cachePremiumPrice = createReadCache<StripePrice>(60 * 1000);
 
 const router: IRouter = Router();
 
@@ -130,29 +132,31 @@ function buildCheckoutReturnUrls(
 }
 
 async function getPremiumPrice(): Promise<StripePrice> {
-  const query = new URLSearchParams();
-  query.append("lookup_keys[]", PREMIUM_LOOKUP_KEY);
-  query.set("active", "true");
-  query.set("limit", "10");
-  const result = await stripeRequest<{ data: StripePrice[] }>(
-    `/v1/prices?${query.toString()}`,
-  );
-  const price = result.data[0];
-
-  if (
-    result.data.length !== 1 ||
-    !price ||
-    price.unit_amount !== PREMIUM_AMOUNT ||
-    price.currency !== PREMIUM_CURRENCY ||
-    price.recurring?.interval !== PREMIUM_INTERVAL ||
-    price.livemode !== (process.env.NODE_ENV === "production")
-  ) {
-    throw new Error(
-      "The active premium price must be exactly USD 9.99 per month.",
+  return cachePremiumPrice(`premium-price:${process.env.NODE_ENV}`, async () => {
+    const query = new URLSearchParams();
+    query.append("lookup_keys[]", PREMIUM_LOOKUP_KEY);
+    query.set("active", "true");
+    query.set("limit", "10");
+    const result = await stripeRequest<{ data: StripePrice[] }>(
+      `/v1/prices?${query.toString()}`,
     );
-  }
+    const price = result.data[0];
 
-  return price;
+    if (
+      result.data.length !== 1 ||
+      !price ||
+      price.unit_amount !== PREMIUM_AMOUNT ||
+      price.currency !== PREMIUM_CURRENCY ||
+      price.recurring?.interval !== PREMIUM_INTERVAL ||
+      price.livemode !== (process.env.NODE_ENV === "production")
+    ) {
+      throw new Error(
+        "The active premium price must be exactly USD 9.99 per month.",
+      );
+    }
+
+    return price;
+  });
 }
 
 async function listSubscriptions(customerId: string) {

@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "漢語樂園 Mandarin Garden",
+  "short_name": "漢語樂園",
+  "description": "A bilingual Mandarin learning playground for children ages 2–12.",
+  "lang": "zh-Hant",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF9ED",
+  "theme_color": "#1E7657",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

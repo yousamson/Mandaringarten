@@ -43,7 +43,11 @@ Concurrent billing reads can exhaust the connector's per-project request limit d
 
 **Why:** a sandbox purchase succeeded, but parallel membership/progress checks triggered a connector 429 and briefly showed a billing-panel error.
 
-**How to apply:** share in-flight identical reads and honor bounded rate-limit retries. Do not cache completed entitlement responses merely to suppress errors, since cancellation and renewal must remain visible.
+**How to apply:** share in-flight identical reads and honor bounded rate-limit retries. Do not cache completed entitlement responses merely to suppress errors, since cancellation and renewal must remain visible. Briefly cache Stripe account identity, positive customer-existence checks, and price configuration to avoid repeating metadata lookups.
+
+**Why:** production latency showed that sequential Stripe identity and customer-validation reads added avoidable waits before the live subscription check.
+
+**How to apply:** keep membership status and cancellation state live on every access decision; limit any cache to non-entitlement metadata and short expirations.
 
 Before sandbox testing, verify Stripe mode through the application's connector transport, not just the first connection returned to the agent.
 

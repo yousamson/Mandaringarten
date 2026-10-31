@@ -5,6 +5,21 @@ import { stage4 } from './stage-4';
 import type { StageContent, StageNumber } from './types';
 
 export type { StageContent, StageNumber, VocabEntry, StageSentence, StageStory } from './types';
+export {
+  ageLabels,
+  ageStages,
+  freeReadings,
+  modeCopy,
+  normalizeAgeStage,
+  pathTheme,
+  pickText,
+  playgroundName,
+  stageAges,
+  stageLabel,
+  stageNames,
+  stageNotes,
+} from './presentation';
+export type { AgeStage, FreeReading, LocalizedText, PlaygroundLanguage } from './presentation';
 
 export const playgroundStages: StageContent[] = [stage1, stage2, stage3, stage4];
 export const STAGE_NUMBERS: StageNumber[] = [1, 2, 3, 4];

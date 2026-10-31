@@ -3,26 +3,33 @@ import { billingCustomerScopesTable, billingCustomersTable, db } from "@workspac
 import { withAccountWrite } from "./account-lifecycle";
 import { customerExistsInMode } from "./stripe-customer-state";
 import { stripeRequest } from "./stripeClient";
+import { createReadCache } from "./in-flight-requests";
+
+const cacheStripeScope = createReadCache<string>(5 * 60 * 1000);
+const cacheCustomerExists = createReadCache<boolean>(30 * 1000, Boolean);
 
 async function currentScope() {
-  const account = await stripeRequest<{ id: string }>("/v1/account");
-  return `${account.id}:${process.env.NODE_ENV === "production" ? "live" : "test"}`;
+  return cacheStripeScope("current-stripe-scope", async () => {
+    const account = await stripeRequest<{ id: string }>("/v1/account");
+    return `${account.id}:${process.env.NODE_ENV === "production" ? "live" : "test"}`;
+  });
 }
 
-const exists = (id: string) => customerExistsInMode(
-  () => stripeRequest(`/v1/customers/${encodeURIComponent(id)}`),
-  process.env.NODE_ENV === "production",
-);
+const exists = (id: string, scope: string) => cacheCustomerExists(`${scope}:${id}`, () =>
+  customerExistsInMode(
+    () => stripeRequest(`/v1/customers/${encodeURIComponent(id)}`),
+    process.env.NODE_ENV === "production",
+  ));
 
 async function findCustomer(userId: string, scope: string) {
   const [scoped] = await db.select().from(billingCustomerScopesTable).where(and(
     eq(billingCustomerScopesTable.clerkUserId, userId),
     eq(billingCustomerScopesTable.stripeScope, scope),
   )).limit(1);
-  if (scoped && await exists(scoped.stripeCustomerId)) return scoped;
+  if (scoped && await exists(scoped.stripeCustomerId, scope)) return scoped;
   const [legacy] = await db.select().from(billingCustomersTable)
     .where(eq(billingCustomersTable.clerkUserId, userId)).limit(1);
-  if (legacy && await exists(legacy.stripeCustomerId)) return legacy;
+  if (legacy && await exists(legacy.stripeCustomerId, scope)) return legacy;
   return null;
 }
 
@@ -61,6 +68,6 @@ export async function currentCustomerIds(userId: string, legacyIds: string[]) {
     eq(billingCustomerScopesTable.stripeScope, scope),
   ));
   const ids = [...new Set([...legacyIds, ...scoped.map((row) => row.stripeCustomerId)])];
-  const checks = await Promise.all(ids.map(async (id) => ({ id, valid: await exists(id) })));
+  const checks = await Promise.all(ids.map(async (id) => ({ id, valid: await exists(id, scope) })));
   return checks.filter((item) => item.valid).map((item) => item.id);
 }

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,15 +9,17 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
 import { useClerk, useUser } from '@clerk/expo';
 import { ActionButton, PageTitle, ProgressBar, Screen, Surface } from '@/components/LearningUI';
 import { useLearning } from '@/context/LearningContext';
 import { ageBandNote, ageBands } from '@/data/vocabulary';
-import { useSubscription } from '@/lib/subscriptions';
+import { getWebsiteOrigin, useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { languageOptions, translate } from '@/lib/i18n';
 import { useLocalSearchParams } from 'expo-router';
+import { stageAges, stageNames } from '@workspace/learning-content';
 
 export default function ParentScreen() {
   const colors = useColors();
@@ -35,14 +36,15 @@ export default function ParentScreen() {
     : routeParams.billing;
   const [confirmPurchase, setConfirmPurchase] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const packageToPurchase = subscription.packageToPurchase;
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [noRefundAccepted, setNoRefundAccepted] = useState(false);
   useEffect(() => {
     if (billingReturn === 'success') void subscription.refresh();
-  }, [billingReturn]);
+  }, [billingReturn, subscription.refresh]);
 
   useEffect(() => {
-    if (!subscription.isWeb || subscription.isLoading) return;
+    if (subscription.isLoading) return;
     if (billingReturn === 'success') {
       setNotice(
         translate(
@@ -72,26 +74,16 @@ export default function ParentScreen() {
     }
     try {
       setConfirmPurchase(false);
-      await subscription.purchase(packageToPurchase);
-      if (!subscription.isWeb) setNotice(t('parent.purchaseComplete'));
+      await subscription.purchase({
+        privacyAccepted,
+        disclaimerAccepted,
+        noRefundAccepted,
+      });
+      setNotice(t('parent.purchasePending'));
+      void subscription.refresh();
     } catch (error) {
       setNotice(t('parent.purchaseFailed'));
       setConfirmPurchase(false);
-    }
-  };
-
-  const restore = async () => {
-    setNotice(null);
-    try {
-      const info = await subscription.restore();
-      const restored = info.entitlements.active.premium !== undefined;
-      setNotice(
-        restored
-          ? t('parent.restoreFound')
-          : t('parent.restoreNotFound'),
-      );
-    } catch {
-      setNotice(t('parent.restoreFailed'));
     }
   };
 
@@ -106,11 +98,27 @@ export default function ParentScreen() {
 
   const progressPercent = Math.min(
     100,
-    learning.level >= 4
-      ? 100
-      : ((learning.curriculumXp - (learning.level - 1) * 100) / 100) * 100,
+    learning.selectedStageXp,
   );
-  const levelName = t(`level.name${((learning.level - 1) % 4) + 1}`);
+  const levelName =
+    language === 'en'
+      ? stageNames[learning.selectedStage - 1][0]
+      : language === 'zh-Hans'
+        ? stageNames[learning.selectedStage - 1][2]
+        : stageNames[learning.selectedStage - 1][1];
+  const openLegal = async (path: 'privacy' | 'disclaimer') => {
+    try {
+      await WebBrowser.openBrowserAsync(`${getWebsiteOrigin()}/${path}`);
+    } catch {
+      setNotice(
+        language === 'en'
+          ? 'Could not open the policy page.'
+          : language === 'zh-Hans'
+            ? '未能開啟政策頁面。'
+            : '未能開啟政策頁面。',
+      );
+    }
+  };
 
   return (
     <Screen>
@@ -198,39 +206,115 @@ export default function ParentScreen() {
               <Text
                 style={[styles.levelBadgeText, { color: colors.accentForeground }]}
               >
-                Lv. {learning.level}
+                {language === 'en'
+                  ? `Stage ${learning.selectedStage}`
+                  : language === 'zh-Hans'
+                    ? `第 ${learning.selectedStage} 阶段`
+                    : `第 ${learning.selectedStage} 階段`}
               </Text>
             </View>
           </View>
           <ProgressBar value={progressPercent} />
           <View style={styles.progressFooter}>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {t('parent.xp', { count: learning.curriculumXp })}
+              {t('parent.xp', { count: learning.selectedStageXp })}
             </Text>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {learning.level >= 4
-                ? t('parent.maxLevel')
-                : t('parent.nextLevel', { count: learning.nextLevelXp })}
+              {learning.selectedStageXp >= 100
+                ? language === 'en'
+                  ? 'Stage complete · choose a higher stage anytime.'
+                  : language === 'zh-Hans'
+                    ? '已完成此阶段 · 可随时选择更高阶段。'
+                    : '已完成此階段 · 可隨時選擇更高階段。'
+                : language === 'en'
+                  ? `${learning.nextLevelXp} XP to complete this stage`
+                  : language === 'zh-Hans'
+                    ? `再得 ${learning.nextLevelXp} XP 即完成此阶段`
+                    : `再得 ${learning.nextLevelXp} XP 即完成此階段`}
             </Text>
           </View>
-          <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
-            <Stat
-              icon="flame-outline"
-              value={`${learning.streak}`}
-              label={t('parent.streak')}
-            />
-            <Stat
-              icon="book-outline"
-              value={`${learning.completedLessonIds.length}`}
-              label={t('parent.completedLessons')}
-            />
-            <Stat
-              icon="checkmark-done-outline"
-              value={`${learning.learnedWordIds.length}`}
-              label={t('parent.learnedWords')}
-            />
-          </View>
         </Surface>
+
+        <View style={styles.sectionHead}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {language === 'en'
+              ? 'Choose a learning stage'
+              : language === 'zh-Hans'
+                ? '自選學習階段'
+                : '自選學習階段'}
+          </Text>
+          <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
+            {language === 'en'
+              ? 'Each stage has its own word bank, games, stories and XP.'
+              : language === 'zh-Hans'
+                ? '每個階段都有獨立詞語庫、遊戲、故事及 XP。'
+                : '每個階段都有獨立詞語庫、遊戲、故事及 XP。'}
+          </Text>
+        </View>
+        <View style={styles.ageGrid}>
+          {[1, 2, 3, 4].map((stage) => {
+            const selected = learning.selectedStage === stage;
+            const stageTitle =
+              language === 'en'
+                ? stageNames[stage - 1][0]
+                : language === 'zh-Hans'
+                  ? stageNames[stage - 1][2]
+                  : stageNames[stage - 1][1];
+            return (
+              <Pressable
+                key={stage}
+                accessibilityRole="button"
+                accessibilityState={{ selected, disabled: !subscription.isPremium }}
+                disabled={!subscription.isPremium || learning.progressLoading}
+                onPress={() => {
+                  void learning.selectStage(stage).catch(() =>
+                    setNotice(
+                      language === 'en'
+                        ? 'Could not save the selected stage. Please retry.'
+                        : language === 'zh-Hans'
+                          ? '未能儲存所選階段，請重試。'
+                          : '未能儲存所選階段，請重試。',
+                    ),
+                  );
+                }}
+                style={[
+                  styles.ageOption,
+                  {
+                    backgroundColor: selected ? colors.secondary : colors.card,
+                    borderColor: selected ? colors.primary : colors.border,
+                    opacity: subscription.isPremium ? 1 : 0.65,
+                  },
+                ]}
+              >
+                <Text style={[styles.ageLabel, { color: colors.foreground }]}>
+                  {stageTitle}
+                </Text>
+                <Text style={[styles.ageNote, { color: colors.mutedForeground }]}>
+                  {language === 'en'
+                    ? `Stage ${stage} · ages ${stageAges[stage - 1]}`
+                    : language === 'zh-Hans'
+                      ? `第 ${stage} 阶段 · ${stageAges[stage - 1]} 岁`
+                      : `第 ${stage} 階段 · ${stageAges[stage - 1]} 歲`}
+                </Text>
+                <Text style={[styles.ageNote, { color: colors.primary, fontWeight: '700' }]}>
+                  {learning.xpByStage[stage - 1] ?? 0} / 100 XP
+                </Text>
+                {selected ? (
+                  <Ionicons name="checkmark-circle" size={18} color={colors.primary} style={styles.ageCheck} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+        {!subscription.isPremium ? (
+          <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
+            {language === 'en'
+              ? 'An active subscription is required to select stages and save XP.'
+              : language === 'zh-Hans'
+                ? '訂閱啟用後即可自選階段並儲存 XP。'
+                : '訂閱啟用後即可自選階段並儲存 XP。'}
+          </Text>
+        ) : null}
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
@@ -369,11 +453,7 @@ export default function ParentScreen() {
                         { color: colors.mutedForeground },
                       ]}
                     >
-                    {t(
-                      subscription.isWeb
-                        ? 'parent.pricePeriodWeb'
-                        : 'parent.pricePeriod',
-                    )}
+                    {t('parent.pricePeriodWeb')}
                     </Text>
                   </>
                 ) : (
@@ -385,17 +465,18 @@ export default function ParentScreen() {
                   >
                     {subscription.configured
                       ? t('parent.planNotPublished')
-                      : t(
-                          subscription.isWeb
-                            ? 'parent.planSetupPendingWeb'
-                            : 'parent.planSetupPending',
-                        )}
+                      : t('parent.planSetupPendingWeb')}
                   </Text>
                 )}
               </View>
               <ActionButton
                 label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
-                onPress={() => setConfirmPurchase(true)}
+                onPress={() => {
+                  setPrivacyAccepted(false);
+                  setDisclaimerAccepted(false);
+                  setNoRefundAccepted(false);
+                  setConfirmPurchase(true);
+                }}
                 testID="upgrade-premium"
                 disabled={!subscription.canPurchase || subscription.isPurchasing}
                 loading={subscription.isPurchasing}
@@ -415,35 +496,20 @@ export default function ParentScreen() {
                   { color: colors.mutedForeground },
                 ]}
               >
-                {t(
-                  subscription.isWeb
-                    ? 'parent.subscriptionLegalWeb'
-                    : 'parent.subscriptionLegal',
-                )}
+                {t('parent.subscriptionLegalWeb')}
               </Text>
-              {subscription.isWeb ? (
-                subscription.hasBillingCustomer ? (
-                  <ActionButton
-                    label={t('parent.manageSubscription')}
-                    onPress={() => void manageSubscription()}
-                    tone="outline"
-                    testID="manage-subscription"
-                    loading={subscription.isManagingSubscription}
-                    disabled={subscription.isManagingSubscription}
-                  />
-                ) : null
-              ) : (
+              {subscription.hasBillingCustomer ? (
                 <ActionButton
-                  label={t('parent.restore')}
-                  onPress={restore}
+                  label={t('parent.manageSubscription')}
+                  onPress={() => void manageSubscription()}
                   tone="outline"
-                  testID="restore-purchases"
-                  loading={subscription.isRestoring}
-                  disabled={subscription.isRestoring}
+                  testID="manage-subscription"
+                  loading={subscription.isManagingSubscription}
+                  disabled={subscription.isManagingSubscription}
                 />
-              )}
+              ) : null}
             </>
-          ) : subscription.isWeb ? (
+          ) : (
             subscription.hasBillingCustomer ? (
               <ActionButton
                 label={t('parent.manageSubscription')}
@@ -454,15 +520,6 @@ export default function ParentScreen() {
                 disabled={subscription.isManagingSubscription}
               />
             ) : null
-          ) : (
-            <ActionButton
-              label={t('parent.restore')}
-              onPress={restore}
-              tone="outline"
-              testID="restore-purchases"
-              loading={subscription.isRestoring}
-              disabled={subscription.isRestoring}
-            />
           )}
           {notice ? (
             <Text style={[styles.notice, { color: colors.primary }]}>
@@ -525,26 +582,88 @@ export default function ParentScreen() {
               ]}
             >
               {subscription.priceLabel
-                ? subscription.isWeb
-                  ? t('parent.confirmWebPrice', {
-                      price: subscription.priceLabel,
-                    })
-                  : t('parent.confirmPrice', {
-                      price: subscription.priceLabel,
-                      store:
-                        Platform.OS === 'ios'
-                          ? t('store.apple')
-                          : Platform.OS === 'android'
-                            ? t('store.google')
-                            : t('store.other'),
-                    })
-                : t('parent.confirmStorePrice')}
+                ? t('parent.confirmWebPrice', { price: subscription.priceLabel })
+                : t('parent.planNotPublished')}
             </Text>
+            <View style={styles.agreementList}>
+              <View style={styles.agreementRow}>
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: privacyAccepted }}
+                  onPress={() => setPrivacyAccepted((value) => !value)}
+                  style={styles.agreementCheck}
+                >
+                  <Ionicons
+                    name={privacyAccepted ? 'checkbox' : 'square-outline'}
+                    size={21}
+                    color={privacyAccepted ? colors.primary : colors.mutedForeground}
+                  />
+                  <Text style={[styles.agreementText, { color: colors.foreground }]}>
+                    {language === 'en'
+                      ? 'I agree to and fully understand the privacy policy.'
+                      : language === 'zh-Hans'
+                        ? '我同意并完全理解个人隐私资料政策。'
+                        : '我同意並完全明白個人私隱資料政策。'}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => void openLegal('privacy')}>
+                  <Text style={[styles.agreementLink, { color: colors.primary }]}>
+                    {language === 'en' ? 'Read' : language === 'zh-Hans' ? '查看' : '閱讀'}
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={styles.agreementRow}>
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: disclaimerAccepted }}
+                  onPress={() => setDisclaimerAccepted((value) => !value)}
+                  style={styles.agreementCheck}
+                >
+                  <Ionicons
+                    name={disclaimerAccepted ? 'checkbox' : 'square-outline'}
+                    size={21}
+                    color={disclaimerAccepted ? colors.primary : colors.mutedForeground}
+                  />
+                  <Text style={[styles.agreementText, { color: colors.foreground }]}>
+                    {language === 'en'
+                      ? 'I agree to and fully understand the legal disclaimer.'
+                      : language === 'zh-Hans'
+                        ? '我同意并完全理解法律免责声明。'
+                        : '我同意並完全明白法律免責聲明。'}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => void openLegal('disclaimer')}>
+                  <Text style={[styles.agreementLink, { color: colors.primary }]}>
+                    {language === 'en' ? 'Read' : language === 'zh-Hans' ? '查看' : '閱讀'}
+                  </Text>
+                </Pressable>
+              </View>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: noRefundAccepted }}
+                onPress={() => setNoRefundAccepted((value) => !value)}
+                style={styles.agreementCheck}
+              >
+                <Ionicons
+                  name={noRefundAccepted ? 'checkbox' : 'square-outline'}
+                  size={21}
+                  color={noRefundAccepted ? colors.primary : colors.mutedForeground}
+                />
+                <Text style={[styles.agreementText, { color: colors.foreground }]}>
+                  {language === 'en'
+                    ? 'I understand paid subscription fees are non-refundable.'
+                    : language === 'zh-Hans'
+                      ? '我明白已缴付的订阅月费不予退还。'
+                      : '我明白已繳付的訂閱月費不獲退還。'}
+                </Text>
+              </Pressable>
+            </View>
             <ActionButton
               label={t('parent.confirmAndContinue')}
               onPress={() => void purchase()}
               testID="confirm-subscription"
               loading={subscription.isPurchasing}
+              disabled={!privacyAccepted || !disclaimerAccepted || !noRefundAccepted}
             />
             <ActionButton
               label={t('parent.later')}
@@ -815,6 +934,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     marginTop: 2,
+  },
+  agreementList: {
+    width: '100%',
+    gap: 12,
+    marginVertical: 12,
+  },
+  agreementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  agreementCheck: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 36,
+  },
+  agreementText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  agreementLink: {
+    fontSize: 12,
+    fontWeight: '800',
+    paddingHorizontal: 5,
   },
   confirmBackdrop: {
     flex: 1,

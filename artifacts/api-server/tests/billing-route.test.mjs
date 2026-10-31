@@ -90,6 +90,11 @@ const stubs = {
     }
   `,
   admin: `export async function isAdministrator() { return false; }`,
+  inFlightRequests: `
+    export function createReadCache(_ttlMs, _shouldCache) {
+      return (_key, operation) => operation();
+    }
+  `,
 };
 
 const stubPaths = {};
@@ -121,6 +126,7 @@ await build({
         ["../subscription-state", stubPaths.subscriptionState],
         ["../account-lifecycle", stubPaths.accountLifecycle],
         ["../admin", stubPaths.admin],
+        ["../in-flight-requests", stubPaths.inFlightRequests],
       ]);
       buildApi.onResolve({ filter: /.*/ }, (args) => {
         const stubPath = aliases.get(args.path);

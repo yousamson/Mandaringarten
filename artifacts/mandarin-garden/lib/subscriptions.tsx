@@ -1,197 +1,179 @@
 import React, { createContext, useContext } from 'react';
 import { Platform } from 'react-native';
-import Purchases from 'react-native-purchases';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import Constants from 'expo-constants';
-import { useAuth } from '@clerk/expo';
+import { useAuth, useUser } from '@clerk/expo';
+import { useMutation } from '@tanstack/react-query';
+import * as WebBrowser from 'expo-web-browser';
 import {
   setAuthTokenGetter,
   useCreateBillingCheckout,
   useCreateBillingPortal,
+  useGetAccountAccess,
   useGetBillingPlan,
   useGetBillingSubscription,
+  getGetAccountAccessQueryKey,
+  getGetBillingSubscriptionQueryKey,
 } from '@workspace/api-client-react';
 
-export const PREMIUM_ENTITLEMENT = 'premium';
+const POLICY_VERSION = '2026-10-29.1';
 
-const testKey = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
-const iosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
-const androidKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
+export type CheckoutAcceptance = {
+  privacyAccepted: boolean;
+  disclaimerAccepted: boolean;
+  noRefundAccepted: boolean;
+};
 
-let configured = false;
-
-export function initializeRevenueCat(): boolean {
-  if (Platform.OS === 'web') return false;
-  if (configured) return true;
-
-  const isTestStoreEnvironment =
-    Constants.executionEnvironment === 'storeClient';
-  const nativeStoreKey =
-    Platform.OS === 'ios'
-      ? iosKey
-      : Platform.OS === 'android'
-        ? androidKey
-        : undefined;
-  const apiKey = isTestStoreEnvironment
-    ? testKey
-    : nativeStoreKey ?? (__DEV__ ? testKey : undefined);
-
-  if (!apiKey) return false;
-
-  try {
-    Purchases.configure({ apiKey });
-    configured = true;
-    return true;
-  } catch {
-    return false;
+export function getWebsiteOrigin(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
   }
+  const configured =
+    process.env.EXPO_PUBLIC_WEB_URL?.trim() ||
+    process.env.EXPO_PUBLIC_DOMAIN?.trim();
+  if (!configured) {
+    throw new Error('The Mandarin Garden website address is not configured.');
+  }
+  const url = new URL(
+    configured.match(/^https?:\/\//i) ? configured : `https://${configured}`,
+  );
+  return url.origin;
 }
 
 function useSubscriptionValue() {
-  const queryClient = useQueryClient();
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   setAuthTokenGetter(getToken);
-  const isWeb = Platform.OS === 'web';
-  const webPlan = useGetBillingPlan({
-    query: {
-      enabled: isWeb,
-      staleTime: 300_000,
-    },
+
+  const siteOrigin = getWebsiteOrigin();
+  const request = Platform.OS === 'web'
+    ? undefined
+    : { headers: { Origin: siteOrigin } };
+  const userId = user?.id ?? 'signed-out';
+
+  const plan = useGetBillingPlan({
+    query: { staleTime: 300_000 },
   });
-  const webStatus = useGetBillingSubscription({
+  const billingKey = [...getGetBillingSubscriptionQueryKey(), userId];
+  const accessKey = [...getGetAccountAccessQueryKey(), userId];
+  const status = useGetBillingSubscription({
     query: {
-      enabled: isWeb && isLoaded && Boolean(isSignedIn),
+      enabled: isLoaded && Boolean(isSignedIn),
+      queryKey: billingKey,
       staleTime: 30_000,
       refetchOnWindowFocus: true,
     },
   });
-  const customerInfo = useQuery({
-    queryKey: ['subscriptions', 'customer-info'],
-    queryFn: () => Purchases.getCustomerInfo(),
-    enabled: configured && !isWeb,
-    staleTime: 60_000,
+  const access = useGetAccountAccess({
+    query: {
+      enabled: isLoaded && Boolean(isSignedIn),
+      queryKey: accessKey,
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+    },
   });
-  const offerings = useQuery({
-    queryKey: ['subscriptions', 'offerings'],
-    queryFn: () => Purchases.getOfferings(),
-    enabled: configured && !isWeb,
-    staleTime: 300_000,
-  });
-  const checkoutRequest = useCreateBillingCheckout();
-  const portalRequest = useCreateBillingPortal();
+  const checkoutRequest = useCreateBillingCheckout({ request });
+  const portalRequest = useCreateBillingPortal({ request });
 
-  const purchase = useMutation({
-    mutationFn: async (
-      packageToPurchase?: Parameters<typeof Purchases.purchasePackage>[0],
-    ) => {
-      if (isWeb) {
+  const checkout = useMutation({
+    mutationFn: async (acceptance: CheckoutAcceptance) => {
+      if (!isLoaded || !isSignedIn) {
+        throw new Error('Sign in before starting checkout.');
+      }
+      if (
+        !acceptance.privacyAccepted ||
+        !acceptance.disclaimerAccepted ||
+        !acceptance.noRefundAccepted
+      ) {
+        throw new Error('Confirm all subscription agreements before checkout.');
+      }
+      const origin = getWebsiteOrigin();
+      const response = await checkoutRequest.mutateAsync({
+        data: {
+          privacyAccepted: true,
+          disclaimerAccepted: true,
+          noRefundAccepted: true,
+          policyVersion: POLICY_VERSION,
+          successUrl: `${origin}/parent?billing=success`,
+          cancelUrl: `${origin}/parent?billing=cancelled`,
+        },
+      });
+
+      if (Platform.OS === 'web') {
         if (typeof window === 'undefined') {
           throw new Error('Checkout is only available in a browser.');
         }
-        if (!isLoaded || !isSignedIn) {
-          throw new Error('Sign in before starting checkout.');
-        }
-        const checkout = await checkoutRequest.mutateAsync({
-          data: { returnUrl: window.location.href },
-        });
-        window.location.assign(checkout.url);
-        return null;
+        window.location.assign(response.url);
+        return;
       }
-      if (!packageToPurchase) {
-        throw new Error('A monthly store package is not available.');
-      }
-      const result = await Purchases.purchasePackage(packageToPurchase);
-      return result.customerInfo;
+
+      await WebBrowser.openBrowserAsync(response.url);
     },
     onSuccess: async () => {
-      if (!isWeb) {
-        await queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      if (Platform.OS !== 'web') {
+        await Promise.all([status.refetch(), access.refetch()]);
       }
     },
   });
 
-  const restore = useMutation({
-    mutationFn: () => {
-      if (isWeb) {
-        throw new Error('Web subscriptions are managed through Stripe.');
-      }
-      return Purchases.restorePurchases();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-    },
-  });
-
-  const manageSubscription = useMutation({
+  const manage = useMutation({
     mutationFn: async () => {
-      if (!isWeb || typeof window === 'undefined') {
-        throw new Error('Subscription management is only available on the web.');
-      }
       if (!isLoaded || !isSignedIn) {
         throw new Error('Sign in to manage your subscription.');
       }
-      const portal = await portalRequest.mutateAsync({
-        data: { returnUrl: window.location.href },
+      const origin = getWebsiteOrigin();
+      const response = await portalRequest.mutateAsync({
+        data: { returnUrl: `${origin}/parent` },
       });
-      window.location.assign(portal.url);
+      if (Platform.OS === 'web') {
+        if (typeof window === 'undefined') {
+          throw new Error('Subscription management is only available in a browser.');
+        }
+        window.location.assign(response.url);
+        return;
+      }
+      await WebBrowser.openBrowserAsync(response.url);
+    },
+    onSuccess: async () => {
+      if (Platform.OS !== 'web') {
+        await Promise.all([status.refetch(), access.refetch()]);
+      }
     },
   });
 
-  const packageToPurchase =
-    offerings.data?.current?.availablePackages.find(
-      (availablePackage) => availablePackage.packageType === 'MONTHLY',
-    );
-  const nativeIsPremium =
-    customerInfo.data?.entitlements.active[PREMIUM_ENTITLEMENT] !== undefined;
-  const isPremium = isWeb
-    ? (webStatus.data?.isPremium ?? false)
-    : nativeIsPremium;
+  const isAdmin = access.data?.isAdmin ?? false;
+  const isPremium = isAdmin || (status.data?.isPremium ?? false);
+  const hasBillingCustomer = status.data?.hasBillingCustomer ?? false;
 
   return {
-    isWeb,
-    configured: isWeb ? Boolean(webPlan.data) : configured,
+    isWeb: Platform.OS === 'web',
+    isAdmin,
+    configured: Boolean(plan.data),
     isPremium,
-    hasBillingCustomer: isWeb
-      ? (webStatus.data?.hasBillingCustomer ?? false)
-      : false,
-    offerings: offerings.data,
-    packageToPurchase,
-    canPurchase: isWeb
-      ? Boolean(
-          webPlan.data &&
-            webStatus.isSuccess &&
-            !webStatus.data.isPremium &&
-            isLoaded &&
-            isSignedIn,
-        )
-      : Boolean(packageToPurchase),
-    priceLabel: isWeb
-      ? (webPlan.data?.priceLabel ?? null)
-      : (packageToPurchase?.product.priceString ?? null),
-    isLoading: isWeb
-      ? webPlan.isLoading ||
-        (isLoaded && Boolean(isSignedIn) && webStatus.isLoading)
-      : configured && (customerInfo.isLoading || offerings.isLoading),
-    error: isWeb
-      ? (webPlan.error ??
-        webStatus.error ??
-        checkoutRequest.error ??
-        portalRequest.error ??
-        null)
-      : (offerings.error ?? customerInfo.error ?? null),
+    hasBillingCustomer,
+    canPurchase: Boolean(
+      plan.data &&
+        status.isSuccess &&
+        isLoaded &&
+        isSignedIn &&
+        !isPremium,
+    ),
+    priceLabel: plan.data?.priceLabel ?? null,
+    isLoading:
+      plan.isLoading ||
+      (isLoaded && Boolean(isSignedIn) && (status.isLoading || access.isLoading)),
+    error:
+      plan.error ??
+      status.error ??
+      access.error ??
+      checkoutRequest.error ??
+      portalRequest.error ??
+      null,
     refresh: async () => {
-      if (isWeb) {
-        await Promise.all([webPlan.refetch(), webStatus.refetch()]);
-      } else {
-        await Promise.all([offerings.refetch(), customerInfo.refetch()]);
-      }
+      await Promise.all([plan.refetch(), status.refetch(), access.refetch()]);
     },
-    purchase: purchase.mutateAsync,
-    restore: restore.mutateAsync,
-    manageSubscription: manageSubscription.mutateAsync,
-    isPurchasing: purchase.isPending,
-    isRestoring: !isWeb && restore.isPending,
-    isManagingSubscription: manageSubscription.isPending,
+    purchase: checkout.mutateAsync,
+    manageSubscription: manage.mutateAsync,
+    isPurchasing: checkout.isPending,
+    isManagingSubscription: manage.isPending,
   };
 }
 

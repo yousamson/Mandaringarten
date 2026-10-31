@@ -5,6 +5,7 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { PwaInstallButton } from '@/components/pwa-install-button';
 import { AccountConsentBoundary } from '@/components/legal/account-consent-boundary';
 import { clearAuthConsent } from '@/hooks/use-consent';
 import { disclaimerName, privacyName } from '@/components/legal/consent-check';
@@ -165,6 +166,7 @@ function Garden() {
       <div className="page-shell">
         <footer className="footer">
           <span>© 漢語樂園 Mandarin Garden</span>
+          <PwaInstallButton language={l} />
           <nav className="footer-legal" aria-label="Legal">
             <Link href="/privacy" data-testid="link-footer-privacy">{privacyName(l)}</Link>
             <Link href="/disclaimer" data-testid="link-footer-disclaimer">{disclaimerName(l)}</Link>

@@ -1,4 +1,6 @@
-export type AgeBand = '2-4' | '3-5' | '6-8' | '9-12';
+import type { AgeStage } from '@workspace/learning-content';
+
+export type AgeBand = AgeStage;
 
 export type Word = {
   id: string;
@@ -22,8 +24,8 @@ export type Lesson = {
 };
 
 export const ageBands: { value: AgeBand; labelKey: string; noteKey: string }[] = [
-  { value: '2-4', labelKey: 'age.2-4.label', noteKey: 'age.2-4.note' },
-  { value: '3-5', labelKey: 'age.3-5.label', noteKey: 'age.3-5.note' },
+  { value: '2-3', labelKey: 'age.2-3.label', noteKey: 'age.2-3.note' },
+  { value: '4-5', labelKey: 'age.4-5.label', noteKey: 'age.4-5.note' },
   { value: '6-8', labelKey: 'age.6-8.label', noteKey: 'age.6-8.note' },
   { value: '9-12', labelKey: 'age.9-12.label', noteKey: 'age.9-12.note' },
 ];
@@ -284,5 +286,5 @@ export const lessons: Lesson[] = [
 export const allWords = lessons.flatMap((lesson) => lesson.words);
 
 export function ageBandNote(ageBand: AgeBand): string {
-  return ageBands.find((band) => band.value === ageBand)?.noteKey ?? 'age.2-4.note';
+  return ageBands.find((band) => band.value === ageBand)?.noteKey ?? 'age.2-3.note';
 }

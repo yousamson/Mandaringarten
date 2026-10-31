@@ -10,10 +10,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { LearningProvider } from '@/context/LearningContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { setBaseUrl } from '@workspace/api-client-react';
-import {
-  initializeRevenueCat,
-  SubscriptionProvider,
-} from '@/lib/subscriptions';
+import { SubscriptionProvider } from '@/lib/subscriptions';
 
 const apiDomain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
 setBaseUrl(
@@ -21,8 +18,6 @@ setBaseUrl(
     ? `https://${apiDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '')}`
     : null,
 );
-
-initializeRevenueCat();
 
 const queryClient = new QueryClient();
 const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';

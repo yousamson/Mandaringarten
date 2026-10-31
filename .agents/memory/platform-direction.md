@@ -1,10 +1,10 @@
 ---
 name: Product platform direction
-description: User decision to prioritize the web experience and preserve the native app separately.
+description: User decision to align web and Expo app content and billing while pursuing non-Apple and non-Google distribution.
 ---
 
-The user chose to switch Mandarin Garden to a web app using Stripe, with the intention of publishing through Replit. Phone browsers are a first-class website target, especially for games and short reading. Preserve the existing Expo app rather than deleting it; native store billing remains a separate concern.
+The user wants the Mandarin Garden website and Expo app to present the same learning content, stage choices, and persistent progress, while retaining Stripe for subscriptions. They do not plan to publish through Apple App Store or Google Play; they chose an installable website PWA as the distribution route.
 
-**Why:** The user explicitly selected “改做網頁版並使用 Stripe” instead of using Stripe for native in-app purchases, and has repeatedly required the website to fit phone screens.
+**Why:** The user explicitly asked for the mobile app to match the website, keep Stripe, and explore distribution outside Apple and Google.
 
-**How to apply:** Treat web membership as the main delivery path and verify responsive behavior on phone widths, particularly for games and reading. Do not replace native RevenueCat billing with web Stripe checkout or remove the preserved native product without a new user instruction.
+**How to apply:** Keep the web and Expo experiences on the same source of learning content and account progress. Use Stripe for subscriptions across the product. Treat the website PWA as the preferred installable mobile distribution channel; do not prepare Apple or Google store builds unless the user changes this direction.

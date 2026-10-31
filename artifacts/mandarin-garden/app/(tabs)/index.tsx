@@ -9,88 +9,75 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import {
-  PageTitle,
-  ProgressBar,
-  Screen,
-  Surface,
-} from '@/components/LearningUI';
+import { PageTitle, ProgressBar, Screen, Surface } from '@/components/LearningUI';
 import { useLearning } from '@/context/LearningContext';
-import { ageBands, lessons } from '@/data/vocabulary';
+import { ageBands } from '@/data/vocabulary';
 import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { translate } from '@/lib/i18n';
+import {
+  freeReadings,
+  getStageContent,
+  modeCopy,
+  pathTheme,
+  stageAges,
+  stageNames,
+  type PlaygroundLanguage,
+} from '@workspace/learning-content';
+import type { GameMode } from '@workspace/learning-content/games';
+
+function tr(language: PlaygroundLanguage, en: string, hant: string, hans: string) {
+  return language === 'en' ? en : language === 'zh-Hant' ? hant : hans;
+}
 
 export default function HomeScreen() {
   const colors = useColors();
   const { language } = useLanguage();
+  const l = language as PlaygroundLanguage;
   const t = (key: string, values?: Record<string, string | number>) =>
     translate(language, key, values);
   const router = useRouter();
   const learning = useLearning();
-  const { isPremium } = useSubscription();
-  const ageLabel =
-    ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.2-4.label';
-  const progress = Math.min(
-    100,
-    learning.level >= 4
-      ? 100
-      : ((learning.curriculumXp - (learning.level - 1) * 100) / 100) * 100,
-  );
-  const nextLesson =
-    lessons.find(
-      (lesson) =>
-        (!lesson.premium || (isPremium && learning.level >= 4)) &&
-        !learning.completedLessonIds.includes(lesson.id),
-    ) ?? lessons[0];
+  const subscription = useSubscription();
+  const stage = subscription.isPremium ? learning.selectedStage : 1;
+  const content = getStageContent(stage);
+  const freeReading = freeReadings[learning.ageBand];
+  const games: GameMode[] = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order'];
+  const visibleGames = subscription.isPremium ? games : ['pinyin' as const];
+
+  const openLesson = (params?: { path?: string; story?: string }) => {
+    router.push({
+      pathname: '/(tabs)/lessons',
+      params: params ?? {},
+    });
+  };
+  const openGame = (mode: GameMode) => {
+    router.push({ pathname: '/(tabs)/games', params: { mode } });
+  };
 
   return (
     <Screen>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
           <View style={styles.brand}>
-            <View
-              style={[
-                styles.brandMark,
-                { backgroundColor: colors.secondary },
-              ]}
-            >
-              <Ionicons name="leaf" size={21} color={colors.primary} />
+            <View style={[styles.brandMark, { backgroundColor: colors.secondary }]}>
+              <Ionicons name="leaf" size={22} color={colors.primary} />
             </View>
             <View>
-              <Text style={[styles.brandName, { color: colors.foreground }]}>
-                {t('app.name')}
-              </Text>
-              <Text
-                style={[
-                  styles.brandCaption,
-                  { color: colors.mutedForeground },
-                ]}
-              >
-                {t('home.brandTagline')}
+              <Text style={[styles.brandName, { color: colors.foreground }]}>{t('app.name')}</Text>
+              <Text style={[styles.brandCaption, { color: colors.mutedForeground }]}>
+                {tr(l, 'A place to grow with Mandarin', '陪孩子一起長大的學習樂園', '陪孩子一起长大的学习乐园')}
               </Text>
             </View>
           </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('nav.parent')}
-            testID="open-parent"
             onPress={() => router.push('/(tabs)/parent')}
-            style={[
-              styles.profileButton,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
+            style={[styles.profileButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           >
-            <Ionicons
-              name="person-circle-outline"
-              size={25}
-              color={colors.primary}
-            />
+            <Ionicons name="person-circle-outline" size={25} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -100,482 +87,236 @@ export default function HomeScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.hero}
         >
-          <View
-            style={[styles.heroDecorOne, { backgroundColor: colors.glass }]}
-          />
-          <View
-            style={[styles.heroDecorTwo, { backgroundColor: colors.glass }]}
-          />
-          <View style={styles.heroCopy}>
-            <View style={[styles.heroPill, { backgroundColor: colors.glass }]}>
-              <Ionicons
-                name="sunny-outline"
-                size={14}
-                color={colors.accent}
-              />
-              <Text
-                style={[
-                  styles.heroPillText,
-                  { color: colors.primaryForeground },
-                ]}
-              >
-                {t('home.dailyTime')}
+          <View style={styles.heroDecoration} />
+          <Text style={[styles.heroEyebrow, { color: colors.accent }]}>
+            {tr(l, `STAGE ${stage} · AGES ${stageAges[stage - 1]}`, `第 ${stage} 階段 · ${stageAges[stage - 1]} 歲`, `第 ${stage} 阶段 · ${stageAges[stage - 1]} 岁`)}
+          </Text>
+          <Text style={styles.heroTitle}>
+            {tr(l, 'Learn Mandarin through play', '在遊戲中學習漢語', '在游戏中学习汉语')}
+          </Text>
+          <Text style={styles.heroSubtitle}>
+            {tr(l, stageNames[stage - 1][0], stageNames[stage - 1][1], stageNames[stage - 1][2])}
+          </Text>
+          {subscription.isPremium ? (
+            <View style={styles.xpCard}>
+              <View style={styles.xpHeader}>
+                <Text style={[styles.xpLabel, { color: colors.foreground }]}>
+                  {tr(l, 'Selected stage progress', '所選階段進度', '所选阶段进度')}
+                </Text>
+                <Text style={[styles.xpValue, { color: colors.primary }]}>
+                  {learning.selectedStageXp}/100 XP
+                </Text>
+              </View>
+              <ProgressBar value={Math.min(100, learning.selectedStageXp)} />
+              <Text style={[styles.xpHint, { color: colors.mutedForeground }]}>
+                {learning.selectedStageXp >= 100
+                  ? tr(l, 'Stage complete · choose a higher challenge anytime.', '已完成此階段 · 可隨時挑戰更高階段。', '已完成此阶段 · 可随时挑战更高阶段。')
+                  : tr(l, '100 XP completes this stage.', '累積 100 XP 即完成此階段。', '累计 100 XP 即完成此阶段。')}
               </Text>
             </View>
-            <Text
-              style={[
-                styles.heroTitle,
-                { color: colors.primaryForeground },
-              ]}
-            >
-              {t('home.heroTitle')}
-            </Text>
-            <Text
-              style={[
-                styles.heroDescription,
-                { color: colors.heroMuted },
-              ]}
-            >
-              {t('home.heroDescription')}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              testID="start-daily-lesson"
-              onPress={() => router.push('/(tabs)/lessons')}
-              style={({ pressed }) => [
-                styles.heroButton,
-                {
-                  backgroundColor: colors.background,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-            >
+          ) : (
+            <Pressable onPress={() => router.push('/(tabs)/parent')} style={styles.heroButton}>
               <Text style={[styles.heroButtonText, { color: colors.primary }]}>
-                {t('home.startLesson')}
+                {tr(l, 'Open parent area', '前往家長專區', '前往家长专区')}
               </Text>
-              <Ionicons name="arrow-forward" size={17} color={colors.primary} />
+              <Ionicons name="arrow-forward" size={16} color={colors.primary} />
             </Pressable>
-          </View>
-          <View style={[styles.heroSeal, { backgroundColor: colors.glass }]}>
-            <Ionicons
-              name="book-outline"
-              size={35}
-              color={colors.accent}
-            />
-            <View style={[styles.sealDot, { backgroundColor: colors.accent }]} />
-          </View>
+          )}
         </LinearGradient>
 
-        <Surface style={styles.progressCard}>
-          <View style={styles.progressTop}>
-            <View>
-              <Text
-                style={[styles.progressEyebrow, { color: colors.primary }]}
-              >
-                {t('home.progressEyebrow')}
-              </Text>
-              <Text
-                style={[styles.progressTitle, { color: colors.foreground }]}
-              >
-                {t('home.levelTitle', {
-                  level: learning.level,
-                  name: t(`level.name${learning.level}`),
-                })}
-              </Text>
-            </View>
-            <View
-              style={[styles.xpPill, { backgroundColor: colors.accent }]}
-            >
-              <Ionicons name="star" size={14} color={colors.accentForeground} />
-              <Text style={[styles.xpText, { color: colors.accentForeground }]}>
-                {learning.xp} XP
-              </Text>
-            </View>
-          </View>
-          <ProgressBar value={progress} />
-          <View style={styles.progressBottom}>
-            <Text style={[styles.helper, { color: colors.mutedForeground }]}>
-              {t('home.wordsLearned', { count: learning.learnedWordIds.length })}
-            </Text>
-            <Text style={[styles.helper, { color: colors.mutedForeground }]}>
-              {t('home.streak', { count: learning.streak })}
-            </Text>
-          </View>
-        </Surface>
-
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {t('home.courses')}
-            </Text>
-            <Text
-              style={[
-                styles.sectionSubtitle,
-                { color: colors.mutedForeground },
-              ]}
-            >
-              {t('home.ageLine', { age: t(ageLabel) })}
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            testID="see-all-lessons"
-            onPress={() => router.push('/(tabs)/lessons')}
-            style={styles.moreButton}
-          >
-            <Text style={[styles.moreText, { color: colors.primary }]}>
-              {t('common.all')}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-          </Pressable>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {tr(l, 'Free reading', '免費閱讀', '免费阅读')}
+          </Text>
+          <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+            {tr(l, 'Choose an age range', '選擇年齡階段', '选择年龄阶段')}
+          </Text>
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          testID={`continue-${nextLesson.id}`}
-          onPress={() => router.push('/(tabs)/lessons')}
-          style={({ pressed }) => ({ opacity: pressed ? 0.86 : 1 })}
-        >
-          <Surface style={styles.nextCard}>
-            <View
-              style={[styles.nextIcon, { backgroundColor: colors.secondary }]}
-            >
-              <Ionicons
-                name={nextLesson.icon as keyof typeof Ionicons.glyphMap}
-                size={23}
-                color={colors.primary}
-              />
-            </View>
-            <View style={styles.nextCopy}>
-              <Text style={[styles.nextLabel, { color: colors.primary }]}>
-                {learning.completedLessonIds.length === 0
-                  ? t('home.firstLesson')
-                  : t('home.continue')}
-              </Text>
-              <Text style={[styles.nextTitle, { color: colors.foreground }]}>
-                {t(`lesson.${nextLesson.id}.title`)}
-              </Text>
-              <Text
+        <View style={styles.ageRow}>
+          {ageBands.map((band) => {
+            const selected = learning.ageBand === band.value;
+            return (
+              <Pressable
+                key={band.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => learning.setAgeBand(band.value)}
                 style={[
-                  styles.nextSubtitle,
-                  { color: colors.mutedForeground },
+                  styles.ageChip,
+                  { backgroundColor: selected ? colors.secondary : colors.card, borderColor: selected ? colors.primary : colors.border },
                 ]}
               >
-                {t(`lesson.${nextLesson.id}.subtitle`)}
+                <Text style={[styles.ageText, { color: selected ? colors.primary : colors.foreground }]}>
+                  {t(band.labelKey)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => openLesson({ story: 'free' })}
+        >
+          <Surface style={styles.readingCard}>
+            <View style={[styles.readingIcon, { backgroundColor: colors.softAccent }]}>
+              <Ionicons name="book-outline" size={21} color={colors.warmInk} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardEyebrow, { color: colors.primary }]}>
+                {tr(l, 'FREE STORY', '免費短篇', '免费短篇')}
+              </Text>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                {freeReading.title[language]}
+              </Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {t(ageBands.find((band) => band.value === learning.ageBand)?.labelKey ?? 'age.2-3.label')}
               </Text>
             </View>
-            <View
-              style={[styles.playCircle, { backgroundColor: colors.accent }]}
-            >
-              <Ionicons
-                name="play"
-                size={18}
-                color={colors.accentForeground}
-              />
-            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </Surface>
         </Pressable>
 
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {t('home.playHeading')}
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {tr(l, 'Choose a word path', '挑一條詞語小徑', '挑一条词语小径')}
+          </Text>
+          {subscription.isPremium ? (
+            <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+              {content.words.length} {tr(l, 'words', '個詞語', '个词语')}
             </Text>
-            <Text
-              style={[
-                styles.sectionSubtitle,
-                { color: colors.mutedForeground },
-              ]}
-            >
-              {t('home.playDescription')}
-            </Text>
-          </View>
+          ) : null}
         </View>
+        {subscription.isPremium ? (
+          <View style={styles.pathGrid}>
+            {Array.from({ length: Math.min(4, Math.ceil(content.words.length / 20)) }, (_, index) => (
+              <Pressable
+                key={index}
+                accessibilityRole="button"
+                onPress={() => openLesson({ path: String(index + 1) })}
+                style={[styles.pathCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={[styles.pathNumber, { backgroundColor: colors.secondary }]}>
+                  <Text style={[styles.pathNumberText, { color: colors.primary }]}>{index + 1}</Text>
+                </View>
+                <Text style={[styles.pathTitle, { color: colors.foreground }]} numberOfLines={2}>
+                  {pathTheme(l, stage, index + 1)}
+                </Text>
+                <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                  20 {tr(l, 'words', '個詞語', '个词语')}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <Surface style={styles.lockedCard}>
+            <Ionicons name="lock-closed-outline" size={19} color={colors.warmInk} />
+            <Text style={[styles.cardSub, { color: colors.mutedForeground, flex: 1 }]}>
+              {tr(l, 'Members can choose any of four stages, with 200 words in each stage.', '會員可自選四個階段，每階段各有 200 個詞語。', '会员可自选四个阶段，每阶段各有 200 个词语。')}
+            </Text>
+          </Surface>
+        )}
 
-        <Pressable
-          accessibilityRole="button"
-          testID="open-game"
-          onPress={() => router.push('/(tabs)/games')}
-          style={({ pressed }) => ({ opacity: pressed ? 0.86 : 1 })}
-        >
-          <Surface style={styles.gameCard}>
-            <View style={[styles.gameIcon, { backgroundColor: colors.softAccent }]}>
-              <Ionicons
-                name="extension-puzzle-outline"
-                size={25}
-                color={colors.warmInk}
-              />
-            </View>
-            <View style={styles.gameCopy}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {tr(l, 'Play a game', '挑選遊戲', '挑选游戏')}
+          </Text>
+        </View>
+        <View style={styles.gameGrid}>
+          {visibleGames.map((mode) => (
+            <Pressable
+              key={mode}
+              accessibilityRole="button"
+              onPress={() => openGame(mode)}
+              style={[styles.gameCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Ionicons name="game-controller-outline" size={18} color={colors.primary} />
               <Text style={[styles.gameTitle, { color: colors.foreground }]}>
-                {t('home.gameTitle')}
+                {tr(l, modeCopy[mode].name[0], modeCopy[mode].name[1], modeCopy[mode].name[2])}
               </Text>
-              <Text
-                style={[
-                  styles.gameSubtitle,
-                  { color: colors.mutedForeground },
-                ]}
+              <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {tr(l, 'Short stories', '短篇故事', '短篇故事')}
+          </Text>
+          {subscription.isPremium ? (
+            <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+              {content.stories.length} {tr(l, 'to replay', '可重複聆聽', '可重复聆听')}
+            </Text>
+          ) : null}
+        </View>
+        {subscription.isPremium ? (
+          <View style={styles.storyList}>
+            {content.stories.slice(0, 3).map((story) => (
+              <Pressable
+                key={story.id}
+                accessibilityRole="button"
+                onPress={() => openLesson({ story: story.id })}
+                style={[styles.storyRow, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
-                {t('home.gameDescription')}
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.mutedForeground}
-            />
-          </Surface>
-        </Pressable>
+                <Ionicons name="headset-outline" size={18} color={colors.primary} />
+                <Text style={[styles.storyTitle, { color: colors.foreground }]} numberOfLines={1}>
+                  {language === 'en' ? story.title.en : language === 'zh-Hans' ? story.title.simp : story.title.trad}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        <Text style={[styles.footer, { color: colors.mutedForeground }]}>
+          {tr(l, 'A learning playground that grows with your child.', '陪孩子一起長大的學習樂園。', '陪孩子一起长大的学习乐园。')}
+        </Text>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 108,
-    gap: 15,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 1,
-  },
-  brand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandMark: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandName: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  brandCaption: {
-    fontSize: 10,
-    marginTop: 2,
-  },
-  profileButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hero: {
-    minHeight: 228,
-    position: 'relative',
-    overflow: 'hidden',
-    borderRadius: 27,
-    padding: 20,
-  },
-  heroDecorOne: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    top: -68,
-    right: -40,
-    borderRadius: 80,
-  },
-  heroDecorTwo: {
-    position: 'absolute',
-    width: 95,
-    height: 95,
-    bottom: -50,
-    right: 48,
-    borderRadius: 48,
-  },
-  heroCopy: {
-    maxWidth: '76%',
-    zIndex: 2,
-  },
-  heroPill: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderRadius: 15,
-    marginBottom: 13,
-  },
-  heroPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  heroTitle: {
-    fontSize: 25,
-    lineHeight: 31,
-    fontWeight: '800',
-  },
-  heroDescription: {
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: 6,
-  },
-  heroButton: {
-    minHeight: 40,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    marginTop: 14,
-  },
-  heroButtonText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  heroSeal: {
-    position: 'absolute',
-    right: 17,
-    bottom: 19,
-    width: 58,
-    height: 58,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: '-8deg' }],
-  },
-  sealDot: {
-    position: 'absolute',
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    top: 9,
-    right: 9,
-  },
-  progressCard: {
-    gap: 10,
-  },
-  progressTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  progressEyebrow: {
-    fontSize: 10,
-    fontWeight: '700',
-    marginBottom: 3,
-  },
-  progressTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  xpPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 13,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-  },
-  xpText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  progressBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  helper: {
-    fontSize: 10,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  sectionSubtitle: {
-    fontSize: 11,
-    marginTop: 3,
-  },
-  moreButton: {
-    minHeight: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 1,
-  },
-  moreText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  nextCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 15,
-  },
-  nextIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  nextLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  nextTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  nextSubtitle: {
-    fontSize: 11,
-  },
-  playCircle: {
-    width: 37,
-    height: 37,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-  },
-  gameIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameCopy: {
-    flex: 1,
-    gap: 3,
-  },
-  gameTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  gameSubtitle: {
-    fontSize: 11,
-  },
+  content: { padding: 20, paddingBottom: 48, gap: 16 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  brandMark: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  brandName: { fontSize: 16, fontWeight: '800' },
+  brandCaption: { fontSize: 10, marginTop: 2 },
+  profileButton: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  hero: { overflow: 'hidden', borderRadius: 24, padding: 20, gap: 9, minHeight: 205 },
+  heroDecoration: { position: 'absolute', right: -28, top: -35, width: 140, height: 140, borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.12)' },
+  heroEyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  heroTitle: { color: '#FFFFFF', fontSize: 25, lineHeight: 32, fontWeight: '800', maxWidth: '85%' },
+  heroSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
+  xpCard: { marginTop: 7, backgroundColor: '#FFFFFF', padding: 12, borderRadius: 15, gap: 8 },
+  xpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  xpLabel: { fontSize: 12, fontWeight: '700' },
+  xpValue: { fontSize: 12, fontWeight: '800' },
+  xpHint: { fontSize: 10, lineHeight: 15 },
+  heroButton: { marginTop: 9, backgroundColor: '#FFFFFF', alignSelf: 'flex-start', borderRadius: 13, paddingHorizontal: 14, minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroButtonText: { fontSize: 12, fontWeight: '800' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 3 },
+  sectionTitle: { fontSize: 18, fontWeight: '800' },
+  sectionMeta: { fontSize: 11, fontWeight: '600' },
+  ageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  ageChip: { borderRadius: 11, borderWidth: 1, minHeight: 34, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 11 },
+  ageText: { fontSize: 11, fontWeight: '700' },
+  readingCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  readingIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cardEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
+  cardTitle: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+  cardSub: { fontSize: 11, lineHeight: 16, marginTop: 2 },
+  pathGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
+  pathCard: { width: '48%', minHeight: 116, borderWidth: 1, borderRadius: 16, padding: 12, gap: 6 },
+  pathNumber: { width: 25, height: 25, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  pathNumberText: { fontSize: 12, fontWeight: '800' },
+  pathTitle: { fontSize: 12, lineHeight: 17, fontWeight: '700', flex: 1 },
+  lockedCard: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 14 },
+  gameGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  gameCard: { width: '48%', minHeight: 54, borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  gameTitle: { flex: 1, fontSize: 11, fontWeight: '700' },
+  storyList: { gap: 7 },
+  storyRow: { minHeight: 48, borderWidth: 1, borderRadius: 13, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  storyTitle: { flex: 1, fontSize: 12, fontWeight: '700' },
+  footer: { textAlign: 'center', fontSize: 11, lineHeight: 17, paddingVertical: 8 },
 });

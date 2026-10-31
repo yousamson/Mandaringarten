@@ -7,6 +7,15 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { useAuth, useUser } from '@clerk/expo';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetLearningProgressQueryKey,
+  useGetLearningProgress,
+  useUpdateLearningProgress,
+} from '@workspace/api-client-react';
+import { normalizeAgeStage } from '@workspace/learning-content';
+import { useSubscription } from '@/lib/subscriptions';
 import type { AgeBand } from '@/data/vocabulary';
 
 const STORAGE_KEY = 'mandarin-garden-learning-v1';
@@ -27,6 +36,11 @@ type LearningContextValue = LearningState & {
   hydrated: boolean;
   level: number;
   nextLevelXp: number;
+  selectedStage: number;
+  xpByStage: number[];
+  selectedStageXp: number;
+  progressLoading: boolean;
+  selectStage: (stage: number) => Promise<void>;
   setAgeBand: (ageBand: AgeBand) => void;
   awardCorrectAnswer: (countsForCurriculum?: boolean) => void;
   markWordLearned: (wordId: string) => void;
@@ -35,7 +49,7 @@ type LearningContextValue = LearningState & {
 };
 
 const initialState: LearningState = {
-  ageBand: '2-4',
+  ageBand: '2-3',
   xp: 0,
   curriculumXp: 0,
   streak: 0,
@@ -83,6 +97,23 @@ export function LearningProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { isPremium } = useSubscription();
+  const queryClient = useQueryClient();
+  const progressKey = useMemo(
+    () => [...getGetLearningProgressQueryKey(), user?.id ?? 'signed-out'],
+    [user?.id],
+  );
+  const progressQuery = useGetLearningProgress({
+    query: {
+      enabled: isLoaded && Boolean(isSignedIn) && isPremium,
+      queryKey: progressKey,
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+    },
+  });
+  const updateProgress = useUpdateLearningProgress();
   const [state, setState] = useState<LearningState>(initialState);
   const [hydrated, setHydrated] = useState(false);
 
@@ -93,14 +124,12 @@ export function LearningProvider({
         if (!active) return;
         if (stored) {
           const parsed = JSON.parse(stored) as Record<string, unknown>;
-          const savedAgeBand =
-            parsed.ageBand === '0-2' || parsed.ageBand === '0-4'
-              ? '2-4'
-              : parsed.ageBand;
           setState({
             ...initialState,
             ...parsed,
-            ageBand: (savedAgeBand as AgeBand) ?? initialState.ageBand,
+            ageBand: normalizeAgeStage(
+              typeof parsed.ageBand === 'string' ? parsed.ageBand : null,
+            ),
           });
         }
       })
@@ -125,6 +154,30 @@ export function LearningProvider({
   const setAgeBand = useCallback((ageBand: AgeBand) => {
     setState((current) => ({ ...current, ageBand }));
   }, []);
+
+  const selectedStage = isPremium
+    ? (progressQuery.data?.selectedStage ?? 1)
+    : 1;
+  const xpByStage = isPremium
+    ? (progressQuery.data?.xpByStage ?? [0, 0, 0, 0])
+    : [0, 0, 0, 0];
+  const selectedStageXp = xpByStage[selectedStage - 1] ?? 0;
+
+  const selectStage = useCallback(
+    async (stage: number) => {
+      if (!Number.isInteger(stage) || stage < 1 || stage > 4) {
+        throw new Error('Choose a learning stage from 1 to 4.');
+      }
+      if (!isPremium) {
+        throw new Error('An active membership is required to choose a stage.');
+      }
+      const updated = await updateProgress.mutateAsync({
+        data: { selectedStage: stage },
+      });
+      queryClient.setQueryData(progressKey, updated);
+    },
+    [isPremium, progressKey, queryClient, updateProgress],
+  );
 
   const markWordLearned = useCallback((wordId: string) => {
     setState((current) => {
@@ -170,19 +223,38 @@ export function LearningProvider({
   }, []);
 
   const value = useMemo<LearningContextValue>(() => {
-    const level = Math.min(4, Math.floor(state.curriculumXp / 100) + 1);
+    const level = selectedStage;
     return {
       ...state,
       hydrated,
       level,
-      nextLevelXp: level < 4 ? level * 100 : 300,
+      curriculumXp: selectedStageXp,
+      selectedStage,
+      xpByStage,
+      selectedStageXp,
+      progressLoading: progressQuery.isLoading,
+      nextLevelXp: Math.max(0, 100 - selectedStageXp),
+      selectStage,
       setAgeBand,
       awardCorrectAnswer,
       markWordLearned,
       completeLesson,
       recordGame,
     };
-  }, [state, hydrated, setAgeBand, awardCorrectAnswer, markWordLearned, completeLesson, recordGame]);
+  }, [
+    state,
+    hydrated,
+    selectedStage,
+    selectedStageXp,
+    xpByStage,
+    progressQuery.isLoading,
+    selectStage,
+    setAgeBand,
+    awardCorrectAnswer,
+    markWordLearned,
+    completeLesson,
+    recordGame,
+  ]);
 
   return (
     <LearningContext.Provider value={value}>
