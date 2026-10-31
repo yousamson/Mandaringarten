@@ -268,14 +268,25 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), [],
     'pending rounds stay in their own browser context');
   useBrowserStorage(browserOne);
+
+  memberships.set(familyA.customerId, 'canceled');
+  const lapsedReplay = await postAnswer(browserOne, reloadedOutbox.pendingRounds(familyA.userId)[0]);
+  assert.equal(lapsedReplay.status, 403, 'a lapsed member cannot submit a queued answer');
+  assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), [pending],
+    'a rejected answer stays available in the browser outbox');
+
+  memberships.set(familyA.customerId, 'active');
   assert.deepEqual(await postAnswer(browserOne, reloadedOutbox.pendingRounds(familyA.userId)[0]), {
     correct: true, selectedStage: 1, xpByStage: [100, 105, 35, 5],
-  });
+  }, 'renewal allows the queued answer to award exactly 5 XP');
   reloadedOutbox.acknowledgeRound(familyA.userId, pending.roundId, pending.questionId);
   assert.deepEqual(reloadedOutbox.pendingRounds(familyA.userId), []);
   assert.deepEqual(await postAnswer(browserOne, pending), {
     correct: true, selectedStage: 1, xpByStage: [100, 105, 35, 5],
-  }, 'replaying an acknowledged or retried round remains idempotent on the server');
+  }, 'replaying after acknowledgement remains idempotent on the server');
+  assert.deepEqual(await getProgress(browserOne), {
+    selectedStage: 1, xpByStage: [100, 105, 35, 5],
+  }, 'a renewed queued answer is awarded only once');
 
   // Account B has independent storage and progress, even if a round identifier
   // is reused across accounts.
