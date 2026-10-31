@@ -260,6 +260,12 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
     questionId: pendingRound.questions[0].id,
     answer: pendingRound.questions[0].speakText,
   };
+  await db.update(learningChallengesTable).set({
+    createdAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
+  }).where(and(
+    eq(learningChallengesTable.clerkUserId, familyA.userId),
+    eq(learningChallengesTable.roundId, pendingRound.roundId),
+  ));
   useBrowserStorage(browserOne);
   outbox.queueRound(familyA.userId, pending);
   const reloadedOutbox = await loadOutbox();
@@ -302,6 +308,53 @@ test('authenticated progress sync preserves XP across browsers, sessions, and re
   assert.deepEqual(await getProgress(browserOne), {
     selectedStage: 1, xpByStage: [100, 105, 35, 5],
   }, 'another account cannot read or change this family’s XP');
+
+  const expiringRound = await issueRound(browserOne, { stage: 2, mode: 'match' });
+  const expiringQuestion = expiringRound.questions[0];
+  const oldCreatedAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+  await db.update(learningChallengesTable).set({ createdAt: oldCreatedAt }).where(and(
+    eq(learningChallengesTable.clerkUserId, familyA.userId),
+    eq(learningChallengesTable.roundId, expiringRound.roundId),
+  ));
+  const expiredSubmission = await request('/learning/round', {
+    token: browserOne.token,
+    method: 'POST',
+    body: {
+      roundId: expiringRound.roundId,
+      questionId: expiringQuestion.id,
+      answer: expiringQuestion.word.trad,
+    },
+  });
+  assert.equal(expiredSubmission.status, 410, 'expired queued answers must be rejected explicitly');
+  assert.equal(expiredSubmission.body.code, 'ROUND_EXPIRED');
+  assert.match(expiredSubmission.body.error, /no XP was awarded/i);
+  assert.deepEqual(await getProgress(browserOne), {
+    selectedStage: 1, xpByStage: [100, 105, 35, 5],
+  }, 'an expired answer cannot award XP');
+
+  const soonToBeCleanedRound = await issueRound(browserOne, { stage: 2, mode: 'match' });
+  await db.update(learningChallengesTable).set({ createdAt: oldCreatedAt }).where(and(
+    eq(learningChallengesTable.clerkUserId, familyA.userId),
+    eq(learningChallengesTable.roundId, soonToBeCleanedRound.roundId),
+  ));
+  await issueRound(browserOne, { stage: 2, mode: 'match' });
+  const [cleanedChallenge] = await db.select().from(learningChallengesTable).where(and(
+    eq(learningChallengesTable.clerkUserId, familyA.userId),
+    eq(learningChallengesTable.roundId, soonToBeCleanedRound.roundId),
+  ));
+  assert.equal(cleanedChallenge, undefined, 'issuing a new round removes stale challenge records');
+  const cleanedSubmission = await request('/learning/round', {
+    token: browserOne.token,
+    method: 'POST',
+    body: {
+      roundId: soonToBeCleanedRound.roundId,
+      questionId: soonToBeCleanedRound.questions[0].id,
+      answer: soonToBeCleanedRound.questions[0].word.trad,
+    },
+  });
+  assert.equal(cleanedSubmission.status, 404);
+  assert.equal(cleanedSubmission.body.code, 'ROUND_UNAVAILABLE');
+  assert.match(cleanedSubmission.body.error, /expired/i);
 
   const selectedStageResponse = await request('/learning/progress', {
     token: browserOne.token,

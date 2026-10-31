@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const learningProgressTable = pgTable("learning_progress", {
   clerkUserId: text("clerk_user_id").primaryKey(),
@@ -26,7 +26,10 @@ export const learningChallengesTable = pgTable("learning_challenges", {
   mode: text("mode").notNull(),
   answers: jsonb("answers").$type<Record<string, string>>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [primaryKey({ columns: [table.clerkUserId, table.roundId] })]);
+}, (table) => [
+  primaryKey({ columns: [table.clerkUserId, table.roundId] }),
+  index("learning_challenges_created_at_idx").on(table.createdAt),
+]);
 
 export const legalConsentsTable = pgTable("legal_consents", {
   clerkUserId: text("clerk_user_id").notNull(),

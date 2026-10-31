@@ -1,7 +1,7 @@
 import { Router, type IRouter, type ErrorRequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 import { getAuth } from "@clerk/express";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { db, learningChallengesTable, learningProgressTable, learningRoundsTable, legalConsentsTable } from "@workspace/db";
 import { AcceptLegalConsentBody, IssueLearningRoundBody, IssueLearningRoundResponse, RecordLearningRoundBody, RecordLearningRoundResponse, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
 import { buildRound, type GameMode, type Script } from "@workspace/learning-content/games";
@@ -12,6 +12,13 @@ import { isAdministrator } from "../admin";
 import { mergeLegacyProgress } from "../learning-progress";
 
 const router: IRouter = Router();
+export const LEARNING_CHALLENGE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+export async function cleanupExpiredLearningChallenges(now = new Date()) {
+  const cutoff = new Date(now.getTime() - LEARNING_CHALLENGE_RETENTION_MS);
+  await db.delete(learningChallengesTable).where(lt(learningChallengesTable.createdAt, cutoff));
+}
+
 router.use(["/learning", "/legal"], (req, res, next) => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!getAuth(req).userId) {
@@ -105,6 +112,7 @@ router.put("/learning/progress", async (req, res) => {
 router.post("/learning/rounds", async (req, res): Promise<void> => {
   const parsed = IssueLearningRoundBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid game round." }); return; }
+  await cleanupExpiredLearningChallenges();
   const userId = getAuth(req).userId!;
   const roundId = randomUUID();
   const questions = buildRound(parsed.data.stage, parsed.data.mode as GameMode, parsed.data.script as Script)
@@ -139,7 +147,11 @@ router.post("/learning/round", async (req, res) => {
       eq(learningChallengesTable.clerkUserId, userId),
       eq(learningChallengesTable.roundId, parsed.data.roundId),
     )).limit(1);
-    if (!challenge || !Object.hasOwn(challenge.answers, parsed.data.questionId)) return null;
+    if (!challenge) return null;
+    if (challenge.createdAt.getTime() < Date.now() - LEARNING_CHALLENGE_RETENTION_MS) {
+      return { expired: true as const };
+    }
+    if (!Object.hasOwn(challenge.answers, parsed.data.questionId)) return null;
     if (challenge.answers[parsed.data.questionId] !== parsed.data.answer) {
       return { progress: current, correct: false };
     }
@@ -171,7 +183,17 @@ router.post("/learning/round", async (req, res) => {
     return { progress: updated, correct: true };
   });
   if (!saved) {
-    res.status(404).json({ error: "This round or question was not issued to this account." });
+    res.status(404).json({
+      error: "This round or question was not issued to this account, or the round has expired. No XP was awarded.",
+      code: "ROUND_UNAVAILABLE",
+    });
+    return;
+  }
+  if ("expired" in saved) {
+    res.status(410).json({
+      error: "This game round has expired. Start a new round; no XP was awarded.",
+      code: "ROUND_EXPIRED",
+    });
     return;
   }
   res.json(RecordLearningRoundResponse.parse({ ...output(saved.progress), correct: saved.correct }));
