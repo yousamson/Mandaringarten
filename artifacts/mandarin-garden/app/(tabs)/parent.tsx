@@ -102,11 +102,14 @@ export default function ParentScreen() {
     setOpeningWebsite(true);
     try {
       await WebBrowser.openBrowserAsync(`${getWebsiteOrigin()}/membership`);
+      void subscription.refresh();
     } catch {
       setNotice(
         language === 'en'
           ? 'Could not open the website membership page.'
-          : '未能開啟網站會員頁面。',
+          : language === 'zh-Hans'
+            ? '未能打开网站会员页面。'
+            : '未能開啟網站會員頁面。',
       );
     } finally {
       setOpeningWebsite(false);
@@ -246,7 +249,9 @@ export default function ParentScreen() {
                   <Text style={[styles.retryText, { color: colors.destructive }]}>
                     {language === 'en'
                       ? 'Could not verify account access. Tap to retry.'
-                      : '未能確認帳戶權限，點此重試。'}
+                      : language === 'zh-Hans'
+                        ? '未能确认账户权限，点此重试。'
+                        : '未能確認帳戶權限，點此重試。'}
                   </Text>
                 </Pressable>
               ) : !subscription.isLoading && !subscription.isSignedIn ? (
@@ -283,8 +288,8 @@ export default function ParentScreen() {
                 <ActionButton
                   label={
                     openingWebsite
-                      ? (language === 'en' ? 'Opening…' : '正在開啟…')
-                      : (language === 'en' ? 'Continue on website to subscribe' : '前往網站訂閱')
+                      ? (language === 'en' ? 'Opening…' : language === 'zh-Hans' ? '正在打开…' : '正在開啟…')
+                      : (language === 'en' ? 'Continue on website to subscribe' : language === 'zh-Hans' ? '前往网站订阅' : '前往網站訂閱')
                   }
                   onPress={() => void openWebsiteMembership()}
                   tone="outline"

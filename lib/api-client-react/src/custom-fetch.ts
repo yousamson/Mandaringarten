@@ -365,8 +365,8 @@ export async function customFetch<T = unknown>(
   let response = await fetch(input, { ...init, method, headers });
 
   // A conditional 304 has no representation for this client to reuse. Some
-  // proxies still return one even for a no-store request, so retry a GET once
-  // without validators rather than surfacing an empty-response parse failure.
+  // runtimes expose it instead of merging a cached body, so retry a GET once
+  // without validators rather than surfacing an empty-response failure.
   if (method === "GET" && response.status === 304) {
     const retryHeaders = new Headers(headers);
     retryHeaders.delete("if-none-match");

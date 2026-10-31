@@ -23,9 +23,6 @@ export type CheckoutAcceptance = {
 };
 
 export function getWebsiteOrigin(): string {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.origin;
-  }
   const configured =
     process.env.EXPO_PUBLIC_WEB_URL?.trim() ||
     process.env.EXPO_PUBLIC_DOMAIN?.trim();
@@ -36,6 +33,12 @@ export function getWebsiteOrigin(): string {
     configured.match(/^https?:\/\//i) ? configured : `https://${configured}`,
   );
   return url.origin;
+}
+
+function getBillingReturnOrigin(): string {
+  return Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location.origin
+    : getWebsiteOrigin();
 }
 
 function useSubscriptionValue() {
@@ -90,7 +93,7 @@ function useSubscriptionValue() {
       ) {
         throw new Error('Confirm all subscription agreements before checkout.');
       }
-      const origin = getWebsiteOrigin();
+      const origin = getBillingReturnOrigin();
       const response = await checkoutRequest.mutateAsync({
         data: {
           privacyAccepted: true,
@@ -124,7 +127,7 @@ function useSubscriptionValue() {
       if (!isLoaded || !isSignedIn) {
         throw new Error('Sign in to manage your subscription.');
       }
-      const origin = getWebsiteOrigin();
+      const origin = getBillingReturnOrigin();
       const response = await portalRequest.mutateAsync({
         data: { returnUrl: `${origin}/parent` },
       });
