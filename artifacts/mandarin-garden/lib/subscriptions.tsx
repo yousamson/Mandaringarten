@@ -50,7 +50,11 @@ function useSubscriptionValue() {
   const userId = user?.id ?? 'signed-out';
 
   const plan = useGetBillingPlan({
-    query: { staleTime: 300_000 },
+    query: {
+      staleTime: 300_000,
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 5_000),
+    },
   });
   const billingKey = [...getGetBillingSubscriptionQueryKey(), userId];
   const accessKey = [...getGetAccountAccessQueryKey(), userId];
@@ -146,18 +150,23 @@ function useSubscriptionValue() {
   return {
     isWeb: Platform.OS === 'web',
     isAdmin,
+    isLoaded,
+    isSignedIn: Boolean(isSignedIn),
     configured: Boolean(plan.data),
     isPremium,
     hasBillingCustomer,
+    isPlanLoading: plan.isLoading,
     canPurchase: Boolean(
       plan.data &&
         status.isSuccess &&
+        access.isSuccess &&
         isLoaded &&
         isSignedIn &&
         !isPremium,
     ),
     priceLabel: plan.data?.priceLabel ?? null,
     isLoading:
+      !isLoaded ||
       plan.isLoading ||
       (isLoaded && Boolean(isSignedIn) && (status.isLoading || access.isLoading)),
     error:

@@ -119,6 +119,13 @@ export default function ParentScreen() {
       );
     }
   };
+  const openCheckoutConfirmation = () => {
+    setNotice(null);
+    setPrivacyAccepted(false);
+    setDisclaimerAccepted(false);
+    setNoRefundAccepted(false);
+    setConfirmPurchase(true);
+  };
 
   return (
     <Screen>
@@ -151,6 +158,106 @@ export default function ParentScreen() {
             onPress={() => void signOut()}
             testID="sign-out"
           />
+        </Surface>
+
+        <View style={styles.sectionHead}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {t('parent.membership')}
+          </Text>
+          <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
+            {subscription.isPremium ? t('parent.premiumEnabled') : t('parent.freePlan')}
+          </Text>
+        </View>
+        <Surface style={styles.purchaseCard}>
+          <View style={styles.purchaseSummary}>
+            <View style={[styles.memberIcon, { backgroundColor: colors.secondary }]}>
+              <Ionicons name="sparkles" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.purchasePriceCopy}>
+              <Text style={[styles.memberTitle, { color: colors.foreground }]}>
+                {subscription.isPremium ? t('parent.premiumMember') : t('parent.freeMember')}
+              </Text>
+              {subscription.isPlanLoading ? (
+                <View style={styles.priceLoading}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              ) : subscription.priceLabel ? (
+                <View style={styles.priceInline}>
+                  <Text style={[styles.price, { color: colors.foreground }]}>{subscription.priceLabel}</Text>
+                  <Text style={[styles.pricePeriod, { color: colors.mutedForeground }]}>
+                    {t('parent.pricePeriodWeb')}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
+                  {subscription.error
+                    ? t('parent.planLoadError')
+                    : t('parent.planSetupPendingWeb')}
+                </Text>
+              )}
+            </View>
+          </View>
+          {!subscription.isPremium ? (
+            <>
+              {subscription.error ? (
+                <Pressable
+                  accessibilityRole="button"
+                  testID="retry-offering"
+                  onPress={() => {
+                    setNotice(null);
+                    void subscription.refresh();
+                  }}
+                  style={styles.planRetry}
+                >
+                  <Ionicons name="refresh" size={16} color={colors.destructive} />
+                  <Text style={[styles.retryText, { color: colors.destructive }]}>
+                    {t('parent.planLoadError')}
+                  </Text>
+                </Pressable>
+              ) : !subscription.isLoading && !subscription.isSignedIn ? (
+                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
+                  {language === 'en'
+                    ? 'Sign in before upgrading.'
+                    : language === 'zh-Hans'
+                      ? '登入後即可升級會員。'
+                      : '登入後即可升級會員。'}
+                </Text>
+              ) : subscription.isLoading && subscription.isSignedIn ? (
+                <Text style={[styles.setupMessage, { color: colors.mutedForeground }]}>
+                  {language === 'en'
+                    ? 'Checking your account before checkout…'
+                    : language === 'zh-Hans'
+                      ? '正在確認帳戶付款資格…'
+                      : '正在確認帳戶付款資格…'}
+                </Text>
+              ) : null}
+              <ActionButton
+                label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
+                onPress={openCheckoutConfirmation}
+                testID="upgrade-premium"
+                disabled={!subscription.canPurchase || subscription.isPurchasing}
+                loading={subscription.isPurchasing}
+                icon={!subscription.isPurchasing ? (
+                  <Ionicons name="sparkles" size={18} color={colors.primaryForeground} />
+                ) : undefined}
+              />
+              <Text style={[styles.legal, { color: colors.mutedForeground }]}>
+                {t('parent.subscriptionLegalWeb')}
+              </Text>
+            </>
+          ) : subscription.hasBillingCustomer ? (
+            <ActionButton
+              label={t('parent.manageSubscription')}
+              onPress={() => void manageSubscription()}
+              tone="outline"
+              testID="manage-subscription"
+              loading={subscription.isManagingSubscription}
+              disabled={subscription.isManagingSubscription}
+            />
+          ) : null}
+          {notice ? (
+            <Text style={[styles.notice, { color: colors.primary }]}>{notice}</Text>
+          ) : null}
         </Surface>
 
         <View style={styles.sectionHead}>
@@ -373,178 +480,15 @@ export default function ParentScreen() {
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {t('parent.membership')}
-          </Text>
-          <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            {subscription.isPremium ? t('parent.premiumEnabled') : t('parent.freePlan')}
+            {language === 'en' ? 'Membership benefits' : language === 'zh-Hans' ? '會員內容' : '會員內容'}
           </Text>
         </View>
-        <Surface
-          style={[
-            styles.membershipCard,
-            subscription.isPremium && {
-              borderColor: colors.primary,
-              backgroundColor: colors.secondary,
-            },
-          ]}
-        >
-          <View style={styles.membershipHead}>
-            <View
-              style={[
-                styles.memberIcon,
-                { backgroundColor: subscription.isPremium ? colors.accent : colors.secondary },
-              ]}
-            >
-              <Ionicons
-                name={subscription.isPremium ? 'sparkles' : 'leaf-outline'}
-                size={22}
-                color={colors.primary}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.memberTitle, { color: colors.foreground }]}>
-                {subscription.isPremium ? t('parent.premiumMember') : t('parent.freeMember')}
-              </Text>
-              <Text style={[styles.memberSub, { color: colors.mutedForeground }]}>
-                {subscription.isPremium
-                  ? t('parent.allCourses')
-                  : t('parent.freeStart')}
-              </Text>
-            </View>
-            {subscription.isPremium ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={22}
-                color={colors.primary}
-              />
-            ) : null}
-          </View>
-
+        <Surface style={styles.membershipCard}>
           <View style={styles.benefitList}>
             <Benefit text={t('parent.benefitFree')} included />
-            <Benefit
-              text={t('parent.benefitPremiumCourses')}
-              included={subscription.isPremium}
-            />
-            <Benefit
-              text={t('parent.benefitPremiumGames')}
-              included={subscription.isPremium}
-            />
+            <Benefit text={t('parent.benefitPremiumCourses')} included={subscription.isPremium} />
+            <Benefit text={t('parent.benefitPremiumGames')} included={subscription.isPremium} />
           </View>
-
-          {!subscription.isPremium ? (
-            <>
-              <View
-                style={[
-                  styles.pricePanel,
-                  { backgroundColor: colors.background },
-                ]}
-              >
-                {subscription.isLoading ? (
-                  <ActivityIndicator color={colors.primary} />
-                ) : subscription.priceLabel ? (
-                  <>
-                    <Text style={[styles.price, { color: colors.foreground }]}>
-                      {subscription.priceLabel}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.pricePeriod,
-                        { color: colors.mutedForeground },
-                      ]}
-                    >
-                    {t('parent.pricePeriodWeb')}
-                    </Text>
-                  </>
-                ) : (
-                  <Text
-                    style={[
-                      styles.setupMessage,
-                      { color: colors.mutedForeground },
-                    ]}
-                  >
-                    {subscription.configured
-                      ? t('parent.planNotPublished')
-                      : t('parent.planSetupPendingWeb')}
-                  </Text>
-                )}
-              </View>
-              <ActionButton
-                label={subscription.isPurchasing ? t('parent.processing') : t('parent.upgrade')}
-                onPress={() => {
-                  setPrivacyAccepted(false);
-                  setDisclaimerAccepted(false);
-                  setNoRefundAccepted(false);
-                  setConfirmPurchase(true);
-                }}
-                testID="upgrade-premium"
-                disabled={!subscription.canPurchase || subscription.isPurchasing}
-                loading={subscription.isPurchasing}
-                icon={
-                  !subscription.isPurchasing ? (
-                    <Ionicons
-                      name="sparkles"
-                      size={18}
-                      color={colors.primaryForeground}
-                    />
-                  ) : undefined
-                }
-              />
-              <Text
-                style={[
-                  styles.legal,
-                  { color: colors.mutedForeground },
-                ]}
-              >
-                {t('parent.subscriptionLegalWeb')}
-              </Text>
-              {subscription.hasBillingCustomer ? (
-                <ActionButton
-                  label={t('parent.manageSubscription')}
-                  onPress={() => void manageSubscription()}
-                  tone="outline"
-                  testID="manage-subscription"
-                  loading={subscription.isManagingSubscription}
-                  disabled={subscription.isManagingSubscription}
-                />
-              ) : null}
-            </>
-          ) : (
-            subscription.hasBillingCustomer ? (
-              <ActionButton
-                label={t('parent.manageSubscription')}
-                onPress={() => void manageSubscription()}
-                tone="outline"
-                testID="manage-subscription"
-                loading={subscription.isManagingSubscription}
-                disabled={subscription.isManagingSubscription}
-              />
-            ) : null
-          )}
-          {notice ? (
-            <Text style={[styles.notice, { color: colors.primary }]}>
-              {notice}
-            </Text>
-          ) : null}
-          {subscription.error ? (
-            <Pressable
-              accessibilityRole="button"
-              testID="retry-offering"
-              onPress={() => {
-                setNotice(null);
-                void subscription.refresh();
-              }}
-            >
-              <Text
-                style={[
-                  styles.retryText,
-                  { color: colors.destructive },
-                ]}
-              >
-                {t('parent.planLoadError')}
-              </Text>
-            </Pressable>
-          ) : null}
         </Surface>
 
         <Text style={[styles.ageNoteFooter, { color: colors.mutedForeground }]}>
@@ -565,6 +509,12 @@ export default function ParentScreen() {
           ]}
         >
           <Surface style={styles.confirmCard}>
+            <ScrollView
+              style={styles.confirmScroll}
+              contentContainerStyle={styles.confirmScrollContent}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+            >
             <View style={[styles.confirmIcon, { backgroundColor: colors.accent }]}>
               <Ionicons
                 name="sparkles"
@@ -658,19 +608,24 @@ export default function ParentScreen() {
                 </Text>
               </Pressable>
             </View>
-            <ActionButton
-              label={t('parent.confirmAndContinue')}
-              onPress={() => void purchase()}
-              testID="confirm-subscription"
-              loading={subscription.isPurchasing}
-              disabled={!privacyAccepted || !disclaimerAccepted || !noRefundAccepted}
-            />
-            <ActionButton
-              label={t('parent.later')}
-              onPress={() => setConfirmPurchase(false)}
-              tone="soft"
-              testID="cancel-subscription"
-            />
+            <View style={styles.confirmButtonWrap}>
+              <ActionButton
+                label={t('parent.confirmAndContinue')}
+                onPress={() => void purchase()}
+                testID="confirm-subscription"
+                loading={subscription.isPurchasing}
+                disabled={!privacyAccepted || !disclaimerAccepted || !noRefundAccepted}
+              />
+            </View>
+            <View style={styles.confirmButtonWrap}>
+              <ActionButton
+                label={t('parent.later')}
+                onPress={() => setConfirmPurchase(false)}
+                tone="soft"
+                testID="cancel-subscription"
+              />
+            </View>
+            </ScrollView>
           </Surface>
         </View>
       </Modal>
@@ -861,6 +816,38 @@ const styles = StyleSheet.create({
   membershipCard: {
     gap: 13,
   },
+  purchaseCard: {
+    width: '100%',
+    gap: 12,
+  },
+  purchaseSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  purchasePriceCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  priceInline: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  priceLoading: {
+    minHeight: 24,
+    justifyContent: 'center',
+  },
+  planRetry: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: 8,
+  },
   membershipHead: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -967,14 +954,26 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 22,
+    padding: 12,
   },
   confirmCard: {
     width: '100%',
     maxWidth: 420,
-    gap: 12,
+    maxHeight: '92%',
+    overflow: 'hidden',
     alignItems: 'center',
-    padding: 22,
+    padding: 14,
+  },
+  confirmScroll: {
+    width: '100%',
+  },
+  confirmScrollContent: {
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 8,
+  },
+  confirmButtonWrap: {
+    width: '100%',
   },
   confirmIcon: {
     width: 56,
