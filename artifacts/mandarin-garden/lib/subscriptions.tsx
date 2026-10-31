@@ -1,5 +1,5 @@
-import React, { createContext, useContext } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useContext, useEffect } from 'react';
+import { AppState, Platform } from 'react-native';
 import { useAuth, useUser } from '@clerk/expo';
 import { useMutation } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
@@ -44,23 +44,37 @@ function useSubscriptionValue() {
 
   const billingKey = [...getGetBillingStatusQueryKey(), userId];
   const accessKey = [...getGetAccountAccessQueryKey(), userId];
-  const status = useGetBillingStatus({
-    query: {
-      enabled: isLoaded && Boolean(isSignedIn),
-      queryKey: billingKey,
-      staleTime: 30_000,
-      refetchOnWindowFocus: true,
-    },
-  });
   const access = useGetAccountAccess({
     query: {
       enabled: isLoaded && Boolean(isSignedIn),
       queryKey: accessKey,
-      staleTime: 30_000,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: true,
+      refetchInterval: 30_000,
+      retry: 1,
+    },
+  });
+  const status = useGetBillingStatus({
+    query: {
+      enabled: isLoaded && Boolean(isSignedIn) && Boolean(access.data) && access.data?.isAdmin !== true,
+      queryKey: billingKey,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+      retry: 1,
     },
   });
   const portalRequest = useCreateBillingPortal({ request });
+  const isAdmin = access.data?.isAdmin === true;
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !isLoaded || !isSignedIn) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      void access.refetch();
+      if (access.data?.isAdmin !== true) void status.refetch();
+    });
+    return () => subscription.remove();
+  }, [isLoaded, isSignedIn, access.data?.isAdmin, access.refetch, status.refetch]);
 
   const manage = useMutation({
     mutationFn: async () => {
@@ -87,7 +101,6 @@ function useSubscriptionValue() {
     },
   });
 
-  const isAdmin = access.data?.isAdmin ?? false;
   const isPremium =
     isAdmin || Boolean(status.data?.isPremium || access.data?.isPremium);
   const isMembershipKnown =
@@ -97,6 +110,7 @@ function useSubscriptionValue() {
     isAdmin,
     isPremium,
     isMembershipKnown,
+    isAccountAccessKnown: Boolean(access.data),
     currentPeriodEnd: status.data?.currentPeriodEnd ?? null,
     cancelAtPeriodEnd: status.data?.cancelAtPeriodEnd ?? false,
     isSignedIn: Boolean(isSignedIn),

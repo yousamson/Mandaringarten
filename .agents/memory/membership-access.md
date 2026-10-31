@@ -9,6 +9,12 @@ Registration includes acknowledging the monthly paid subscription; creating a lo
 
 **How to apply:** authenticate the parent but keep ordinary lapsed accounts restricted to renewal, platform messages, deletion and legal information. The verified administrator is the sole no-charge, continuously entitled exception and must never be sent through checkout or subscription management. Billing needs an authenticated identity, and parents must not be trapped behind payment when seeking help or deleting data. Preserve public free material for signed-out visitors. Scheduled cancellation does not remove already-paid access before its end date.
 
+Resolve the verified administrator entitlement before querying Stripe. The administrator is continuously premium without a Stripe subscription, so a billing-provider outage must not remove their access or team-inbox role.
+
+**Why:** coupling admin recognition to Stripe status made complimentary access depend on an unrelated billing request.
+
+**How to apply:** return active administrator access directly from the server-side verified-admin check; do not use client email matching as authorization.
+
 Parents contact the management team through platform messages. Only the server-authorized administrator can see the team inbox navigation and contents; other members can see only their own conversations. The administrator login email is never shown on the website or inbox.
 
 **Why:** the user requested a platform messaging feature and designated an administrator account, then reiterated that the team inbox must be hidden from members and free pages. They did not authorize publishing the login email.

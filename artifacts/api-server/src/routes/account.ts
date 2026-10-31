@@ -24,8 +24,13 @@ router.get("/account/access", async (req, res) => {
   if (await deletionState(userId)) {
     res.json({ isAdmin: false, isPremium: false, access: "deleting" }); return;
   }
-  const [isAdmin, isPremium] = await Promise.all([isAdministrator(userId), hasPremiumMembership(userId)]);
-  res.json({ isAdmin, isPremium, access: isAdmin || isPremium ? "active" : "subscription_required" });
+  const isAdmin = await isAdministrator(userId);
+  if (isAdmin) {
+    res.json({ isAdmin: true, isPremium: true, access: "active" });
+    return;
+  }
+  const isPremium = await hasPremiumMembership(userId);
+  res.json({ isAdmin: false, isPremium, access: isPremium ? "active" : "subscription_required" });
 });
 
 type StripeObject = { id: string; status?: string; deleted?: boolean };

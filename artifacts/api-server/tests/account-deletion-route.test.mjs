@@ -134,8 +134,15 @@ const stubs = {
     }
     export async function lockAccount(tx) { await tx.execute(); }
   `,
-  admin: `export async function isAdministrator() { return false; }`,
-  billing: `export async function hasPremiumMembership() { return false; }`,
+  admin: `export async function isAdministrator() { return globalThis.__accountDeletionTestState.isAdmin; }`,
+  billing: `
+    export async function hasPremiumMembership() {
+      const state = globalThis.__accountDeletionTestState;
+      state.billingAccessCalls++;
+      if (state.failMembershipLookup) throw new Error("Injected billing status failure");
+      return state.isPremium;
+    }
+  `,
   stripeCustomers: `export async function currentCustomerIds(_userId, ids) { return [...new Set(ids)]; }`,
   stripeClient: `
     export async function stripeRequest(endpoint, options = {}) {
@@ -282,6 +289,10 @@ function resetState({ failOnce = null, identityFailureCount = 0 } = {}) {
     sessionStatus: "open",
     subscriptionStatus: "active",
     stripeCalls: [],
+    isAdmin: false,
+    isPremium: false,
+    failMembershipLookup: false,
+    billingAccessCalls: 0,
   };
   return globalThis.__accountDeletionTestState;
 }
@@ -336,6 +347,33 @@ for (const [label, failOnce] of [
     assert.ok(state.stripeCalls.length > 1, "the retry should resume Stripe cleanup");
   });
 }
+
+test("administrator access stays active without calling billing", async () => {
+  const state = resetState();
+  state.isAdmin = true;
+  state.failMembershipLookup = true;
+  const response = await fetch(`${baseUrl}/api/account/access`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    isAdmin: true,
+    isPremium: true,
+    access: "active",
+  });
+  assert.equal(state.billingAccessCalls, 0);
+});
+
+test("ordinary account access still reflects confirmed membership", async () => {
+  const state = resetState();
+  state.isPremium = true;
+  const response = await fetch(`${baseUrl}/api/account/access`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    isAdmin: false,
+    isPremium: true,
+    access: "active",
+  });
+  assert.equal(state.billingAccessCalls, 1);
+});
 
 test("an identity-provider failure leaves local data removed but deletion retryable", async () => {
   const state = resetState({ identityFailureCount: 1 });

@@ -22,7 +22,7 @@ export function MembershipPanel({ l }: { l: Language }) {
   const isAdmin = account.isAdmin;
   const uid = user?.id ?? null;
   const statusKey = [...getGetBillingStatusQueryKey(), uid];
-  const status = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn && !isAdmin), queryKey: statusKey, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true } });
+  const status = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn && account.data && !isAdmin), queryKey: statusKey, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true } });
   const plan = useGetBillingPlan({ request: { skipAuth: true, cache: 'no-store' }, query: {
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),

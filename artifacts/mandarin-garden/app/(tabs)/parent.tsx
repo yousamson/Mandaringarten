@@ -105,7 +105,11 @@ export default function ParentScreen() {
                 {t('auth.account')}
               </Text>
               <Text style={[styles.accountEmail, { color: colors.mutedForeground }]}>
-                {user?.primaryEmailAddress?.emailAddress ?? user?.username ?? ''}
+                {!subscription.isAccountAccessKnown
+                  ? t('parent.membershipSyncing')
+                  : subscription.isAdmin
+                    ? t('parent.managementAccount')
+                    : user?.primaryEmailAddress?.emailAddress ?? user?.username ?? ''}
               </Text>
             </View>
           </View>
@@ -143,6 +147,14 @@ export default function ParentScreen() {
               </Text>
             </View>
           </View>
+          {subscription.isAdmin ? (
+            <Text
+              style={[styles.memberSub, { color: colors.mutedForeground }]}
+              testID="admin-membership-note"
+            >
+              {t('parent.adminMemberNote')}
+            </Text>
+          ) : null}
           {subscription.isPremium &&
           !subscription.isAdmin &&
           currentPeriodEndLabel ? (

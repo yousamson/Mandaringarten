@@ -33,9 +33,18 @@ export function useMembership() {
   const { isSignedIn, isLoaded, user } = useUser();
   const account = useAccountAccess();
   const uid = user?.id ?? null;
-  const billing = useGetBillingStatus({ query: { enabled: Boolean(isSignedIn), queryKey: [...getGetBillingStatusQueryKey(), uid], retry: false } });
+  const billing = useGetBillingStatus({ query: {
+    enabled: Boolean(isSignedIn && account.data && !account.isAdmin),
+    queryKey: [...getGetBillingStatusQueryKey(), uid],
+    retry: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  } });
   const premium = Boolean(isSignedIn && (billing.data?.isPremium === true || account.isAdmin));
-  const checking = !isLoaded || Boolean(isSignedIn && (billing.isLoading || account.query.isLoading));
+  const checking = !isLoaded || Boolean(isSignedIn && (
+    account.query.isLoading || (!account.data && !account.query.isError) ||
+    (account.data && !account.isAdmin && billing.isLoading)
+  ));
   return { isLoaded, isSignedIn: Boolean(isSignedIn), user, uid, billing, premium, checking };
 }
 
