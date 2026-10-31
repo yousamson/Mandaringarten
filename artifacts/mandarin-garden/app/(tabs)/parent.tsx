@@ -78,7 +78,9 @@ export default function ParentScreen() {
       : null;
   const membershipLabel = subscription.isPremium
     ? t('parent.subscribed')
-    : t('parent.notSubscribed');
+    : subscription.isMembershipKnown
+      ? t('parent.notSubscribed')
+      : '';
 
   return (
     <Screen>
