@@ -49,7 +49,36 @@ export function getClerkProxyHost(req: {
   const forwarded = req.headers['x-forwarded-host'];
   const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   const firstHop = raw?.split(',')[0]?.trim();
-  return firstHop || req.headers.host?.trim() || undefined;
+  const effectiveHost = firstHop || req.headers.host?.trim() || undefined;
+
+  // Replit's deployment edge replaces X-Forwarded-Host with its own host.
+  // The Pages Worker overwrites this separate header with its public origin.
+  // Accept only HTTPS origins owned by this Pages project, never arbitrary
+  // caller-supplied hosts. Leave Origin intact for Clerk's CSRF checks.
+  const publicOrigin = req.headers['x-mandarin-public-origin'];
+  if (
+    effectiveHost === 'mandarin-garden.replit.app' &&
+    typeof publicOrigin === 'string'
+  ) {
+    try {
+      const url = new URL(publicOrigin);
+      const isProjectHost =
+        url.hostname === 'mandarin-garden-mobile-pwa.pages.dev' ||
+        /^[a-z0-9-]+\.mandarin-garden-mobile-pwa\.pages\.dev$/.test(url.hostname);
+      if (
+        isProjectHost &&
+        url.protocol === 'https:' &&
+        url.origin === publicOrigin &&
+        !url.port
+      ) {
+        return url.hostname;
+      }
+    } catch {
+      // Invalid transport headers must not override the effective host.
+    }
+  }
+
+  return effectiveHost;
 }
 
 export function clerkProxyMiddleware(): RequestHandler {

@@ -20,3 +20,9 @@ Internal API redirects must remain on the Pages origin.
 **Why:** Clerk's versioned script redirects can point back to the backend origin, introducing cross-origin loading failures even when the API health check succeeds.
 
 **How to apply:** rewrite only redirects to the fixed backend origin under `/api/`; preserve external payment destinations.
+
+Replit's production edge replaces `X-Forwarded-Host`, so it cannot reliably carry the Pages hostname across that extra proxy hop.
+
+**Why:** Clerk GETs without Origin succeeded while requests with the correct Pages Origin failed with `origin_invalid`; the backend accepted its own origin instead.
+
+**How to apply:** carry the Pages public origin in a dedicated Worker-overwritten header and strictly allowlist the project's HTTPS Pages hosts on the backend. Keep the browser Origin unchanged; never remove it to bypass validation. Deploy the backend and Worker changes together.
