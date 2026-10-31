@@ -4,7 +4,8 @@ import worker from '../public/_worker.js';
 
 test('Worker preserves browser Origin and overwrites the public-origin carrier', async () => {
   const realFetch = globalThis.fetch;
-  const origin = 'https://mandaringarden.asia';
+  const origin = 'https://www.mandaringarden.asia';
+  const clerkProxyOrigin = 'https://mandaringarden.asia';
   let forwarded;
   globalThis.fetch = async (request) => {
     forwarded = request;
@@ -18,7 +19,7 @@ test('Worker preserves browser Origin and overwrites the public-origin carrier',
       },
     }));
     assert.equal(forwarded.headers.get('origin'), origin);
-    assert.equal(forwarded.headers.get('x-mandarin-public-origin'), origin);
+    assert.equal(forwarded.headers.get('x-mandarin-public-origin'), clerkProxyOrigin);
     assert.equal(new URL(forwarded.url).origin, 'https://mandarin-garden.replit.app');
   } finally {
     globalThis.fetch = realFetch;

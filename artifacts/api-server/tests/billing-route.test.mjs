@@ -352,6 +352,42 @@ test("checkout submits the exact test price returned by successful plan validati
   }
 });
 
+test("checkout accepts the Pages subdomain as a return host", async () => {
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+  setFixture(fixturePrice);
+  try {
+    const response = await fetch(`${baseUrl}/api/billing/checkout`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://www.mandaringarden.asia",
+      },
+      body: JSON.stringify({
+        returnUrl: "https://www.mandaringarden.asia/parent",
+        privacyAccepted: true,
+        disclaimerAccepted: true,
+        noRefundAccepted: true,
+        policyVersion: "2026-10-29.1",
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    const checkoutForm = globalThis.__billingRouteTestState.checkoutForms[0];
+    assert.equal(
+      checkoutForm.get("success_url"),
+      "https://www.mandaringarden.asia/parent?billing=success",
+    );
+    assert.equal(
+      checkoutForm.get("cancel_url"),
+      "https://www.mandaringarden.asia/parent?billing=cancelled",
+    );
+  } finally {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  }
+});
+
 test("declined incomplete checkout can be retried and activates only after Stripe reports success", async () => {
   const previousMode = process.env.NODE_ENV;
   process.env.NODE_ENV = "development";

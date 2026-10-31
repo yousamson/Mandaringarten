@@ -14,6 +14,7 @@ import { logger } from "./lib/logger";
 const app: Express = express();
 const allowedOrigins = new Set(
   [
+    "https://www.mandaringarden.asia",
     process.env.REPLIT_DEV_DOMAIN,
     process.env.REPLIT_EXPO_DEV_DOMAIN,
     ...(process.env.REPLIT_DOMAINS ?? "").split(","),

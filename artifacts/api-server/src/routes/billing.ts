@@ -42,6 +42,7 @@ function getAuthenticatedUserId(req: Request): string | null {
 
 function getAllowedReturnHosts(): Set<string> {
   const values = [
+    "www.mandaringarden.asia",
     process.env.REPLIT_DOMAINS,
     process.env.REPLIT_DEV_DOMAIN,
     process.env.REPLIT_EXPO_DEV_DOMAIN,

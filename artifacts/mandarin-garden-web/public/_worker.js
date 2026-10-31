@@ -14,9 +14,13 @@ export default {
     );
     const upstreamRequest = new Request(upstreamUrl, request);
     const headers = new Headers(upstreamRequest.headers);
-    // Replit's edge replaces X-Forwarded-Host. Carry the original site
-    // origin separately; the API accepts only the registered custom domain.
-    headers.set('x-mandarin-public-origin', incomingUrl.origin);
+    // Replit's edge replaces X-Forwarded-Host. Clerk recognizes the existing
+    // apex domain, so use it as the proxy URL for the Pages subdomain while
+    // keeping the browser's Origin header unchanged for Clerk's checks.
+    const clerkProxyOrigin = incomingUrl.hostname === 'www.mandaringarden.asia'
+      ? 'https://mandaringarden.asia'
+      : incomingUrl.origin;
+    headers.set('x-mandarin-public-origin', clerkProxyOrigin);
     headers.set('x-forwarded-host', incomingUrl.host);
     headers.set('x-forwarded-proto', incomingUrl.protocol.slice(0, -1));
     headers.delete('host');
