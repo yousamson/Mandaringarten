@@ -3,10 +3,12 @@ import {
   getGetAccountAccessQueryKey,
   getGetSupportConversationQueryKey,
   getGetSupportThreadsQueryKey,
+  getAccountAccess,
   useGetAccountAccess,
   useGetSupportConversation,
   useGetSupportThreads,
 } from '@workspace/api-client-react';
+import { withAbortTimeout } from '@/lib/with-abort-timeout';
 
 export const accessQueryKey = (uid: string | null) => [...getGetAccountAccessQueryKey(), uid];
 export const threadsQueryKey = (uid: string | null) => [...getGetSupportThreadsQueryKey(), uid];
@@ -23,7 +25,11 @@ export function useAccountAccess() {
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
       refetchInterval: 30_000,
-      retry: 1,
+      retry: false,
+      queryFn: ({ signal }) =>
+        withAbortTimeout(signal, 12_000, (requestSignal) =>
+          getAccountAccess({ signal: requestSignal }),
+        ),
     },
   });
   const data = query.isError ? undefined : query.data;

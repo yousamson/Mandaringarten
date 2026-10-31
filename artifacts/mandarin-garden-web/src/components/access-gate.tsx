@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useClerk } from '@clerk/react';
 import { ArrowRight, LogOut, MessageCircle, RotateCcw, ShieldAlert, Sprout, UserX } from 'lucide-react';
 import { Link } from 'wouter';
@@ -14,10 +14,28 @@ export function AccountSignOut({ l, className = 'button-secondary' }: { l: Langu
 }
 
 export function AccessChecking({ l }: { l: Language }) {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setTimedOut(true), 15_000);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
   return (
     <main className="page-shell"><div className="consent-shell" aria-busy="true">
-      <div className="skeleton-line w40" /><div className="skeleton-line w80" /><div className="skeleton-block" />
-      <p className="panel-desc" role="status">{tr(l, 'Checking your account access…', '正在確認帳戶權限…', '正在确认账户权限…')}</p>
+      {timedOut ? (
+        <>
+          <div className="alert" role="alert">{tr(l, 'We could not confirm account access in time. Please retry or return to the garden.', '確認帳戶權限逾時，請重試或返回樂園。', '确认账户权限超时，请重试或返回乐园。')}</div>
+          <div className="button-row">
+            <button className="button-primary" onClick={() => window.location.reload()} data-testid="button-reload-access">{tr(l, 'Try again', '重新載入', '重新加载')}</button>
+            <Link href="/" className="button-secondary" data-testid="link-access-home">{tr(l, 'Return to the garden', '返回樂園', '返回乐园')}</Link>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="skeleton-line w40" /><div className="skeleton-line w80" /><div className="skeleton-block" />
+          <p className="panel-desc" role="status">{tr(l, 'Checking your account access…', '正在確認帳戶權限…', '正在确认账户权限…')}</p>
+        </>
+      )}
     </div></main>
   );
 }
