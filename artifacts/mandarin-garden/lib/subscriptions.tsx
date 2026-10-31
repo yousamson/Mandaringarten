@@ -111,6 +111,7 @@ function useSubscriptionValue() {
     isPremium,
     isMembershipKnown,
     isAccountAccessKnown: Boolean(access.data),
+    isRefreshing: access.isFetching || status.isFetching,
     currentPeriodEnd: status.data?.currentPeriodEnd ?? null,
     cancelAtPeriodEnd: status.data?.cancelAtPeriodEnd ?? false,
     isSignedIn: Boolean(isSignedIn),

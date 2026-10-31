@@ -19,7 +19,7 @@ Use `/account/access` to settle the membership identity; `/billing/status` suppl
 
 **Why:** the account-access response can succeed while the separate billing-status query is delayed or disabled, otherwise members see “syncing” indefinitely despite a confirmed entitlement response.
 
-**How to apply:** treat either a successful access response or a confirmed admin role as enough to display the member identity; render billing dates independently when available.
+**How to apply:** treat either a successful access response or a confirmed admin role as enough to display the member identity; render billing dates independently when available. If identity lookup stalls, stop the indefinite spinner after a short wait and provide a retry without guessing the account is free.
 
 Parents contact the management team through platform messages. Only the server-authorized administrator can see the team inbox navigation and contents; other members can see only their own conversations. The administrator login email is never shown on the website or inbox.
 

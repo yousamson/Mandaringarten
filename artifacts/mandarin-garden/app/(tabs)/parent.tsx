@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -29,6 +29,15 @@ export default function ParentScreen() {
   const { signOut } = useClerk();
   const [notice, setNotice] = useState<string | null>(null);
   const [openingWebsite, setOpeningWebsite] = useState(false);
+  const [membershipTimedOut, setMembershipTimedOut] = useState(false);
+  useEffect(() => {
+    if (!subscription.isSignedIn || subscription.isMembershipKnown) {
+      setMembershipTimedOut(false);
+      return;
+    }
+    const timeout = setTimeout(() => setMembershipTimedOut(true), 5_000);
+    return () => clearTimeout(timeout);
+  }, [subscription.isSignedIn, subscription.isMembershipKnown]);
   const manageSubscription = async () => {
     setNotice(null);
     try {
@@ -77,7 +86,7 @@ export default function ParentScreen() {
         )
       : null;
   const membershipLabel = !subscription.isMembershipKnown
-    ? t('parent.membershipSyncing')
+    ? t(membershipTimedOut ? 'parent.membershipDelayed' : 'parent.membershipSyncing')
     : subscription.isAdmin
       ? t('parent.adminMember')
       : subscription.isPremium
@@ -106,7 +115,7 @@ export default function ParentScreen() {
               </Text>
               <Text style={[styles.accountEmail, { color: colors.mutedForeground }]}>
                 {!subscription.isAccountAccessKnown
-                  ? t('parent.membershipSyncing')
+                  ? ''
                   : subscription.isAdmin
                     ? t('parent.managementAccount')
                     : user?.primaryEmailAddress?.emailAddress ?? user?.username ?? ''}
@@ -130,7 +139,7 @@ export default function ParentScreen() {
               ? subscription.isPremium
                 ? t('parent.premiumEnabled')
                 : t('parent.freePlan')
-              : t('parent.membershipSyncing')}
+              : ''}
           </Text>
         </View>
         <Surface style={styles.purchaseCard}>
@@ -154,6 +163,24 @@ export default function ParentScreen() {
             >
               {t('parent.adminMemberNote')}
             </Text>
+          ) : null}
+          {!subscription.isMembershipKnown && membershipTimedOut ? (
+            <View style={styles.membershipRetry}>
+              <Text style={[styles.memberSub, { color: colors.mutedForeground }]}>
+                {t('parent.membershipDelayed')}
+              </Text>
+              <ActionButton
+                label={t('parent.retryMembership')}
+                tone="outline"
+                loading={subscription.isRefreshing}
+                disabled={subscription.isRefreshing}
+                onPress={() => {
+                  setMembershipTimedOut(false);
+                  void subscription.refresh();
+                }}
+                testID="retry-membership"
+              />
+            </View>
           ) : null}
           {subscription.isPremium &&
           !subscription.isAdmin &&
@@ -652,6 +679,10 @@ const styles = StyleSheet.create({
   membershipCopy: {
     flex: 1,
     minWidth: 0,
+  },
+  membershipRetry: {
+    gap: 8,
+    marginTop: 8,
   },
   membershipHead: {
     flexDirection: 'row',
