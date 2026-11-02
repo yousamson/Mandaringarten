@@ -17,6 +17,7 @@ import MessagesPage from '@/pages/messages';
 import { StagePicker } from '@/components/playground/stage-picker';
 import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
+import { DailyChallengeCard } from '@/components/playground/daily-challenge-card';
 import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useIssueLearningRound, useRecordRound, useSelectStage, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
@@ -271,12 +272,13 @@ function PracticeSection({ language, age, onAgeChange }: { language: Language; a
 }
 
 function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
-  const stage = ageStages.indexOf(normalizeAgeStage(age)) + 1;
-  const stageWords = levels[ageStages.indexOf(normalizeAgeStage(age))].words.map((entry, index) => {
-    const [hanzi, simplified, pinyin] = entry.split('|');
-    return { id: `${age}-${index}`, hanzi, simplified, pinyin };
-  });
   const membership = useMembership();
+  if (!membership.premium) return <DailyChallengeCard language={language} age={age} onAgeChange={onAgeChange} />;
+  return <PremiumPinyinMatchCard language={language} age={age} onAgeChange={onAgeChange} membership={membership} />;
+}
+
+function PremiumPinyinMatchCard({ language, age, onAgeChange, membership }: { language: Language; age: string; onAgeChange: (value: string) => void; membership: ReturnType<typeof useMembership> }) {
+  const stage = ageStages.indexOf(normalizeAgeStage(age)) + 1;
   const { replay } = useRecordRound(membership.uid);
   const { issue } = useIssueLearningRound(membership.uid);
   const [round, setRound] = useState(0);
@@ -326,12 +328,10 @@ function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; a
     pinyin: issuedQuestion.word.pinyin,
     correctOption: scriptFor(language) === 'simp' ? issuedQuestion.word.simp : issuedQuestion.word.trad,
   } : undefined;
-  const current = membership.premium ? premiumCurrent : stageWords[round];
-  const choices = membership.premium && issuedQuestion?.options
-    ? issuedQuestion.options.map((value) => ({ id: value, hanzi: value, simplified: value }))
-    : stageWords.map((_, index) => stageWords[(index + round) % stageWords.length]);
-  const gameLength = membership.premium ? (challenge?.questions.length ?? 5) : stageWords.length;
-  const finished = membership.premium ? Boolean(challenge && round >= challenge.questions.length) : round >= stageWords.length;
+  const current = premiumCurrent;
+  const choices = issuedQuestion?.options?.map((value) => ({ id: value, hanzi: value, simplified: value })) ?? [];
+  const gameLength = challenge?.questions.length ?? 5;
+  const finished = Boolean(challenge && round >= challenge.questions.length);
   const saveAnswer = (input: LearningRoundInput, ownerRoundId: string) => {
     if (savingIds.current.has(input.questionId)) return;
     savingIds.current.add(input.questionId);
@@ -391,7 +391,7 @@ function PinyinMatchCard({ language, age, onAgeChange }: { language: Language; a
             : tr(language, 'Preparing your questions…', '正在準備題目…', '正在准备题目…')}</div>
         ) : null}
         {finished ? (
-          <div className="quiz-result"><div className="quiz-score">{score}<span> / {stageWords.length}</span></div>{membership.premium ? <p className="round-xp">+{score * XP_PER_CORRECT} XP</p> : null}<p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p>{membership.premium && saveState === 'saving' ? <p role="status">{language === 'en' ? 'Saving XP…' : language === 'zh-Hant' ? '正在儲存 XP…' : '正在保存 XP…'}</p> : null}{membership.premium && saveState === 'saved' ? <p role="status">{language === 'en' ? 'XP saved to this stage.' : language === 'zh-Hant' ? 'XP 已儲存到此階段。' : 'XP 已保存到此阶段。'}</p> : null}{membership.premium && saveState === 'error' ? <p role="alert">{language === 'en' ? 'Some XP could not be saved.' : language === 'zh-Hant' ? '部分 XP 未能儲存。' : '部分 XP 未能保存。'} <button className="text-next" onClick={retryFailedAnswers}>{language === 'en' ? 'Retry' : language === 'zh-Hant' ? '重試' : '重试'}</button></p> : null}<button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
+          <div className="quiz-result"><div className="quiz-score">{score}<span> / {gameLength}</span></div><p className="round-xp">+{score * XP_PER_CORRECT} XP</p><p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p>{saveState === 'saving' ? <p role="status">{language === 'en' ? 'Saving XP…' : language === 'zh-Hant' ? '正在儲存 XP…' : '正在保存 XP…'}</p> : null}{saveState === 'saved' ? <p role="status">{language === 'en' ? 'XP saved to this stage.' : language === 'zh-Hant' ? 'XP 已儲存到此階段。' : 'XP 已保存到此阶段。'}</p> : null}{saveState === 'error' ? <p role="alert">{language === 'en' ? 'Some XP could not be saved.' : language === 'zh-Hant' ? '部分 XP 未能儲存。' : '部分 XP 未能保存。'} <button className="text-next" onClick={retryFailedAnswers}>{language === 'en' ? 'Retry' : language === 'zh-Hant' ? '重試' : '重试'}</button></p> : null}<button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
         ) : current ? (
           <>
             <div className="quiz-question">

@@ -60,3 +60,9 @@ Before sandbox testing, verify Stripe mode through the application's connector t
 **Why:** both sandbox and live connections can be attached at once; the development application's default connector resolved a live price while the agent's first connection was an empty sandbox. Development runtime mode alone did not establish payment isolation.
 
 **How to apply:** read the selected price's `livemode` through the same transport as checkout before submitting any test payment. If it is live, stop and resolve development connection routing without modifying live subscriptions.
+
+Public daily challenges should use existing free lesson words and age-stage samples, not the complete paid vocabulary banks.
+
+**Why:** the daily teaser should bring in visitors without gradually giving away the member-only word libraries.
+
+**How to apply:** keep guest challenge generation limited to content already marked free; use the full stage banks only inside paid-member learning activities.

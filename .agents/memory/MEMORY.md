@@ -2,7 +2,7 @@
 - [Product platform direction](platform-direction.md) — keep web and Expo content aligned; Stripe remains, and the user chose an installable PWA instead of app stores.
 - [Membership progression](membership-progression.md) — paid parents freely choose stages; 100 XP marks stage completion, not an unlock gate; never charge per-stage fees.
 - [Dependency security compatibility](dependency-security.md) — preserve Expo config merge semantics when replacing unpatched dependencies; retain the package release-age safeguard.
-- [Mandarin Garden billing direction](mandarin-garden-billing.md) — web-only subscriptions use Stripe at US$9.99/month; use the connector proxy and verify live account readiness.
+- [Mandarin Garden billing direction](mandarin-garden-billing.md) — Stripe web subscriptions stay separate from public challenges, which use free samples rather than paid stage vocabulary.
 - [Membership access and account controls](membership-access.md) — payment gates ordinary access; verified admin membership is free; lapsed members retain renewal/support/deletion.
 - [Cloudflare PWA hosting](cloudflare-pwa-hosting.md) — use the registered apex as Clerk proxy and `www` for Pages via external CNAME; avoid moving all DNS nameservers.
 - [Google Search Console verification](google-search-console-verification.md) — the homepage HTML meta-tag method verified the site; do not change DNS for this URL-prefix verification.
