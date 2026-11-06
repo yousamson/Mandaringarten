@@ -715,6 +715,60 @@ a { color: inherit; text-decoration: none; }
 .reading-listen-actions { display: flex; align-items: center; gap: 14px; margin-top: 28px; color: #899084; font-size: 12px; }
 .reading-listen-actions .button-primary { margin: 0; }
 
+.parent-books-section { margin: 34px 0 48px; }
+.parent-books-heading { align-items: end; }
+.parent-books-heading .eyebrow { display: flex; align-items: center; gap: 6px; }
+.picture-book-picker { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 20px 0 16px; }
+.picture-book-tile { display: grid; grid-template-columns: 54px minmax(0,1fr) auto; align-items: center; gap: 11px; min-width: 0; padding: 12px; text-align: left; border: 1px solid #e8e3d6; border-radius: 17px; background: #fffdf7; color: #435846; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
+.picture-book-tile:hover { transform: translateY(-2px); box-shadow: 0 9px 22px #53624612; }
+.picture-book-tile.selected { border-color: #78a27c; background: #f3f7ef; box-shadow: 0 0 0 2px #78a27c20; }
+.picture-book-cover { display: grid; place-items: center; width: 54px; height: 62px; border-radius: 12px 8px 8px 12px; background: linear-gradient(135deg,#dcebd8,#f7e9b8); box-shadow: inset 4px 0 #ffffff80; font-size: 28px; }
+.picture-book-cover-4-5 { background: linear-gradient(145deg,#f5d9bf,#f5edc9); }
+.picture-book-cover-6-8 { background: linear-gradient(145deg,#d9e8ed,#d9d9ef); }
+.picture-book-cover-9-12 { background: linear-gradient(145deg,#dcead7,#e9d9bc); }
+.picture-book-tile-copy { display: grid; gap: 5px; min-width: 0; }
+.picture-book-tile-copy strong { overflow-wrap: anywhere; color: #3e5944; font-size: 13px; line-height: 1.35; }
+.picture-book-tile-copy small { color: #858b7d; font-size: 11px; }
+.picture-book-tile > svg { color: #7d8c78; }
+.picture-book-reader { display: grid; grid-template-columns: minmax(260px,.85fr) minmax(0,1.15fr); overflow: hidden; min-height: 330px; border: 1px solid #e6e2d6; border-radius: 24px; background: #fffdf8; box-shadow: 0 14px 35px #46583a0c; }
+.picture-book-page-art { position: relative; display: grid; place-items: center; min-height: 330px; overflow: hidden; background: radial-gradient(circle at 50% 45%,#fffdf0 0 20%,transparent 21%),linear-gradient(145deg,#e7efd9,#d7e8db 57%,#f3e9c8); }
+.picture-book-reader-4-5 .picture-book-page-art { background: radial-gradient(circle at 55% 48%,#fff8e8 0 20%,transparent 21%),linear-gradient(145deg,#f3dfc9,#e6e8cb 60%,#d4e6dc); }
+.picture-book-reader-6-8 .picture-book-page-art { background: radial-gradient(circle at 50% 48%,#fffaf0 0 19%,transparent 20%),linear-gradient(145deg,#dbe8ee,#e6e0f1 57%,#f3e8cf); }
+.picture-book-reader-9-12 .picture-book-page-art { background: radial-gradient(circle at 50% 48%,#fffaf0 0 18%,transparent 19%),linear-gradient(145deg,#dcebd8,#d2e8ea 57%,#efe0bf); }
+.picture-book-page-art::before,.picture-book-page-art::after { content:"";position:absolute;border-radius:50%;background:#fff9d655; }
+.picture-book-page-art::before { width:210px;height:210px;top:-70px;right:-44px; }
+.picture-book-page-art::after { width:150px;height:150px;bottom:-54px;left:-38px;background:#ffffff46; }
+.picture-book-art-emoji { position: relative; z-index: 1; font-size: clamp(68px,10vw,112px); line-height: 1.5; filter: drop-shadow(0 10px 7px #44553b20); animation: book-illustration-enter .3s ease-out both; }
+.picture-book-spark { position: absolute; color: #bb9b56; font-size: 22px; }
+.picture-book-spark-one { top: 24%; left: 24%; }
+.picture-book-spark-two { right: 25%; bottom: 25%; font-size: 17px; }
+.picture-book-page-count { position: absolute; right: 16px; bottom: 14px; z-index: 1; color: #687c67; font-size: 11px; font-weight: 700; }
+.picture-book-page-copy { display: flex; min-width: 0; flex-direction: column; padding: clamp(21px,4vw,34px); }
+.picture-book-page-topline { display: flex; justify-content: space-between; gap: 12px; color: #8a8e81; font-size: 11px; }
+.picture-book-page-copy h3 { margin: 7px 0 13px; color: #385342; font: 600 clamp(22px,3vw,29px)/1.2 var(--app-font-serif); }
+.picture-book-text { margin: 0; color: #405742; font: 500 clamp(18px,2.1vw,23px)/1.9 var(--app-font-sans); }
+.picture-book-pinyin { margin: 5px 0 0; color: #8a907f; font-size: 12px; line-height: 1.7; }
+.picture-book-translation { margin: 9px 0 0; color: #667165; font-size: 14px; line-height: 1.7; }
+.picture-book-prompt { margin-top: 17px; padding: 12px 14px; border: 1px solid #e6eadc; border-radius: 13px; background: #f5f7ef; }
+.picture-book-prompt strong { color: #547554; font-size: 11px; }
+.picture-book-prompt p { margin: 4px 0 0; color: #526452; font-size: 13px; line-height: 1.6; }
+.picture-book-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.picture-book-script { display: flex; gap: 5px; }
+.picture-book-script button { padding: 7px 10px; border: 1px solid #e5e3d7; border-radius: 99px; background: #fffdf7; color: #747a70; font-size: 11px; font-weight: 700; cursor: pointer; }
+.picture-book-script button.selected { border-color: #56815e; background: #56815e; color: white; }
+.picture-book-listen { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 8px 12px; font-size: 12px; }
+.picture-book-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 20px; }
+.picture-book-page-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 0; border: 0; background: transparent; color: #4e7054; font-size: 12px; font-weight: 700; cursor: pointer; }
+.picture-book-page-button:disabled { color: #bdc1b5; cursor: not-allowed; }
+.picture-book-dots { display: flex; align-items: center; gap: 6px; }
+.picture-book-dots span { width: 6px; height: 6px; border-radius: 50%; background: #d7ddcf; }
+.picture-book-dots span.active { width: 17px; border-radius: 99px; background: #638c69; }
+.picture-book-membership { display: flex; align-items: center; gap: 12px; margin-top: 15px; padding: 14px 17px; border: 1px solid #e8e5d9; border-radius: 15px; background: #fbfaf5; }
+.picture-book-membership-icon { display: grid; flex: 0 0 auto; place-items: center; width: 35px; height: 35px; border-radius: 11px; background: #e8f0e3; color: #57825e; }
+.picture-book-membership p { flex: 1; margin: 0; color: #6d7669; font-size: 12px; line-height: 1.6; }
+.picture-book-membership-link { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #47734f; font-size: 12px; font-weight: 700; }
+@keyframes book-illustration-enter { from { opacity: .65; transform: scale(.92) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
 @media (max-width: 980px) {
   .stage-paths-grid {
     grid-auto-flow: column;
@@ -726,12 +780,28 @@ a { color: inherit; text-decoration: none; }
     scroll-snap-type: x proximity;
   }
   .stage-games-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .picture-book-picker { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 620px) {
   .stage-games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stage-game-card { min-height: 124px; padding: 12px; }
   .free-reading-page { padding-top: 18px; }
   .reading-listen-card { border-radius: 20px; }
+  .picture-book-reader { grid-template-columns: minmax(0,1fr); }
+  .picture-book-page-art { min-height: 210px; }
+  .picture-book-art-emoji { font-size: 78px; }
+  .picture-book-page-copy { padding: 21px; }
+  .picture-book-membership { align-items: flex-start; flex-wrap: wrap; }
+  .picture-book-membership p { flex-basis: calc(100% - 55px); }
+  .picture-book-membership-link { margin-left: 47px; }
+}
+
+@media (max-width: 420px) {
+  .picture-book-picker { grid-template-columns: minmax(0,1fr); }
+  .picture-book-tile { grid-template-columns: 48px minmax(0,1fr) auto; padding: 10px; }
+  .picture-book-cover { width: 48px; height: 54px; font-size: 25px; }
+  .picture-book-controls { align-items: flex-start; }
+  .picture-book-listen { margin-left: auto; }
 }
 
 /* Real botanical art grows with the selected age stage. */
