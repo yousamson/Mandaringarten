@@ -5,20 +5,34 @@ import { ageLabels, ageStages, normalizeAgeStage } from '@/lib/age-stages';
 import type { Language } from '@/lib/garden-data';
 import { tr } from '@/lib/playground-copy';
 import { parentChildBooks } from '@/lib/parent-child-books';
+import { getStageContent } from '@/lib/playground-content';
+import { useMembership } from '@/hooks/use-learning';
 import { scriptFor, speakMandarin, stopSpeech, type Script } from '@/lib/speech';
 
 export function ParentChildBookSection({ language, age }: { language: Language; age: string }) {
+  const membership = useMembership();
   const [selectedId, setSelectedId] = useState(() => normalizeAgeStage(age));
   const [pageIndex, setPageIndex] = useState(0);
   const [script, setScript] = useState<Script>(() => scriptFor(language));
   const [playing, setPlaying] = useState(false);
+  const [memberPlaying, setMemberPlaying] = useState(false);
+  const [memberAge, setMemberAge] = useState(() => normalizeAgeStage(age));
+  const [memberStoryId, setMemberStoryId] = useState<string | null>(null);
   const book = parentChildBooks.find((item) => item.id === selectedId) ?? parentChildBooks[0];
   const page = book.pages[pageIndex];
   const storyText = script === 'simp' ? page.simp : page.trad;
+  const memberStage = ageStages.indexOf(memberAge) + 1;
+  const memberStories = getStageContent(memberStage).stories;
+  const memberStory = memberStories.find((item) => item.id === memberStoryId) ?? memberStories[0];
+  const memberStoryText = script === 'simp' ? memberStory.simp : memberStory.trad;
+  const memberStoryTitle = (title: { en: string; trad: string; simp: string }) =>
+    language === 'en' ? title.en : language === 'zh-Hans' ? title.simp : title.trad;
+  const membershipError = membership.accountQuery.isError || membership.billing.isError;
 
   useEffect(() => { setSelectedId(normalizeAgeStage(age)); }, [age]);
+  useEffect(() => { setMemberAge(normalizeAgeStage(age)); setMemberStoryId(null); }, [age]);
   useEffect(() => { setScript(scriptFor(language)); }, [language]);
-  useEffect(() => { stopSpeech(); setPlaying(false); }, [selectedId, pageIndex, script]);
+  useEffect(() => { stopSpeech(); setPlaying(false); setMemberPlaying(false); }, [selectedId, pageIndex, script, memberAge, memberStoryId]);
   useEffect(() => () => stopSpeech(), []);
 
   const selectBook = (id: string) => {
@@ -33,9 +47,18 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
     }
     setPlaying(speakMandarin(storyText, script, () => setPlaying(false)));
   };
+  const toggleMemberAudio = () => {
+    if (memberPlaying) {
+      stopSpeech();
+      setMemberPlaying(false);
+      return;
+    }
+    setMemberPlaying(speakMandarin(memberStoryText, script, () => setMemberPlaying(false)));
+  };
   const movePage = (direction: -1 | 1) => {
     setPageIndex((current) => Math.max(0, Math.min(book.pages.length - 1, current + direction)));
   };
+  const retryMembership = () => window.location.reload();
 
   return (
     <section className="parent-books-section" data-testid="parent-child-books">
@@ -116,11 +139,92 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
         </div>
       </article>
 
-      <div className="picture-book-membership">
-        <span className="picture-book-membership-icon"><BookHeart size={17} /></span>
-        <p>{tr(language, 'Members can also explore 40 read-aloud stories across all four stages.', '訂閱會員還可聆聽四個階段共 40 篇故事，並在樂園中重複閱讀。', '订阅会员还可聆听四个阶段共 40 篇故事，并在乐园中重复阅读。')}</p>
-        <Link href="/membership" className="picture-book-membership-link">{tr(language, 'Explore membership', '了解會員訂閱', '了解会员订阅')} <ArrowRight size={14} /></Link>
-      </div>
+      {membership.checking ? (
+        <div className="picture-book-membership" role="status">
+          <span className="picture-book-membership-icon"><BookHeart size={17} /></span>
+          <p>{tr(language, 'Loading member stories…', '正在載入會員故事…', '正在加载会员故事…')}</p>
+          <button type="button" className="picture-book-membership-link" onClick={retryMembership}>
+            {tr(language, 'Refresh access', '重新整理權限', '刷新权限')} <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : membershipError && !membership.premium ? (
+        <div className="picture-book-membership" role="alert">
+          <span className="picture-book-membership-icon"><BookHeart size={17} /></span>
+          <p>{tr(language, 'We could not confirm membership. Refresh to try again.', '暫時無法確認會員資格，請重新整理再試。', '暂时无法确认会员资格，请刷新后重试。')}</p>
+          <button type="button" className="picture-book-membership-link" onClick={retryMembership}>
+            {tr(language, 'Refresh', '重新整理', '刷新')} <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : membership.premium ? (
+        <section className="member-story-library" data-testid="member-story-library">
+          <div className="member-story-heading">
+            <div className="eyebrow"><BookHeart size={14} /> {tr(language, 'MEMBER STORIES', '會員故事', '会员故事')}</div>
+            <h3>{tr(language, '40 stories to read together', '40 篇親子共讀故事', '40 篇亲子共读故事')}</h3>
+            <p>{tr(language, 'Choose a learning stage to find 10 more stories.', '選擇學習階段，每個階段都有 10 篇故事。', '选择学习阶段，每个阶段都有 10 篇故事。')}</p>
+          </div>
+
+          <div className="member-story-stages" role="group" aria-label={tr(language, 'Choose a story age stage', '選擇故事年齡階段', '选择故事年龄阶段')}>
+            {ageStages.map((stageId, index) => {
+              const active = stageId === memberAge;
+              return (
+                <button
+                  key={stageId}
+                  type="button"
+                  className={active ? 'selected' : ''}
+                  aria-pressed={active}
+                  onClick={() => { setMemberAge(stageId); setMemberStoryId(null); }}
+                  data-testid={`button-member-story-stage-${stageId}`}
+                >
+                  {ageLabels(language)[index]}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="member-story-picker" role="group" aria-label={tr(language, 'Choose a member story', '選擇會員故事', '选择会员故事')}>
+            {memberStories.map((item, index) => {
+              const active = item.id === memberStory.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`member-story-choice${active ? ' selected' : ''}`}
+                  aria-pressed={active}
+                  onClick={() => setMemberStoryId(item.id)}
+                  data-testid={`button-member-story-${item.id}`}
+                >
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong>{memberStoryTitle(item.title)}</strong>
+                </button>
+              );
+            })}
+          </div>
+
+          <article className="member-story-reader" data-testid="member-story-reader">
+            <div className="member-story-reader-heading">
+              <div>
+                <span className="eyebrow">{ageLabels(language)[ageStages.indexOf(memberAge)]}</span>
+                <h4>{memberStoryTitle(memberStory.title)}</h4>
+              </div>
+              <button type="button" className="button-secondary picture-book-listen" onClick={toggleMemberAudio} data-testid="button-member-story-listen">
+                {memberPlaying ? <Pause size={15} /> : <Volume2 size={15} />}
+                {memberPlaying ? tr(language, 'Stop listening', '停止聆聽', '停止聆听') : tr(language, 'Read aloud', '聆聽故事', '聆听故事')}
+              </button>
+            </div>
+            <p className="picture-book-text" lang={script === 'simp' ? 'zh-Hans' : 'zh-Hant'} data-testid="member-story-text">{memberStoryText}</p>
+            <div className="picture-book-script" role="group" aria-label={tr(language, 'Chinese characters', '中文文字', '中文文字')}>
+              <button type="button" className={script === 'trad' ? 'selected' : ''} onClick={() => setScript('trad')} aria-pressed={script === 'trad'}>繁體</button>
+              <button type="button" className={script === 'simp' ? 'selected' : ''} onClick={() => setScript('simp')} aria-pressed={script === 'simp'}>简体</button>
+            </div>
+          </article>
+        </section>
+      ) : (
+        <div className="picture-book-membership">
+          <span className="picture-book-membership-icon"><BookHeart size={17} /></span>
+          <p>{tr(language, 'Members can explore 40 read-aloud stories across all four stages.', '訂閱會員還可閱讀四個階段共 40 篇故事，並重複聆聽。', '订阅会员还可阅读四个阶段共 40 篇故事，并重复聆听。')}</p>
+          <Link href="/membership" className="picture-book-membership-link">{tr(language, 'Explore membership', '了解會員訂閱', '了解会员订阅')} <ArrowRight size={14} /></Link>
+        </div>
+      )}
     </section>
   );
 }

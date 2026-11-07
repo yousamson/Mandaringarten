@@ -45,7 +45,7 @@ export function useMembership() {
     account.query.isLoading || (!account.data && !account.query.isError) ||
     (account.data && !account.isAdmin && billing.isLoading)
   ));
-  return { isLoaded, isSignedIn: Boolean(isSignedIn), user, uid, billing, premium, checking };
+  return { isLoaded, isSignedIn: Boolean(isSignedIn), user, uid, billing, accountQuery: account.query, premium, checking };
 }
 
 export const progressQueryKey = (uid: string | null) => [...getGetLearningProgressQueryKey(), uid];
