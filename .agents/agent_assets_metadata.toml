@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "JB4vFy2slfDkiGsGbUZQZ"
+uri = "file://generated-artifacts/ig/mandarin-garden-ig-feed.jpg"
+type = "image"
+title = "IG 貼文圖片｜漢語樂園"
+description = "1080 × 1350 的 IG 貼文圖片，使用網站首頁實際截圖，展示漢語樂園首頁與字詞查找功能。"
+logical_id = "a164ec17-2665-466d-a017-dd9644eb17e1"
+content_hash = "sha256:03315971af623bca326eb642a7129f89899f85bba94e5b08133f791995a610f3"
+size = 94283
+mtime_ms = 1794034729871
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/a164ec17-2665-466d-a017-dd9644eb17e1/5a1fe7b7-99d7-45a7-8840-f0dede86c726"
+storage_version_token = "1794034821432796"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "zfR4FblTlKnaso9Zpqw0v"
+uri = "file://artifacts/mandarin-garden/assets/images/icon.png"
+type = "image"
+title = "Mandarin Garden App 圖示"
+description = "App.json 設定中使用的正式 App icon，PNG、1024 × 1024，可下載作宣傳素材。"
+logical_id = "bb1b53df-d692-4893-a649-ac26f13fd224"
+content_hash = "sha256:94048aa4a18b0e586db982ee750cd207ddf2fdd1512fbbdd55f730b280803739"
+size = 1794255
+mtime_ms = 1793253641243
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/bb1b53df-d692-4893-a649-ac26f13fd224/61c3ca98-6e06-447e-955a-e967efa71221"
+storage_version_token = "1794034904045194"
+content_type = "image/png"
