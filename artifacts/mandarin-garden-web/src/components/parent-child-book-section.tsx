@@ -61,7 +61,7 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
   const retryMembership = () => window.location.reload();
 
   return (
-    <section id="parent-child-books" className="parent-books-section" data-testid="parent-child-books">
+    <section className="parent-books-section" data-testid="parent-child-books">
       <div className="section-head parent-books-heading">
         <div>
           <div className="eyebrow"><BookHeart size={14} /> {tr(language, 'READ TOGETHER', '親子共讀', '亲子共读')}</div>

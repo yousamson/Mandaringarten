@@ -28,3 +28,87 @@ mtime_ms = 1793253641243
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/bb1b53df-d692-4893-a649-ac26f13fd224/61c3ca98-6e06-447e-955a-e967efa71221"
 storage_version_token = "1794034904045194"
 content_type = "image/png"
+
+[[outputs]]
+id = "Y99GwEYFcQeF1bYJSqMI0"
+uri = "file://generated-artifacts/ig/01-home-word-finder.jpg"
+type = "image"
+title = "01｜首頁與查詞"
+description = "IG 輪播截圖，1080 × 1350（4:5）；首頁及免費字詞查找。"
+logical_id = "e11cbeac-ff2d-45dc-981b-77ce88b315b4"
+content_hash = "sha256:03315971af623bca326eb642a7129f89899f85bba94e5b08133f791995a610f3"
+size = 94283
+mtime_ms = 1794035957760
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/e11cbeac-ff2d-45dc-981b-77ce88b315b4/64938aea-b48c-4640-9154-9427487b9a42"
+storage_version_token = "1794036073781214"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "JwA_O13iYsqkRoLi-77rE"
+uri = "file://generated-artifacts/ig/02-vocabulary-paths.jpg"
+type = "image"
+title = "02｜分齡詞語小徑"
+description = "IG 輪播截圖，1080 × 1350（4:5）；四階段主題詞語小徑。"
+logical_id = "ba2c98f2-1024-47bb-bb25-2bae24bb50a7"
+content_hash = "sha256:730eab5a9113ec5af5daaabf233610f099d1c1afe884b0b66af4827eafa0870c"
+size = 113624
+mtime_ms = 1794035862404
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/ba2c98f2-1024-47bb-bb25-2bae24bb50a7/6c2e92bc-6978-4144-bfb7-c55b1ff99a80"
+storage_version_token = "1794036075093768"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "HMnLzSOd5VDm8DoRX03Lm"
+uri = "file://generated-artifacts/ig/03-game-modes.jpg"
+type = "image"
+title = "03｜五種遊戲模式"
+description = "IG 輪播截圖，1080 × 1350（4:5）；配對、拼音、聆聽、重組詞語和句子。"
+logical_id = "ca31c145-983d-45e2-b627-6ce5081f8bf3"
+content_hash = "sha256:dfdaa582ffb2a6e627d3052f87b7f05bffa9248689a7f1d02fe51795d32f985b"
+size = 90661
+mtime_ms = 1794035960771
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/ca31c145-983d-45e2-b627-6ce5081f8bf3/f75412e0-7c47-4d55-a579-666fa02dbbbe"
+storage_version_token = "1794036076425494"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "P3kq1Gd7KHPt8Xzq7zzIT"
+uri = "file://generated-artifacts/ig/04-free-reading.jpg"
+type = "image"
+title = "04｜免費短篇閱讀"
+description = "IG 輪播截圖，1080 × 1350（4:5）；短篇故事可切換字體並聆聽。"
+logical_id = "a81ab1ee-15a4-4d17-beb2-e012cefaa438"
+content_hash = "sha256:4434eee283839358c13ead6fe56b6ec822e64caab5c7477ab101ac6571e30bbe"
+size = 44529
+mtime_ms = 1794035778700
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/a81ab1ee-15a4-4d17-beb2-e012cefaa438/e24c1d65-5f38-4755-9ed0-ac4f0ddb64f3"
+storage_version_token = "1794036077673189"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "b44M52Lwx0ec4qRw03tyF"
+uri = "file://generated-artifacts/ig/05-co-reading.jpg"
+type = "image"
+title = "05｜親子共讀繪本"
+description = "IG 輪播截圖，1080 × 1350（4:5）；分齡繪本、共讀提問及會員故事提示。"
+logical_id = "da2c2764-3d81-48c7-858a-6f7dbaa3d7a4"
+content_hash = "sha256:ba7477666a35df4a56b4703ef63cd3e59390e89672e4c18c9926b5f0d7724a07"
+size = 78489
+mtime_ms = 1794035963447
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/da2c2764-3d81-48c7-858a-6f7dbaa3d7a4/f6f7b3c8-b0d3-4a2a-a862-cdba5b4daaf7"
+storage_version_token = "1794036078907153"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Ov_6ofFDEjHz8ug_rPAUi"
+uri = "file://generated-artifacts/ig/06-free-daily-challenge.jpg"
+type = "image"
+title = "06｜每日免費挑戰"
+description = "IG 輪播截圖，1080 × 1350（4:5）；免登入每日三題挑戰。"
+logical_id = "a0002acb-3dd6-4d27-b433-e5ec72b76543"
+content_hash = "sha256:bd63a1f64f2bedb17b8e988ed9ddc8028e031a2af99ac3d4fe351b36749f704f"
+size = 109275
+mtime_ms = 1794035966439
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/a0002acb-3dd6-4d27-b433-e5ec72b76543/5a8a2ff2-e1ea-4b79-b13c-c4d7e6f79bbc"
+storage_version_token = "1794036080209025"
+content_type = "image/jpeg"

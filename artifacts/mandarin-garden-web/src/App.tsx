@@ -118,31 +118,6 @@ function Garden() {
   const [menuOpen, setMenuOpen] = useState(false);
   const freeLessons = useMemo(() => lessons.filter((lesson) => !lesson.premium), []);
   const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
-  useEffect(() => {
-    let retryTimer = 0;
-    let frame = 0;
-    const scrollToHash = () => {
-      const id = decodeURIComponent(window.location.hash.slice(1));
-      if (!id) return;
-      let attempts = 0;
-      const findTarget = () => {
-        const target = document.getElementById(id);
-        if (target) {
-          target.scrollIntoView({ block: 'start', behavior: 'auto' });
-          return;
-        }
-        if (attempts++ < 30) retryTimer = window.setTimeout(findTarget, 100);
-      };
-      frame = window.requestAnimationFrame(findTarget);
-    };
-    scrollToHash();
-    window.addEventListener('hashchange', scrollToHash);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(retryTimer);
-      window.removeEventListener('hashchange', scrollToHash);
-    };
-  }, [path]);
   const shellClass = `garden-app theme-${preferences.theme}`;
   const close = () => setMenuOpen(false);
   const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><MemberGate l={l}><LegacySync l={l} />{node}</MemberGate></AccountConsentBoundary>;

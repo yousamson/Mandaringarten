@@ -25,7 +25,7 @@ export function StagePathCards({ l }: { l: Language }) {
   const locked = !m.premium;
 
   return (
-    <section id="stage-paths" className="stage-paths" data-testid="section-stage-paths">
+    <section className="stage-paths" data-testid="section-stage-paths">
       <div className="section-head">
         <div>
           <div className="eyebrow">{playgroundName[l]} · {stageLabel(l, stage)}</div>
@@ -46,7 +46,7 @@ export function StagePathCards({ l }: { l: Language }) {
           </Link>
         ))}
       </div>
-      <div id="stage-games" className="stage-games" data-testid="stage-games">
+      <div className="stage-games" data-testid="stage-games">
         <div className="section-head">
           <div>
             <div className="eyebrow">{stageLabel(l, stage)} · {stageAges[stage - 1]} {tr(l, 'years', '歲', '岁')}</div>
