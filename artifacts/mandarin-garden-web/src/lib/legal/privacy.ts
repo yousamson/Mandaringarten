@@ -22,7 +22,6 @@ export const privacyPolicy: Record<Language, LegalDoc> = {
       { h: '3. How information is used and shared', p: [
         'We use information to provide and secure the service, save progress across devices, manage membership and payments, answer messages, prevent abuse, maintain the website, and meet legal, tax and accounting requirements.',
         'We do not sell personal information or use it for advertising. Information is handled by service providers that help us operate the site: Clerk (sign-in), Replit (hosting and database) and Stripe (payments and subscriptions). Google Fonts may receive your IP address and browser information when a page loads.',
-        'If you choose to play audio or video, Wikimedia Commons may receive your IP address, device or browser details and media request. Wikimedia Commons handles that information under its own privacy terms.',
         'The read-aloud feature uses your device’s speech service. Depending on your device or browser, text you choose to hear may be processed by its provider. We may also disclose information where required by law or reasonably needed to protect users, the service or others, or in a transfer of the service.',
       ] },
       { h: '4. Storage and security', p: [
@@ -62,7 +61,6 @@ export const privacyPolicy: Record<Language, LegalDoc> = {
       { h: '3. 資料用途及分享', p: [
         '我們使用資料提供及保障服務、跨裝置保存學習進度、管理會員及付款、回覆訊息、防止濫用、維持網站運作，以及履行法律、稅務和會計責任。',
         '我們不出售個人資料，也不以此作廣告用途。協助營運的服務商包括 Clerk（登入）、Replit（託管及資料庫）和 Stripe（付款及訂閱）。載入 Google Fonts 時，Google 可能收到您的 IP 位址和瀏覽器資料。',
-        '如您選擇播放影音，Wikimedia Commons 可能收到您的 IP 位址、裝置或瀏覽器資料及影音請求；相關資料會按 Wikimedia Commons 自身的私隱條款處理。',
         '朗讀功能使用您裝置的語音服務；視乎裝置或瀏覽器而定，您選擇朗讀的文字可能由其服務商處理。如法律要求，或為合理地保障使用者、服務或他人，或移轉服務時，我們亦可能披露資料。',
       ] },
       { h: '4. 儲存與安全', p: [
@@ -102,7 +100,6 @@ export const privacyPolicy: Record<Language, LegalDoc> = {
       { h: '3. 信息用途与分享', p: [
         '我们使用信息提供和保护服务、跨设备保存学习进度、管理会员和付款、回复消息、防止滥用、维护网站，以及履行法律、税务和会计责任。',
         '我们不出售个人信息，也不将其用于广告。协助运营的服务商包括 Clerk（登录）、Replit（托管和数据库）及 Stripe（付款和订阅）。加载 Google Fonts 时，Google 可能会收到您的 IP 地址和浏览器信息。',
-        '如您选择播放影音，Wikimedia Commons 可能会收到您的 IP 地址、设备或浏览器信息及影音请求；相关信息将依 Wikimedia Commons 自身的隐私条款处理。',
         '朗读功能使用您设备的语音服务；视设备或浏览器而定，您选择朗读的文字可能由其服务商处理。法律要求、合理保护用户、服务或他人，或转让服务时，我们也可能披露信息。',
       ] },
       { h: '4. 存储与安全', p: [

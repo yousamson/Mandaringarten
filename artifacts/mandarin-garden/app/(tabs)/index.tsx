@@ -16,7 +16,6 @@ import { useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
 import { translate } from '@/lib/i18n';
-import { MediaGarden } from '@/components/MediaGarden';
 import {
   freeReadings,
   getStageContent,
@@ -295,8 +294,6 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         )}
-
-        <MediaGarden language={l} />
 
         <Text style={[styles.footer, { color: colors.mutedForeground }]}>
           {tr(l, 'A learning playground that grows with your child.', '陪孩子一起長大的學習樂園。', '陪孩子一起长大的学习乐园。')}

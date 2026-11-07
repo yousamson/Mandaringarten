@@ -30,9 +30,7 @@
             "web": false
           }
         }
-      ],
-      "expo-video",
-      "expo-audio"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

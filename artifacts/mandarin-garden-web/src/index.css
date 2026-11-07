@@ -767,29 +767,6 @@ a { color: inherit; text-decoration: none; }
 .picture-book-membership-icon { display: grid; flex: 0 0 auto; place-items: center; width: 35px; height: 35px; border-radius: 11px; background: #e8f0e3; color: #57825e; }
 .picture-book-membership p { flex: 1; margin: 0; color: #6d7669; font-size: 12px; line-height: 1.6; }
 .picture-book-membership-link { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #47734f; font-size: 12px; font-weight: 700; }
-.media-garden { margin: 32px 0 46px; }
-.media-garden-heading .eyebrow { display: flex; align-items: center; gap: 6px; }
-.media-garden-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 18px; }
-.media-garden-card { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 18px; border: 1px solid #e7e3d7; border-radius: 19px; background: #fffdf7; }
-.media-garden-card.expanded { border-color: #8aaa83; box-shadow: 0 0 0 2px #71977220; }
-.media-garden-card-top { display: flex; width: 100%; align-items: center; justify-content: space-between; }
-.media-garden-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; }
-.media-garden-icon.audio { background: #e6f0e3; color: #4f805b; }
-.media-garden-icon.video { background: #f8e8d6; color: #a46d3e; }
-.media-garden-duration { color: #7c8578; font-size: 11px; font-weight: 700; }
-.media-garden-card h3 { margin: 14px 0 6px; color: #3e5944; font: 600 19px/1.25 var(--app-font-serif); }
-.media-garden-description { margin: 0; color: #72796e; font-size: 12px; line-height: 1.6; }
-.media-garden-license { margin-top: 12px; padding: 5px 8px; border-radius: 99px; background: #edf3e8; color: #4d7653; font-size: 10px; font-weight: 700; }
-.media-garden-credit { margin: 9px 0 14px; color: #92968b; font-size: 10px; }
-.media-garden-play { display: inline-flex; align-items: center; gap: 7px; min-height: 37px; margin-top: auto; padding: 8px 13px; font-size: 12px; }
-.media-garden-player { width: 100%; margin-top: 15px; }
-.media-garden-player audio,.media-garden-player video { display: block; width: 100%; max-width: 100%; border-radius: 12px; background: #20231f; }
-.media-garden-player audio { height: 42px; }
-.media-garden-player video { aspect-ratio: 4/3; object-fit: contain; }
-.media-playback-error { margin: 7px 0 0; color: #a54b3a; font-size: 11px; line-height: 1.5; }
-.media-source-links { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 10px; }
-.media-source-links a { display: inline-flex; align-items: center; gap: 4px; color: #71816d; font-size: 10px; }
-.media-garden-note { margin: 11px 0 0; color: #92968b; font-size: 10px; line-height: 1.5; }
 @keyframes book-illustration-enter { from { opacity: .65; transform: scale(.92) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
 @media (max-width: 980px) {
@@ -804,7 +781,6 @@ a { color: inherit; text-decoration: none; }
   }
   .stage-games-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .picture-book-picker { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .media-garden-grid { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 620px) {
   .stage-games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

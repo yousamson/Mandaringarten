@@ -19,7 +19,6 @@ import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
 import { DailyChallengeCard } from '@/components/playground/daily-challenge-card';
 import { ParentChildBookSection } from '@/components/parent-child-book-section';
-import { MediaGarden } from '@/components/media-garden';
 import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useIssueLearningRound, useRecordRound, useSelectStage, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
@@ -234,7 +233,6 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
       <StagePathCards l={language} />
       <PracticeSection language={language} age={age} onAgeChange={onAgeChange} />
       <ParentChildBookSection language={language} age={age} />
-      <MediaGarden language={language} />
       <section className="progress-band">
         <div>
           <div className="eyebrow">{t.path}</div>
