@@ -9,3 +9,4 @@
 - [Legacy progress migration](progress-migration.md) — overlapping browser snapshots are high-water baselines; reconcile them with distinct server rounds rather than importing once.
 - [Expo browser test sessions](expo-test-sessions.md) — a Clerk test login on the website host does not establish a signed-in session on the separate Expo preview host.
 - [Preview proxy caching](preview-proxy-caching.md) — direct route tests and the shared preview origin can differ on conditional responses; verify the full client path.
+- [Free translation provider](translation-provider.md) — use MyMemory only, with clear disclosure of long-term retention and partner sharing before lookup.

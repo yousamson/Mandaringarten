@@ -19,6 +19,7 @@ import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
 import { DailyChallengeCard } from '@/components/playground/daily-challenge-card';
 import { ParentChildBookSection } from '@/components/parent-child-book-section';
+import { TranslationLookup } from '@/components/translation-lookup';
 import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useIssueLearningRound, useRecordRound, useSelectStage, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
@@ -215,6 +216,7 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           <img className="hero-flower-image" src={`/images/mandarin-cosmos-${normalizeAgeStage(age)}.png`} alt={tr(language, `Cosmos flower growing for ${t.levelAges[recommendedLevel]}`, `${t.levelAges[recommendedLevel]}成長階段的波斯菊`, `${t.levelAges[recommendedLevel]}成长阶段的波斯菊`)} width="480" height="390" fetchPriority="high" />
         </div>
       </section>
+      <TranslationLookup language={language} />
       <section id="lessons" className="reveal">
         <div className="section-head">
           <div><div className="eyebrow">{t.category}</div><h2>{t.lessons}</h2><p className="section-sub">{t.lessonsHint}</p></div>

@@ -340,3 +340,45 @@ export interface SupportMessageInput {
   text: string;
 }
 
+export type TranslationLookupInputScript = typeof TranslationLookupInputScript[keyof typeof TranslationLookupInputScript];
+
+
+export const TranslationLookupInputScript = {
+  'zh-Hant': 'zh-Hant',
+  'zh-Hans': 'zh-Hans',
+} as const;
+
+export interface TranslationLookupInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  text: string;
+  script: TranslationLookupInputScript;
+}
+
+export type TranslationLookupResponseSourceLanguage = typeof TranslationLookupResponseSourceLanguage[keyof typeof TranslationLookupResponseSourceLanguage];
+
+
+export const TranslationLookupResponseSourceLanguage = {
+  en: 'en',
+  'zh-TW': 'zh-TW',
+  'zh-CN': 'zh-CN',
+} as const;
+
+export type TranslationLookupResponseTargetLanguage = typeof TranslationLookupResponseTargetLanguage[keyof typeof TranslationLookupResponseTargetLanguage];
+
+
+export const TranslationLookupResponseTargetLanguage = {
+  en: 'en',
+  'zh-TW': 'zh-TW',
+  'zh-CN': 'zh-CN',
+} as const;
+
+export interface TranslationLookupResponse {
+  text: string;
+  translatedText: string;
+  sourceLanguage: TranslationLookupResponseSourceLanguage;
+  targetLanguage: TranslationLookupResponseTargetLanguage;
+}
+

@@ -767,6 +767,27 @@ a { color: inherit; text-decoration: none; }
 .picture-book-membership-icon { display: grid; flex: 0 0 auto; place-items: center; width: 35px; height: 35px; border-radius: 11px; background: #e8f0e3; color: #57825e; }
 .picture-book-membership p { flex: 1; margin: 0; color: #6d7669; font-size: 12px; line-height: 1.6; }
 .picture-book-membership-link { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #47734f; font-size: 12px; font-weight: 700; }
+.translation-lookup { margin: 20px 0 36px; padding: clamp(18px, 3vw, 26px); border: 1px solid #e7e3d7; border-radius: 23px; background: #fffdf7; }
+.translation-lookup-heading { display: flex; align-items: flex-start; gap: 13px; }
+.translation-lookup-icon { display: grid; flex: 0 0 auto; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: #e6f0e3; color: #4f805b; }
+.translation-lookup-heading .eyebrow { margin: 1px 0 5px; }
+.translation-lookup-heading h2 { margin: 0; color: #3e5944; font: 600 23px/1.2 var(--app-font-serif); }
+.translation-lookup-heading p { margin: 6px 0 0; color: #72796e; font-size: 12px; line-height: 1.55; }
+.translation-lookup-controls { display: flex; gap: 10px; margin-top: 17px; }
+.translation-search-field { display: flex; min-width: 0; flex: 1; align-items: center; gap: 9px; min-height: 48px; padding: 0 13px; border: 1px solid #dfe3d8; border-radius: 14px; background: #fff; color: #71816d; }
+.translation-search-field:focus-within { border-color: #6d9b73; box-shadow: 0 0 0 3px #6d9b7320; }
+.translation-search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #314b3a; font: inherit; font-size: 14px; }
+.translation-search-field input::placeholder { color: #92968b; }
+.translation-submit { min-width: 138px; min-height: 48px; white-space: nowrap; }
+.translation-submit:disabled { cursor: wait; opacity: .7; }
+.translation-spinner { animation: translation-spin .9s linear infinite; }
+.translation-result { margin-top: 13px; padding: 13px 15px; border: 1px solid #dce8d9; border-radius: 15px; background: #f5f8f0; }
+.translation-pair { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; color: #647267; font-size: 14px; }
+.translation-pair strong { color: #314b3a; font-size: 18px; }
+.translation-result small { display: block; margin-top: 6px; color: #7b877b; font-size: 10px; }
+.translation-error { margin: 10px 0 0; color: #a54b3a; font-size: 12px; line-height: 1.5; }
+.translation-privacy-note { margin: 12px 0 0; color: #626d61; font-size: 11px; line-height: 1.6; }
+@keyframes translation-spin { to { transform: rotate(360deg); } }
 @keyframes book-illustration-enter { from { opacity: .65; transform: scale(.92) translateY(5px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
 @media (max-width: 980px) {
@@ -785,6 +806,8 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 620px) {
   .stage-games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stage-game-card { min-height: 124px; padding: 12px; }
+  .translation-lookup-controls { flex-direction: column; }
+  .translation-submit { width: 100%; }
   .free-reading-page { padding-top: 18px; }
   .reading-listen-card { border-radius: 20px; }
   .picture-book-reader { grid-template-columns: minmax(0,1fr); }

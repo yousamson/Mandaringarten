@@ -47,3 +47,8 @@ export * from './supportMessageAuthor';
 export * from './supportMessageInput';
 export * from './supportThread';
 export * from './supportThreadInput';
+export * from './translationLookupInput';
+export * from './translationLookupInputScript';
+export * from './translationLookupResponse';
+export * from './translationLookupResponseSourceLanguage';
+export * from './translationLookupResponseTargetLanguage';

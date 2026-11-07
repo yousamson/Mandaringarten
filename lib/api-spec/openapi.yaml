@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: billing
     description: Stripe subscription and membership operations
+  - name: translation
+    description: Free word and short-phrase translation
 paths:
   /healthz:
     get:
@@ -310,6 +312,25 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportConversation" }
+  /translation/lookup:
+    post:
+      operationId: lookupTranslation
+      tags: [translation]
+      summary: Translate one word or a short phrase between English and Chinese
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TranslationLookupInput" }
+      responses:
+        "200":
+          description: Translation result from MyMemory
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TranslationLookupResponse" }
+        "400": { description: Invalid or oversized input }
+        "429": { description: Free daily translation allowance reached }
+        "503": { description: Translation service is temporarily unavailable }
 components:
   securitySchemes:
     bearerAuth:
@@ -572,3 +593,17 @@ components:
       required: [text]
       properties:
         text: { type: string, minLength: 1, maxLength: 5000 }
+    TranslationLookupInput:
+      type: object
+      required: [text, script]
+      properties:
+        text: { type: string, minLength: 1, maxLength: 100 }
+        script: { type: string, enum: ["zh-Hant", "zh-Hans"] }
+    TranslationLookupResponse:
+      type: object
+      required: [text, translatedText, sourceLanguage, targetLanguage]
+      properties:
+        text: { type: string }
+        translatedText: { type: string }
+        sourceLanguage: { type: string, enum: [en, zh-TW, zh-CN] }
+        targetLanguage: { type: string, enum: [en, zh-TW, zh-CN] }

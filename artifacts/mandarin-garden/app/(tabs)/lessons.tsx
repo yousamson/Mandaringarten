@@ -6,11 +6,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useLookupTranslation } from '@workspace/api-client-react';
 import { PageTitle, Screen, Surface } from '@/components/LearningUI';
 import { useLearning } from '@/context/LearningContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -73,6 +76,9 @@ export default function LessonsScreen() {
   const [selectedStory, setSelectedStory] = useState<StageStory | null>(null);
   const [showFreeReading, setShowFreeReading] = useState(false);
   const [speechState, setSpeechState] = useState<'playing' | 'paused' | 'idle'>('idle');
+  const [lookupText, setLookupText] = useState('');
+  const translationLookup = useLookupTranslation();
+  const translationErrorStatus = (translationLookup.error as { status?: number } | null)?.status;
   const freeReading = freeReadings[learning.ageBand];
   const scriptForStory = (story: StageStory) => simplified ? story.simp : story.trad;
   const currentReading = showFreeReading
@@ -160,9 +166,29 @@ export default function LessonsScreen() {
   const displayStoryTitle = (story: StageStory) =>
     simplified ? story.title.simp : story.title.trad;
 
+  const submitLookup = () => {
+    const text = lookupText.trim();
+    if (!text || translationLookup.isPending) return;
+    translationLookup.mutate({
+      data: { text, script: simplified ? 'zh-Hans' : 'zh-Hant' },
+    });
+  };
+
+  const translationLanguageName = (code: string) => code === 'en'
+    ? 'English'
+    : code === 'zh-CN'
+      ? tr(language, 'Simplified Chinese', '簡體中文', '简体中文')
+      : tr(language, 'Traditional Chinese', '繁體中文', '繁体中文');
+
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={styles.keyboardContainer} behavior="padding" keyboardVerticalOffset={0}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <PageTitle
           eyebrow={tr(language, 'LEARNING PLAYGROUND', '學習樂園', '学习乐园')}
           title={tr(language, 'Word paths & stories', '詞語小徑與短篇故事', '词语小径与短篇故事')}
@@ -170,6 +196,80 @@ export default function LessonsScreen() {
             ? tr(language, `Stage ${stage} · ages ${stageAges[stage - 1]}`, `第 ${stage} 階段 · ${stageAges[stage - 1]} 歲`, `第 ${stage} 阶段 · ${stageAges[stage - 1]} 岁`)
             : tr(language, 'Free reading is available. Membership opens all stages.', '可免費閱讀；會員可使用全部學習階段。', '可免费阅读；会员可使用全部学习阶段。')}
         />
+
+        <View style={[styles.translationCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="translation-lookup">
+          <View style={styles.translationHeading}>
+            <View style={[styles.translationIcon, { backgroundColor: colors.secondary }]}>
+              <Ionicons name="language-outline" size={19} color={colors.primary} />
+            </View>
+            <View style={styles.translationHeadingCopy}>
+              <Text style={[styles.cardEyebrow, { color: colors.primary }]}>
+                {tr(language, 'WORD FINDER', '字詞查找', '字词查找')}
+              </Text>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                {tr(language, 'Look up a word', '查找字詞翻譯', '查找字词翻译')}
+              </Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {tr(language, 'Translate a word or short phrase between English and Chinese.', '查找中英文單字或短句的翻譯。', '查找中英文单词或短句的翻译。')}
+              </Text>
+            </View>
+          </View>
+          <TextInput
+            accessibilityLabel={tr(language, 'Word to translate', '要翻譯的字詞', '要翻译的字词')}
+            testID="input-translation-word"
+            value={lookupText}
+            onChangeText={(value) => {
+              setLookupText(value);
+              translationLookup.reset();
+            }}
+            onSubmitEditing={submitLookup}
+            returnKeyType="search"
+            autoCorrect={false}
+            maxLength={100}
+            placeholder={tr(language, 'Type a word or short phrase', '輸入字詞或短句', '输入字词或短句')}
+            placeholderTextColor={colors.mutedForeground}
+            selectionColor={colors.primary}
+            style={[styles.translationInput, { color: colors.foreground, backgroundColor: colors.background, borderColor: colors.border }]}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={tr(language, 'Translate word', '查找翻譯', '查找翻译')}
+            testID="button-translate-word"
+            disabled={!lookupText.trim() || translationLookup.isPending}
+            onPress={submitLookup}
+            style={[styles.translationButton, { backgroundColor: colors.primary, opacity: !lookupText.trim() || translationLookup.isPending ? 0.65 : 1 }]}
+          >
+            {translationLookup.isPending
+              ? <ActivityIndicator size="small" color={colors.primaryForeground} />
+              : <Ionicons name="search-outline" size={17} color={colors.primaryForeground} />}
+            <Text style={[styles.translationButtonText, { color: colors.primaryForeground }]}>
+              {translationLookup.isPending
+                ? tr(language, 'Translating…', '翻譯中…', '翻译中…')
+                : tr(language, 'Translate', '查找翻譯', '查找翻译')}
+            </Text>
+          </Pressable>
+          {translationLookup.data && translationLookup.data.text === lookupText.trim() ? (
+            <View style={[styles.translationResult, { backgroundColor: colors.secondary, borderColor: colors.border }]} accessibilityLiveRegion="polite" testID="text-translation-result">
+              <Text style={[styles.translationResultText, { color: colors.foreground }]}>{translationLookup.data.translatedText}</Text>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {translationLanguageName(translationLookup.data.sourceLanguage)} → {translationLanguageName(translationLookup.data.targetLanguage)} · MyMemory
+              </Text>
+            </View>
+          ) : null}
+          {translationLookup.isError ? (
+            <Text style={[styles.translationError, { color: colors.destructive }]} accessibilityRole="alert" testID="text-translation-error">
+              {translationErrorStatus === 429
+                ? tr(language, 'The free shared daily limit has been reached. Please try tomorrow.', '免費共用每日額度已用完，請明天再試。', '免费共用每日额度已用完，请明天再试。')
+                : tr(language, 'Translation is unavailable right now. Please try again.', '目前無法取得翻譯，請稍後再試。', '目前无法取得翻译，请稍后再试。')}
+            </Text>
+          ) : null}
+          <Text style={[styles.translationPrivacyNote, { color: colors.mutedForeground }]}>
+            {tr(language,
+              'Free shared limit: about 5,000 characters per day. Your text and selected Chinese script are sent to MyMemory, which may store submissions long term and share them with partners. Do not enter personal or sensitive information.',
+              '免費服務由所有使用者共用，每日約 5,000 字元。輸入文字及所選中文版本會傳送至 MyMemory；其可能長期保存內容並與合作夥伴分享。請勿輸入個人或敏感資料。',
+              '免费服务由所有用户共用，每日约 5,000 字符。输入文字及所选中文版本会发送至 MyMemory；其可能长期保存内容并与合作伙伴分享。请勿输入个人或敏感信息。')}
+          </Text>
+        </View>
 
         <Surface style={styles.freeCard}>
           <View style={styles.freeIcon}><Ionicons name="book-outline" size={21} color={colors.primary} /></View>
@@ -305,6 +405,7 @@ export default function LessonsScreen() {
           </Surface>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <Modal visible={selectedPath !== null} animationType="slide" onRequestClose={() => setSelectedPath(null)}>
         <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
@@ -398,7 +499,19 @@ export default function LessonsScreen() {
 }
 
 const styles = StyleSheet.create({
+  keyboardContainer: { flex: 1 },
   content: { padding: 20, paddingBottom: 40, gap: 18 },
+  translationCard: { padding: 15, borderWidth: 1, borderRadius: 19, gap: 10 },
+  translationHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: 11 },
+  translationIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  translationHeadingCopy: { flex: 1, gap: 3 },
+  translationInput: { minHeight: 46, borderWidth: 1, borderRadius: 13, paddingHorizontal: 12, fontSize: 14 },
+  translationButton: { minHeight: 44, borderRadius: 13, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  translationButtonText: { fontSize: 13, fontWeight: '800' },
+  translationResult: { padding: 12, borderWidth: 1, borderRadius: 13, gap: 5 },
+  translationResultText: { fontSize: 18, lineHeight: 25, fontWeight: '700' },
+  translationError: { fontSize: 11, lineHeight: 16 },
+  translationPrivacyNote: { fontSize: 11, lineHeight: 16 },
   freeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   freeIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E6F1E6' },
   freeCopy: { flex: 1, gap: 3 },

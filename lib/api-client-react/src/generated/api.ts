@@ -46,7 +46,9 @@ import type {
   SupportConversation,
   SupportMessageInput,
   SupportThread,
-  SupportThreadInput
+  SupportThreadInput,
+  TranslationLookupInput,
+  TranslationLookupResponse
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1705,5 +1707,93 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSendSupportMessageMutationOptions(options), queryClient);
+    }
+
+export const getLookupTranslationUrl = () => {
+
+
+
+
+  return `/api/translation/lookup`
+}
+
+/**
+ * @summary Translate one word or a short phrase between English and Chinese
+ */
+export const lookupTranslation = async (translationLookupInput: TranslationLookupInput, options?: Parameters<typeof customFetch>[1]): Promise<TranslationLookupResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TranslationLookupResponse>(getLookupTranslationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(translationLookupInput)
+  }
+);}
+
+
+
+
+
+export const getLookupTranslationMutationKey = () => ['lookupTranslation'] as const;
+
+export const getLookupTranslationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupTranslation>>, TError,LookupTranslationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof lookupTranslation>>, TError,LookupTranslationMutationVariables, TContext> => {
+
+const mutationKey = getLookupTranslationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupTranslation>>, LookupTranslationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  lookupTranslation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LookupTranslationMutationResult = NonNullable<Awaited<ReturnType<typeof lookupTranslation>>>
+    export type LookupTranslationMutationBody = BodyType<TranslationLookupInput>
+    export type LookupTranslationMutationError = ErrorType<void>
+    export type LookupTranslationMutationVariables = {data: BodyType<TranslationLookupInput>}
+
+    /**
+ * @summary Translate one word or a short phrase between English and Chinese
+ */
+export const useLookupTranslation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupTranslation>>, TError,LookupTranslationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof lookupTranslation>>,
+        TError,
+        LookupTranslationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLookupTranslationMutationOptions(options), queryClient);
     }
 

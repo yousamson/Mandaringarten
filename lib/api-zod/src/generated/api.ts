@@ -322,3 +322,23 @@ export const SendSupportMessageResponse = zod.object({
 })
 
 
+/**
+ * @summary Translate one word or a short phrase between English and Chinese
+ */
+export const lookupTranslationBodyTextMax = 100;
+
+
+
+export const LookupTranslationBody = zod.object({
+  "text": zod.string().min(1).max(lookupTranslationBodyTextMax),
+  "script": zod.enum(['zh-Hant', 'zh-Hans'])
+})
+
+export const LookupTranslationResponse = zod.object({
+  "text": zod.string(),
+  "translatedText": zod.string(),
+  "sourceLanguage": zod.enum(['en', 'zh-TW', 'zh-CN']),
+  "targetLanguage": zod.enum(['en', 'zh-TW', 'zh-CN'])
+})
+
+
