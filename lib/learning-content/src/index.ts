@@ -20,6 +20,8 @@ export {
   stageNotes,
 } from './presentation';
 export type { AgeStage, FreeReading, LocalizedText, PlaygroundLanguage } from './presentation';
+export { familyMedia } from './media-garden';
+export type { FamilyMedia } from './media-garden';
 
 export const playgroundStages: StageContent[] = [stage1, stage2, stage3, stage4];
 export const STAGE_NUMBERS: StageNumber[] = [1, 2, 3, 4];

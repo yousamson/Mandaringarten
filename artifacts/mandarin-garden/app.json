@@ -23,7 +23,16 @@
       "output": "static"
     },
     "plugins": [
-      ["expo-router", { "asyncRoutes": { "web": false } }]
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": false
+          }
+        }
+      ],
+      "expo-video",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
