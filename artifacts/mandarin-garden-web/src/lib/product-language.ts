@@ -1,6 +1,9 @@
 /** Keep all visible website copy aligned with the product's garden and subscription terminology. */
 export function cleanProductText(text: string): string {
   return text
+    .replaceAll('Five games', 'Six games')
+    .replaceAll('五種遊戲', '六種遊戲')
+    .replaceAll('五种游戏', '六种游戏')
     .replaceAll('且費用恕不退還', '且已付訂閱月費恕不退還')
     .replaceAll('且费用恕不退还', '且已付订阅月费恕不退还')
     .replaceAll('已付費用', '已付訂閱月費')

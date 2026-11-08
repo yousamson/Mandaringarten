@@ -159,7 +159,7 @@ export const issueLearningRoundBodyStageMax = 4;
 
 export const IssueLearningRoundBody = zod.object({
   "stage": zod.int().min(1).max(issueLearningRoundBodyStageMax),
-  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order', 'focus']),
   "script": zod.enum(['trad', 'simp'])
 })
 
@@ -172,11 +172,11 @@ export const issueLearningRoundResponseQuestionsMax = 5;
 export const IssueLearningRoundResponse = zod.object({
   "roundId": zod.uuid(),
   "stage": zod.int().min(1).max(issueLearningRoundResponseStageMax),
-  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order', 'focus']),
   "questions": zod.array(zod.object({
   "id": zod.uuid(),
   "kind": zod.enum(['choice', 'order']),
-  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order']),
+  "mode": zod.enum(['match', 'pinyin', 'listen', 'word-order', 'sentence-order', 'focus']),
   "prompt": zod.string().optional(),
   "speakText": zod.string(),
   "options": zod.array(zod.string()).optional(),

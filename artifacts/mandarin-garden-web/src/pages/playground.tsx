@@ -9,6 +9,7 @@ import { useLearningProgress, useMembership, useSelectStage, XP_COMPLETE, XP_PER
 import type { Language } from '@/lib/garden-data';
 import { GAME_MODES, modeCopy, pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { initialPlaygroundMode, type GameMode } from '@/lib/playground-modes';
+import { TOTAL_FOCUS_CARDS } from '@workspace/learning-content/games';
 
 export function PlaygroundSkeleton() {
   return (
@@ -92,7 +93,7 @@ function LockedPlayground({ l, signedIn }: { l: Language; signedIn: boolean }) {
     <div className="panel locked-panel" data-testid="playground-locked">
       <div className="complete-mark"><LockKeyhole size={27} /></div>
       <h2>{tr(l, 'The Learning playground is part of family membership', '學習樂園屬於家庭會員內容', '学习乐园属于家庭会员内容')}</h2>
-      <p className="panel-desc">{tr(l, '800 words, 40 stories and five games across four stages. Free lessons stay open in the garden.', '四個階段共 800 個詞語、40 篇故事和五種遊戲。免費課程仍可在樂園中使用。', '四个阶段共 800 个词语、40 篇故事和五种游戏。免费课程仍可在乐园中使用。')}</p>
+      <p className="panel-desc">{tr(l, '800 words, 40 stories and six games across four stages. Free learning stays open in the garden.', '四個階段共 800 個詞語、40 篇故事和六種遊戲。免費內容仍可在樂園中使用。', '四个阶段共 800 个词语、40 篇故事和六种游戏。免费内容仍可在乐园中使用。')}</p>
       <div className="button-row" style={{ justifyContent: 'center' }}>
         {!signedIn ? <Link href="/sign-in" className="button-secondary" data-testid="link-playground-sign-in">{tr(l, 'Sign in', '登入', '登录')}</Link> : null}
         <Link href="/parent" className="button-primary" data-testid="link-playground-membership">{tr(l, 'See family membership', '看看家庭會員', '看看家庭会员')} <ArrowRight size={15} /></Link>
@@ -132,8 +133,8 @@ function PlaygroundBody({ uid, progress, l }: { uid: string; progress: Normalize
       </section>
       <div className="mode-tabs" role="tablist">
         {GAME_MODES.map((gm) => (
-          <button key={gm} role="tab" aria-selected={gm === mode} className={`mode-tab ${gm === mode ? 'selected' : ''}`} onClick={() => setMode(gm)} data-testid={`tab-mode-${gm}`}>
-            <Sparkles size={13} /> {pick(l, modeCopy[gm].name)}
+            <button key={gm} role="tab" aria-selected={gm === mode} className={`mode-tab ${gm === mode ? 'selected' : ''}`} onClick={() => setMode(gm)} data-testid={`tab-mode-${gm}`}>
+            <Sparkles size={13} /> {pick(l, modeCopy[gm].name)} {gm === 'focus' ? <span className="mode-tab-count">{TOTAL_FOCUS_CARDS}</span> : null}
           </button>
         ))}
       </div>

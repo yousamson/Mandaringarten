@@ -6,6 +6,7 @@ import type { Question } from '@/lib/playground-games';
 import { modeCopy, pick, tr, type GameMode } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 import { useIssueLearningRound, useRecordRound, XP_PER_CORRECT } from '@/hooks/use-learning';
+import { FOCUS_CARDS_PER_STAGE, focusRevealMilliseconds, TOTAL_FOCUS_CARDS } from '@workspace/learning-content/games';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 type DisplayQuestion = Question & { id: string };
@@ -36,6 +37,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   );
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
+  const [focusTargetVisible, setFocusTargetVisible] = useState(false);
   const [built, setBuilt] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
   const [pendingSaves, setPendingSaves] = useState(0);
@@ -74,6 +76,16 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   const save: SaveState = pendingSaves > 0 ? 'saving' : failedAnswers.length ? 'error' : savedAnswers > 0 ? 'saved' : 'idle';
   const q: DisplayQuestion | undefined = questions[idx];
 
+  useEffect(() => {
+    if (q?.kind !== 'choice' || q.mode !== 'focus') {
+      setFocusTargetVisible(false);
+      return;
+    }
+    setFocusTargetVisible(true);
+    const timer = window.setTimeout(() => setFocusTargetVisible(false), focusRevealMilliseconds(stage));
+    return () => window.clearTimeout(timer);
+  }, [q?.id, q?.mode, stage]);
+
   const saveAnswer = (input: LearningRoundInput, ownerRoundId: string) => {
     if (savingIds.current.has(input.questionId)) return;
     savingIds.current.add(input.questionId);
@@ -107,7 +119,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   useEffect(() => () => stopSpeech(), []);
 
   const answer = (value: string) => {
-    if (picked || !q || !challenge) return;
+    if (picked || !q || !challenge || (q.mode === 'focus' && focusTargetVisible)) return;
     setPicked(value);
     if (value === q.answer) {
       setCorrect((count) => count + 1);
@@ -141,6 +153,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
         <div>
           <div className="eyebrow">{pick(l, modeCopy[mode].name)}</div>
           <p className="game-hint">{pick(l, modeCopy[mode].hint)}</p>
+          {mode === 'focus' ? <p className="focus-deck-count">{tr(l, `${FOCUS_CARDS_PER_STAGE} focus cards for this stage · ${TOTAL_FOCUS_CARDS} across four stages`, '每階段 15 張專注力訓練卡 · 四階段共 60 張', '每阶段 15 张专注力训练卡 · 四阶段共 60 张')}</p> : null}
         </div>
         <div className="game-pips" aria-label={`${Math.min(idx + 1, questions.length)} / ${questions.length}`}>
           {questions.map((_, i) => <span key={i} className={i < idx ? 'done' : i === idx && !done ? 'now' : ''} />)}
@@ -163,7 +176,12 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
         <>
           <div className="game-prompt">
             <span className="question-count">{idx + 1} / {questions.length}</span>
-            {q.mode === 'listen' ? (
+            {q.mode === 'focus' ? (
+              <div className="focus-target" data-testid="focus-target" aria-live="polite">
+                <span>{focusTargetVisible ? tr(l, 'Remember this character', '請記住這個漢字', '请记住这个汉字') : tr(l, 'The character has disappeared. Find it below.', '漢字已消失，請在下方找出來。', '汉字已消失，请在下方找出来。')}</span>
+                <strong>{focusTargetVisible ? q.prompt : '？'}</strong>
+              </div>
+            ) : q.mode === 'listen' ? (
               <button className="listen-orb" onClick={() => speakMandarin(q.speakText, script)} aria-label={tr(l, 'Play the word', '播放詞語', '播放词语')} data-testid="button-play-prompt"><Volume2 size={30} /></button>
             ) : (
               <strong className={q.mode === 'pinyin' ? 'prompt-hanzi' : 'prompt-meaning'}>{q.prompt}</strong>
@@ -171,7 +189,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
           </div>
           <div className={`quiz-options ${q.mode === 'pinyin' ? 'pinyin-options' : ''}`}>
             {q.options.map((option, i) => (
-              <button key={option} className={`quiz-option ${picked && option === q.answer ? 'correct' : picked === option ? 'incorrect' : ''}`} disabled={Boolean(picked)} onClick={() => answer(option)} data-testid={`button-option-${i}`}>{option}</button>
+              <button key={option} className={`quiz-option ${picked && option === q.answer ? 'correct' : picked === option ? 'incorrect' : ''}`} disabled={Boolean(picked) || (q.mode === 'focus' && focusTargetVisible)} onClick={() => answer(option)} data-testid={`button-option-${i}`}>{option}</button>
             ))}
           </div>
           {picked ? (

@@ -129,6 +129,7 @@ export const LearningRoundRequestMode = {
   listen: 'listen',
   'word-order': 'word-order',
   'sentence-order': 'sentence-order',
+  focus: 'focus',
 } as const;
 
 export type LearningRoundRequestScript = typeof LearningRoundRequestScript[keyof typeof LearningRoundRequestScript];
@@ -166,6 +167,7 @@ export const LearningQuestionMode = {
   listen: 'listen',
   'word-order': 'word-order',
   'sentence-order': 'sentence-order',
+  focus: 'focus',
 } as const;
 
 export type LearningQuestionWord = {
@@ -197,6 +199,7 @@ export const LearningRoundMode = {
   listen: 'listen',
   'word-order': 'word-order',
   'sentence-order': 'sentence-order',
+  focus: 'focus',
 } as const;
 
 export interface LearningRound {

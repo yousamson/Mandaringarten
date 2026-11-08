@@ -187,4 +187,5 @@ export const modeCopy: Record<GameMode, { name: LocalizedText; hint: LocalizedTe
   listen: { name: ['Listen and select', '聽音選字', '听音选字'], hint: ['Listen closely, then tap what you heard.', '仔細聽，再點選聽到的詞語。', '仔细听，再点选听到的词语。'] },
   'word-order': { name: ['Word builder', '漢字排排站', '汉字排排站'], hint: ['Tap the characters in the right order.', '依正確順序點選漢字。', '依正确顺序点选汉字。'] },
   'sentence-order': { name: ['Sentence builder', '句子拼拼看', '句子拼拼看'], hint: ['Put the sentence pieces back together.', '把句子片段重新排好。', '把句子片段重新排好。'] },
+  focus: { name: ['Focus training', '專注力訓練', '专注力训练'], hint: ['Remember the character, then find it after it disappears.', '記住漢字，消失後再找出來。', '记住汉字，消失后再找出来。'] },
 };

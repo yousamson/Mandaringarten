@@ -475,6 +475,8 @@ a { color: inherit; text-decoration: none; }
 .mode-tab { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid #e1dccb; background: #fbf9f1; border-radius: 99px; padding: 9px 15px; font-size: 13px; font-weight: 600; color: #4b5446; cursor: pointer; transition: transform .15s ease, background .2s; }
 .mode-tab:hover { transform: translateY(-1px); }
 .mode-tab.selected { background: var(--theme); border-color: var(--theme); color: #fdfaf1; }
+.mode-tab-count { min-width: 20px; height: 20px; border-radius: 99px; display: inline-grid; place-items: center; padding: 0 5px; background: var(--theme-soft); color: var(--theme-deep); font-size: 10px; font-weight: 800; }
+.mode-tab.selected .mode-tab-count { background: rgba(255,255,255,.2); color: #fffdf6; }
 
 .game-card, .story-card { background: #fdfbf4; border: 1px solid #e7e2d2; border-radius: 28px; padding: 24px; animation: mg-rise .35s ease both; }
 .game-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
@@ -484,6 +486,10 @@ a { color: inherit; text-decoration: none; }
 .game-pips span.done { background: var(--theme); }
 .game-pips span.now { background: var(--theme-soft); outline: 1.5px solid var(--theme); }
 .game-prompt { text-align: center; margin: 22px 0 18px; display: grid; gap: 8px; justify-items: center; }
+.focus-deck-count { margin: 8px 0 0; color: var(--muted-foreground); font-size: 12px; }
+.focus-target { display: grid; justify-items: center; gap: 10px; min-width: min(100%, 190px); padding: 16px 24px; border: 1px solid var(--border); border-radius: 18px; background: var(--secondary); }
+.focus-target span { color: var(--muted-foreground); font-size: 13px; line-height: 1.5; }
+.focus-target strong { color: var(--foreground); font-size: 40px; line-height: 1.2; }
 .prompt-hanzi { font-size: clamp(40px, 6vw, 60px); font-weight: 600; color: #2a3a2d; line-height: 1.1; }
 .prompt-meaning { font-family: var(--app-font-serif); font-size: clamp(24px, 3.5vw, 32px); color: #2a3a2d; }
 .listen-orb { width: 86px; height: 86px; border-radius: 50%; border: 0; background: var(--theme); color: #fdfaf1; display: grid; place-items: center; cursor: pointer; transition: transform .2s ease; box-shadow: 0 0 0 10px var(--theme-soft); }

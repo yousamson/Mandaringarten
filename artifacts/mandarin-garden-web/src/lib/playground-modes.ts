@@ -1,6 +1,6 @@
 import type { GameMode as ContentGameMode } from '@workspace/learning-content/games';
 
-export const GAME_MODES = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order'] as const satisfies readonly ContentGameMode[];
+export const GAME_MODES = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order', 'focus'] as const satisfies readonly ContentGameMode[];
 export type GameMode = typeof GAME_MODES[number];
 
 export function initialPlaygroundMode(search: string): GameMode {

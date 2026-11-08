@@ -261,6 +261,12 @@ const rows: TranslationRow[] = [
   ['Preparing your questions…', 'Preparando las preguntas…', 'Préparation des questions…', '問題を準備中…', '문제를 준비 중…', 'A preparar as perguntas…'],
   ['Open learning activity', 'Abrir actividad de aprendizaje', 'Ouvrir l’activité d’apprentissage', '学習アクティビティを開く', '학습 활동 열기', 'Abrir atividade de aprendizagem'],
   ['Correct answer:', 'Respuesta correcta:', 'Bonne réponse :', '正解：', '정답:', 'Resposta correta:'],
+  ['Focus training', 'Entrenamiento de concentración', 'Entraînement de la concentration', '集中力トレーニング', '집중력 훈련', 'Treino de concentração'],
+  ['Remember the character, then find it after it disappears.', 'Memoriza el carácter y encuéntralo cuando desaparezca.', 'Mémorisez le caractère, puis retrouvez-le après sa disparition.', '漢字を覚えて、消えたあとに見つけましょう。', '한자를 기억한 뒤 사라지면 찾아보세요.', 'Memorize o caractere e encontre-o quando desaparecer.'],
+  ['Remember this character', 'Memoriza este carácter', 'Mémorisez ce caractère', 'この漢字を覚えましょう', '이 한자를 기억하세요', 'Memorize este caractere'],
+  ['The character has disappeared. Find it below.', 'El carácter ha desaparecido. Encuéntralo abajo.', 'Le caractère a disparu. Retrouvez-le ci-dessous.', '漢字が消えました。下から見つけましょう。', '한자가 사라졌어요. 아래에서 찾아보세요.', 'O caractere desapareceu. Encontre-o abaixo.'],
+  ['15 focus cards for this stage · 60 across four stages', '15 tarjetas de concentración para esta etapa · 60 en total', '15 cartes de concentration pour cette étape · 60 au total', 'この段階は15枚 · 4段階で全60枚', '이 단계 15장 · 네 단계 총 60장', '15 cartões de concentração nesta etapa · 60 no total'],
+  ['Members can choose any stage and play all six modes. Correct answers earn 5 XP.', 'Los miembros pueden elegir cualquier etapa y jugar en los seis modos. Cada respuesta correcta suma 5 XP.', 'Les membres peuvent choisir une étape et jouer aux six modes. Chaque bonne réponse rapporte 5 XP.', '会員は好きな段階と6種類のゲームを選べます。正解ごとに5 XPを獲得。', '회원은 원하는 단계와 여섯 가지 게임을 선택할 수 있어요. 정답마다 5 XP를 얻어요.', 'Os membros podem escolher qualquer etapa e jogar nos seis modos. Cada resposta certa vale 5 XP.'],
   ['This legal text is currently available in English and Chinese.', 'Este texto legal está disponible actualmente en inglés y chino.', 'Ce texte juridique est actuellement disponible en anglais et en chinois.', '法的文書は現在、英語と中国語で提供されています。', '법률 문서는 현재 영어와 중국어로 제공됩니다.', 'Este texto jurídico está disponível atualmente em inglês e chinês.'],
 ];
 

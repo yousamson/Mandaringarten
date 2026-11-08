@@ -15,4 +15,5 @@ export const LearningRoundRequestMode = {
   listen: 'listen',
   'word-order': 'word-order',
   'sentence-order': 'sentence-order',
+  focus: 'focus',
 } as const;

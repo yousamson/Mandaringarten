@@ -29,11 +29,16 @@ import {
 } from '@workspace/api-client-react';
 import { getStageContent, modeCopy, pickText, translateInterface } from '@workspace/learning-content';
 import type { GameMode } from '@workspace/learning-content/games';
-import { shuffle } from '@workspace/learning-content/games';
+import {
+  FOCUS_CARDS_PER_STAGE,
+  focusRevealMilliseconds,
+  shuffle,
+  TOTAL_FOCUS_CARDS,
+} from '@workspace/learning-content/games';
 
 type DisplayQuestion = LearningQuestion & { answer: string };
 
-const allModes: GameMode[] = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order'];
+const allModes: GameMode[] = ['match', 'pinyin', 'listen', 'word-order', 'sentence-order', 'focus'];
 const freeModes: GameMode[] = ['pinyin'];
 
 function getAnswer(question: LearningQuestion, script: 'trad' | 'simp'): string {
@@ -93,6 +98,7 @@ export default function GamesScreen() {
   const [seed, setSeed] = useState(0);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
+  const [focusTargetVisible, setFocusTargetVisible] = useState(false);
   const [built, setBuilt] = useState<number[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
@@ -115,6 +121,16 @@ export default function GamesScreen() {
   }, [freeQuestions, round, script, subscription.isPremium]);
   const question = questions[index];
   const finished = questions.length > 0 && index >= questions.length;
+
+  useEffect(() => {
+    if (question?.kind !== 'choice' || question.mode !== 'focus') {
+      setFocusTargetVisible(false);
+      return;
+    }
+    setFocusTargetVisible(true);
+    const timer = setTimeout(() => setFocusTargetVisible(false), focusRevealMilliseconds(stage));
+    return () => clearTimeout(timer);
+  }, [question?.id, question?.mode, stage]);
 
   useEffect(() => {
     if (!availableModes.includes(mode)) setMode('pinyin');
@@ -167,7 +183,7 @@ export default function GamesScreen() {
   }, [question, script]);
 
   const answer = (value: string) => {
-    if (!question || picked) return;
+    if (!question || picked || (question.mode === 'focus' && focusTargetVisible)) return;
     setPicked(value);
     if (value !== question.answer) return;
     setCorrectCount((count) => count + 1);
@@ -238,7 +254,16 @@ export default function GamesScreen() {
           <Text style={[styles.questionCount, { color: colors.mutedForeground }]}>
             {index + 1} / {questions.length}
           </Text>
-          {question.mode === 'listen' ? (
+          {question.mode === 'focus' ? (
+            <View style={[styles.focusTarget, { borderColor: colors.border, backgroundColor: colors.secondary }]} testID="focus-target" accessibilityLiveRegion="polite">
+              <Text style={[styles.modeHint, { color: colors.mutedForeground, textAlign: 'center' }]}>
+                {focusTargetVisible
+                  ? t('Remember this character', '請記住這個漢字', '请记住这个汉字')
+                  : t('The character has disappeared. Find it below.', '漢字已消失，請在下方找出來。', '汉字已消失，请在下方找出来。')}
+              </Text>
+              <Text style={[styles.focusCharacter, { color: colors.foreground }]}>{focusTargetVisible ? question.prompt : '？'}</Text>
+            </View>
+          ) : question.mode === 'listen' ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('Play the word', '播放詞語', '播放词语')}
@@ -259,7 +284,7 @@ export default function GamesScreen() {
               key={`${option}-${optionIndex}`}
               accessibilityRole="button"
               testID={`game-option-${optionIndex + 1}`}
-              disabled={picked !== null}
+              disabled={picked !== null || (question.mode === 'focus' && focusTargetVisible)}
               onPress={() => answer(option)}
               style={[
                 styles.option,
@@ -352,6 +377,7 @@ export default function GamesScreen() {
               <Pressable
                 key={item}
                 accessibilityRole="button"
+                testID={`game-mode-${item}`}
                 accessibilityState={{ selected: active, disabled: locked }}
                 disabled={locked}
                 onPress={() => setMode(item)}
@@ -367,6 +393,11 @@ export default function GamesScreen() {
                 <Text style={[styles.modeHint, { color: colors.mutedForeground }]}>
                   {locked ? t('Membership required', '會員專享', '会员专享') : pickText(language, copy.hint)}
                 </Text>
+                {item === 'focus' ? (
+                  <Text style={[styles.modeHint, { color: colors.primary, fontWeight: '700' }]}>
+                    {t(`${FOCUS_CARDS_PER_STAGE} focus cards for this stage · ${TOTAL_FOCUS_CARDS} across four stages`, '每階段 15 張 · 四階段共 60 張', '每阶段 15 张 · 四阶段共 60 张')}
+                  </Text>
+                ) : null}
               </Pressable>
             );
           })}
@@ -376,7 +407,7 @@ export default function GamesScreen() {
           <Surface style={styles.membershipNote}>
             <Ionicons name="lock-closed-outline" size={18} color={colors.warmInk} />
             <Text style={[styles.modeHint, { color: colors.mutedForeground, flex: 1 }]}>
-              {t('Members can choose any stage and play all five modes. Correct answers earn 5 XP.', '會員可自選階段及體驗五種遊戲；答對每題可得 5 XP。', '会员可自选阶段及体验五种游戏；答对每题可得 5 XP。')}
+              {t('Members can choose any stage and play all six modes. Correct answers earn 5 XP.', '會員可自選階段及體驗六種遊戲；答對每題可得 5 XP。', '会员可自选阶段及体验六种游戏；答对每题可得 5 XP。')}
             </Text>
           </Surface>
         ) : null}
@@ -390,6 +421,11 @@ export default function GamesScreen() {
               <Text style={[styles.modeHint, { color: colors.mutedForeground }]}>
                 {pickText(language, modeCopy[mode].hint)}
               </Text>
+              {mode === 'focus' ? (
+                <Text style={[styles.modeHint, { color: colors.mutedForeground, marginTop: 6 }]}>
+                  {t(`${FOCUS_CARDS_PER_STAGE} focus cards for this stage · ${TOTAL_FOCUS_CARDS} across four stages`, '每階段 15 張專注力訓練卡 · 四階段共 60 張', '每阶段 15 张专注力训练卡 · 四阶段共 60 张')}
+                </Text>
+              ) : null}
             </View>
             <View style={styles.pips}>
               {questions.map((_, i) => (
@@ -504,6 +540,8 @@ const styles = StyleSheet.create({
   pip: { height: 6, width: 6, borderRadius: 4 },
   loadingState: { minHeight: 120, alignItems: 'center', justifyContent: 'center', gap: 12 },
   promptBox: { alignItems: 'center', gap: 11, paddingVertical: 8 },
+  focusTarget: { minWidth: 190, minHeight: 116, borderWidth: 1, borderRadius: 18, paddingHorizontal: 22, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  focusCharacter: { fontSize: 42, lineHeight: 52, fontWeight: '800' },
   questionCount: { fontSize: 11, fontWeight: '700' },
   promptText: { fontSize: 30, lineHeight: 38, fontWeight: '800', textAlign: 'center' },
   listenButton: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
