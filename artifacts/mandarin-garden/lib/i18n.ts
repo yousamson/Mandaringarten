@@ -1,15 +1,14 @@
-export type AppLanguage = 'en' | 'zh-Hant' | 'zh-Hans';
+import {
+  interfaceLanguageOptions,
+  localizeInterfaceMap,
+  type InterfaceLanguage,
+} from '@workspace/learning-content';
 
-export const languageOptions: {
-  value: AppLanguage;
-  label: string;
-}[] = [
-  { value: 'en', label: 'English' },
-  { value: 'zh-Hant', label: '繁體中文' },
-  { value: 'zh-Hans', label: '简体中文' },
-];
+export type AppLanguage = InterfaceLanguage;
+export const languageOptions = interfaceLanguageOptions;
+type BaseLanguage = 'en' | 'zh-Hant' | 'zh-Hans';
 
-const messages: Record<AppLanguage, Record<string, string>> = {
+const baseMessages: Record<BaseLanguage, Record<string, string>> = {
   en: {
     'app.name': 'Mandarin Garden',
     'app.description': 'A Mandarin learning app for children ages 2–12, with everyday vocabulary, pinyin, short sentences, games, and four progressive levels.',
@@ -711,6 +710,15 @@ const messages: Record<AppLanguage, Record<string, string>> = {
     'curriculum.intermediate': '中级',
     'curriculum.hard': '困难',
   },
+};
+
+const messages: Record<AppLanguage, Record<string, string>> = {
+  ...baseMessages,
+  es: localizeInterfaceMap('es', baseMessages.en),
+  fr: localizeInterfaceMap('fr', baseMessages.en),
+  ja: localizeInterfaceMap('ja', baseMessages.en),
+  ko: localizeInterfaceMap('ko', baseMessages.en),
+  pt: localizeInterfaceMap('pt', baseMessages.en),
 };
 
 export function translate(

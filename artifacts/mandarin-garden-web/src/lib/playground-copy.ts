@@ -11,6 +11,7 @@ import {
   stageLabel as sharedStageLabel,
   stageNames,
   stageNotes,
+  translateInterface,
 } from '@workspace/learning-content';
 
 export { GAME_MODES };
@@ -18,7 +19,7 @@ export type { GameMode };
 export { modeCopy, stageAges, stageNames, stageNotes };
 
 export const tr = (l: Language, en: string, hant: string, hans: string) =>
-  cleanProductText(l === 'en' ? en : l === 'zh-Hant' ? hant : hans);
+  cleanProductText(l === 'en' ? en : l === 'zh-Hant' ? hant : l === 'zh-Hans' ? hans : translateInterface(l, en));
 export const pick = (l: Language, v: readonly [string, string, string]) =>
   cleanProductText(pickText(l, v));
 

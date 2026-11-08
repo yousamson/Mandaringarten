@@ -7,7 +7,8 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import type { AppLanguage } from '@/lib/i18n';
+import { Platform } from 'react-native';
+import { languageOptions, type AppLanguage } from '@/lib/i18n';
 
 const STORAGE_KEY = '@mandarin-garden/language';
 
@@ -19,11 +20,17 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function isAppLanguage(value: string | null): value is AppLanguage {
-  return value === 'en' || value === 'zh-Hant' || value === 'zh-Hans';
+  return languageOptions.some((option) => option.value === value);
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<AppLanguage>('zh-Hant');
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
 
   useEffect(() => {
     let mounted = true;

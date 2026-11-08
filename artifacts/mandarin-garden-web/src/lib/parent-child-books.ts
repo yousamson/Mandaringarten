@@ -1,5 +1,5 @@
 import type { AgeStage } from '@workspace/learning-content';
-import type { Language } from './garden-data';
+export type ContentLanguage = 'en' | 'zh-Hant' | 'zh-Hans';
 
 export type PictureBookPage = {
   art: string;
@@ -7,14 +7,14 @@ export type PictureBookPage = {
   simp: string;
   pinyin: string;
   en: string;
-  prompt: Record<Language, string>;
+  prompt: Record<ContentLanguage, string>;
 };
 
 export type PictureBook = {
   id: AgeStage;
   cover: string;
-  title: Record<Language, string>;
-  subtitle: Record<Language, string>;
+  title: Record<ContentLanguage, string>;
+  subtitle: Record<ContentLanguage, string>;
   pages: PictureBookPage[];
 };
 

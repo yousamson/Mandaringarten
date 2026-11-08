@@ -1,6 +1,15 @@
 import type { GameMode } from './games';
+import { localizeInterfaceRecord, translateInterface } from './interface-localization';
 
-export type PlaygroundLanguage = 'en' | 'zh-Hant' | 'zh-Hans';
+export type PlaygroundLanguage =
+  | 'en'
+  | 'zh-Hant'
+  | 'zh-Hans'
+  | 'es'
+  | 'fr'
+  | 'ja'
+  | 'ko'
+  | 'pt';
 export type AgeStage = '2-3' | '4-5' | '6-8' | '9-12';
 export type LocalizedText = readonly [string, string, string];
 
@@ -15,9 +24,16 @@ export function normalizeAgeStage(value: string | null): AgeStage {
 export function ageLabels(language: PlaygroundLanguage): string[] {
   return ageStages.map((age) => {
     const [min, max] = age.split('-');
-    return language === 'en'
-      ? `Ages ${min}–${max}`
-      : `${min}至${max}${language === 'zh-Hant' ? '歲' : '岁'}`;
+    if (language === 'en') return `Ages ${min}–${max}`;
+    if (language === 'zh-Hant') return `${min}至${max}歲`;
+    if (language === 'zh-Hans') return `${min}至${max}岁`;
+    if (language === 'ja') return `${min}〜${max}歳`;
+    if (language === 'ko') return `${min}–${max}세`;
+    return language === 'es'
+      ? `Edades ${min}–${max}`
+      : language === 'fr'
+        ? `Âges ${min}–${max}`
+        : `Idades ${min}–${max}`;
   });
 }
 
@@ -29,39 +45,39 @@ export type FreeReading = {
 
 export const freeReadings: Record<AgeStage, FreeReading> = {
   '2-3': {
-    title: { en: 'My red ball', 'zh-Hant': '我的紅球', 'zh-Hans': '我的红球' },
-    text: {
+    title: localizeInterfaceRecord({ en: 'My red ball', 'zh-Hant': '我的紅球', 'zh-Hans': '我的红球' }),
+    text: localizeInterfaceRecord({
       en: 'Look, a red ball! I roll it. Mum catches it. We play together.',
       'zh-Hant': '看，紅球！我推一推。媽媽接住了。我們一起玩。',
       'zh-Hans': '看，红球！我推一推。妈妈接住了。我们一起玩。',
-    },
+    }),
     minutes: 1,
   },
   '4-5': {
-    title: { en: 'A little umbrella', 'zh-Hant': '小雨傘', 'zh-Hans': '小雨伞' },
-    text: {
+    title: localizeInterfaceRecord({ en: 'A little umbrella', 'zh-Hant': '小雨傘', 'zh-Hans': '小雨伞' }),
+    text: localizeInterfaceRecord({
       en: 'It is raining. The kitten opens a yellow umbrella. A puppy comes over. “Come under my umbrella!” says the kitten. They walk home together, dry and happy.',
       'zh-Hant': '下雨了，小貓打開黃色的小雨傘。小狗走過來，小貓說：「一起撐傘吧！」牠們慢慢走回家，身上沒有淋濕，心裡暖暖的。',
       'zh-Hans': '下雨了，小猫打开黄色的小雨伞。小狗走过来，小猫说：“一起撑伞吧！”它们慢慢走回家，身上没有淋湿，心里暖暖的。',
-    },
+    }),
     minutes: 1,
   },
   '6-8': {
-    title: { en: 'The tiny school garden', 'zh-Hant': '校園小花圃', 'zh-Hans': '校园小花圃' },
-    text: {
+    title: localizeInterfaceRecord({ en: 'The tiny school garden', 'zh-Hant': '校園小花圃', 'zh-Hans': '校园小花圃' }),
+    text: localizeInterfaceRecord({
       en: 'After class, Ming and his friends care for the school garden. Ming waters the soil while his friends remove weeds. A week later, new leaves appear. They discover that working together helps the whole garden grow.',
       'zh-Hant': '下課後，小明和同學一起照顧校園的花圃。小明負責澆水，同學幫忙拔除雜草。過了一星期，泥土裡長出了嫩綠的新葉。大家發現，只要分工合作、耐心照顧，小小的花圃也能充滿生機。',
       'zh-Hans': '下课后，小明和同学一起照顾校园的花圃。小明负责浇水，同学帮忙拔除杂草。过了一星期，泥土里长出了嫩绿的新叶。大家发现，只要分工合作、耐心照顾，小小的花圃也能充满生机。',
-    },
+    }),
     minutes: 2,
   },
   '9-12': {
-    title: { en: 'A green corner for everyone', 'zh-Hant': '為公園留一片綠地', 'zh-Hans': '为公园留一片绿地' },
-    text: {
+    title: localizeInterfaceRecord({ en: 'A green corner for everyone', 'zh-Hant': '為公園留一片綠地', 'zh-Hans': '为公园留一片绿地' }),
+    text: localizeInterfaceRecord({
       en: 'When the neighbourhood park was due for renovation, some residents wanted more parking spaces while others hoped to preserve the old trees. The children interviewed their neighbours and compared the different needs. They proposed keeping the trees, adding a safe footpath and placing parking near the entrance. Through discussion and compromise, the community found a plan that balanced convenience with care for the environment.',
       'zh-Hant': '附近公園準備改建時，有人希望增加停車空間，也有人想保留老樹。孩子們訪問居民，整理不同意見，再提出兼顧安全與綠地的方案：保留樹木、增設行人步道，並把停車位安排在入口附近。經過討論與協調，居民逐漸明白，公共空間的規劃不只是滿足個人需要，也要考慮環境與其他使用者的感受。',
       'zh-Hans': '附近公园准备改建时，有人希望增加停车空间，也有人想保留老树。孩子们访问居民，整理不同意见，再提出兼顾安全与绿地的方案：保留树木、增设行人步道，并把停车位安排在入口附近。经过讨论与协调，居民逐渐明白，公共空间的规划不只是满足个人需要，也要考虑环境与其他使用者的感受。',
-    },
+    }),
     minutes: 3,
   },
 };
@@ -70,6 +86,11 @@ export const playgroundName: Record<PlaygroundLanguage, string> = {
   en: 'Learning playground',
   'zh-Hant': '學習樂園',
   'zh-Hans': '学习乐园',
+  es: 'Espacio de aprendizaje',
+  fr: 'Espace d’apprentissage',
+  ja: '学習プレイグラウンド',
+  ko: '학습 놀이터',
+  pt: 'Espaço de aprendizagem',
 };
 
 export const stageNames: LocalizedText[] = [
@@ -138,7 +159,10 @@ const wordPathThemes: LocalizedText[][] = [
 ];
 
 export function pickText(language: PlaygroundLanguage, text: LocalizedText): string {
-  return language === 'en' ? text[0] : language === 'zh-Hant' ? text[1] : text[2];
+  if (language === 'en') return text[0];
+  if (language === 'zh-Hant') return text[1];
+  if (language === 'zh-Hans') return text[2];
+  return translateInterface(language, text[0]);
 }
 
 export function pathTheme(language: PlaygroundLanguage, stage: number, packIndex: number): string {

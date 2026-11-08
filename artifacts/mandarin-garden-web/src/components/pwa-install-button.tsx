@@ -6,7 +6,7 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-const copy = {
+const copy: Record<Language, { install: string; ios: string; instructions: string }> = {
   en: {
     install: 'Install app',
     ios: 'Add to Home Screen',
@@ -22,7 +22,12 @@ const copy = {
     ios: '添加到主屏幕',
     instructions: '在 Safari 点按“分享”，再选择“添加到主屏幕”。',
   },
-} satisfies Record<Language, { install: string; ios: string; instructions: string }>;
+  es: { install: 'Instalar la aplicación', ios: 'Añadir a la pantalla de inicio', instructions: 'En Safari, toca Compartir y luego Añadir a la pantalla de inicio.' },
+  fr: { install: 'Installer l’application', ios: 'Ajouter à l’écran d’accueil', instructions: 'Dans Safari, touchez Partager, puis Ajouter à l’écran d’accueil.' },
+  ja: { install: 'アプリをインストール', ios: 'ホーム画面に追加', instructions: 'Safariで共有をタップし、「ホーム画面に追加」を選びます。' },
+  ko: { install: '앱 설치', ios: '홈 화면에 추가', instructions: 'Safari에서 공유를 누른 다음 홈 화면에 추가를 선택하세요.' },
+  pt: { install: 'Instalar aplicação', ios: 'Adicionar ao ecrã principal', instructions: 'No Safari, toque em Partilhar e depois em Adicionar ao ecrã principal.' },
+};
 
 export function PwaInstallButton({ language }: { language: Language }) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);

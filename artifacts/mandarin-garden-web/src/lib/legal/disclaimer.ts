@@ -1,7 +1,7 @@
 import type { Language } from '../garden-data';
 import type { LegalDoc } from './privacy';
 
-export const disclaimerTerms: Record<Language, LegalDoc> = {
+const baseDisclaimerTerms: Record<'en' | 'zh-Hant' | 'zh-Hans', LegalDoc> = {
   en: {
     title: 'Disclaimer & Terms of Use',
     summary: 'The rules for using Mandarin Garden, what it can and cannot promise, and how membership billing, renewal and refunds work.',
@@ -161,4 +161,13 @@ export const disclaimerTerms: Record<Language, LegalDoc> = {
       ] },
     ],
   },
+};
+
+export const disclaimerTerms: Record<Language, LegalDoc> = {
+  ...baseDisclaimerTerms,
+  es: baseDisclaimerTerms.en,
+  fr: baseDisclaimerTerms.en,
+  ja: baseDisclaimerTerms.en,
+  ko: baseDisclaimerTerms.en,
+  pt: baseDisclaimerTerms.en,
 };

@@ -4,24 +4,23 @@ import type { LegalDoc } from '@/lib/legal/privacy';
 import { LEGAL_SOURCES, LEGAL_VERSION, legalConfig, legalConfigComplete } from '@/lib/legal-config';
 import { tr } from '@/lib/playground-copy';
 import { cleanProductText } from '@/lib/product-language';
+import { interfaceLanguageOptions } from '@workspace/learning-content';
 
-const langs: { value: Language; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'zh-Hant', label: '繁體中文' },
-  { value: 'zh-Hans', label: '简体中文' },
-];
+const langs = interfaceLanguageOptions;
 
 export function LegalDocument({ docs, language, source, testId, hideSourceFor = [] }: { docs: Record<Language, LegalDoc>; language: Language; source: string; testId: string; hideSourceFor?: Language[] }) {
   const [shown, setShown] = useState<Language>(language);
   const doc = docs[shown];
   const l = shown;
+  const legalCopyHasTranslation = l === 'en' || l === 'zh-Hant' || l === 'zh-Hans';
   return (
-    <main className="page-shell legal-page" lang={l} data-testid={testId}>
+    <main className="page-shell legal-page" lang={legalCopyHasTranslation ? l : 'en'} data-testid={testId}>
       <header className="legal-head">
         <div className="eyebrow">{tr(l, `Version ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`, `版本 ${LEGAL_VERSION}`)}</div>
         <h1>{cleanProductText(doc.title)}</h1>
         <p>{cleanProductText(doc.summary)}</p>
-        <div className="legal-langs" role="group" aria-label="Document language">
+        {!legalCopyHasTranslation ? <p className="legal-missing">{tr(l, 'This legal text is currently available in English and Chinese.', '法律文件目前提供英文及中文版本。', '法律文件目前提供英文及中文版本。')}</p> : null}
+        <div className="legal-langs" role="group" aria-label={tr(l, 'Document language', '文件語言', '文件语言')}>
           {langs.map((item) => <button key={item.value} className={`filter-chip ${shown === item.value ? 'selected' : ''}`} onClick={() => setShown(item.value)} aria-pressed={shown === item.value} data-testid={`button-legal-lang-${item.value}`}>{item.label}</button>)}
         </div>
       </header>

@@ -15,8 +15,51 @@ import { ageBandNote, ageBands } from '@/data/vocabulary';
 import { getWebsiteOrigin, useSubscription } from '@/lib/subscriptions';
 import { useColors } from '@/hooks/useColors';
 import { useLanguage } from '@/context/LanguageContext';
-import { languageOptions, translate } from '@/lib/i18n';
-import { stageAges, stageNames } from '@workspace/learning-content';
+import { languageOptions, translate, type AppLanguage } from '@/lib/i18n';
+import { pickText, stageAges, stageNames, translateInterface } from '@workspace/learning-content';
+
+function uiText(language: AppLanguage, en: string, hant: string, hans: string) {
+  return language === 'en'
+    ? en
+    : language === 'zh-Hant'
+      ? hant
+      : language === 'zh-Hans'
+        ? hans
+        : translateInterface(language, en);
+}
+
+function stagePrefix(language: AppLanguage, stage: number) {
+  if (language === 'en') return `Stage ${stage}`;
+  if (language === 'zh-Hant') return `第 ${stage} 階段`;
+  if (language === 'zh-Hans') return `第 ${stage} 阶段`;
+  if (language === 'es') return `Etapa ${stage}`;
+  if (language === 'fr') return `Étape ${stage}`;
+  if (language === 'ja') return `${stage}段階`;
+  if (language === 'ko') return `${stage}단계`;
+  return `Etapa ${stage}`;
+}
+
+function ageText(language: AppLanguage, age: string) {
+  if (language === 'en') return `ages ${age}`;
+  if (language === 'zh-Hant') return `${age} 歲`;
+  if (language === 'zh-Hans') return `${age} 岁`;
+  if (language === 'es') return `de ${age} años`;
+  if (language === 'fr') return `${age} ans`;
+  if (language === 'ja') return `${age}歳`;
+  if (language === 'ko') return `${age}세`;
+  return `${age} anos`;
+}
+
+function xpRemaining(language: AppLanguage, count: number) {
+  if (language === 'en') return `${count} XP to complete this stage`;
+  if (language === 'zh-Hant') return `再得 ${count} XP 即完成此階段`;
+  if (language === 'zh-Hans') return `再得 ${count} XP 即完成此阶段`;
+  if (language === 'es') return `${count} XP para completar esta etapa`;
+  if (language === 'fr') return `${count} XP pour terminer cette étape`;
+  if (language === 'ja') return `あと${count} XPでこの段階を完了`;
+  if (language === 'ko') return `이 단계를 완료하려면 ${count} XP 더 필요해요`;
+  return `${count} XP para concluir esta etapa`;
+}
 
 export default function ParentScreen() {
   const colors = useColors();
@@ -46,11 +89,12 @@ export default function ParentScreen() {
       await subscription.refresh();
     } catch {
       setNotice(
-        language === 'en'
-          ? 'Could not open the website membership page.'
-          : language === 'zh-Hans'
-            ? '未能打开网站会员页面。'
-            : '未能開啟網站會員頁面。',
+        uiText(
+          language,
+          'Could not open the website membership page.',
+          '未能開啟網站會員頁面。',
+          '未能打开网站会员页面。',
+        ),
       );
     } finally {
       setOpeningWebsite(false);
@@ -61,12 +105,7 @@ export default function ParentScreen() {
     100,
     learning.selectedStageXp,
   );
-  const levelName =
-    language === 'en'
-      ? stageNames[learning.selectedStage - 1][0]
-      : language === 'zh-Hans'
-        ? stageNames[learning.selectedStage - 1][2]
-        : stageNames[learning.selectedStage - 1][1];
+  const levelName = pickText(language, stageNames[learning.selectedStage - 1]);
   const currentPeriodEnd = subscription.currentPeriodEnd
     ? new Date(subscription.currentPeriodEnd)
     : null;
@@ -264,11 +303,7 @@ export default function ParentScreen() {
               <Text
                 style={[styles.levelBadgeText, { color: colors.accentForeground }]}
               >
-                {language === 'en'
-                  ? `Stage ${learning.selectedStage}`
-                  : language === 'zh-Hans'
-                    ? `第 ${learning.selectedStage} 阶段`
-                    : `第 ${learning.selectedStage} 階段`}
+                {stagePrefix(language, learning.selectedStage)}
               </Text>
             </View>
           </View>
@@ -278,46 +313,35 @@ export default function ParentScreen() {
               {t('parent.xp', { count: learning.selectedStageXp })}
             </Text>
             <Text style={[styles.helperText, { color: colors.mutedForeground }]}>
-              {learning.selectedStageXp >= 100
-                ? language === 'en'
-                  ? 'Stage complete · choose a higher stage anytime.'
-                  : language === 'zh-Hans'
-                    ? '已完成此阶段 · 可随时选择更高阶段。'
-                    : '已完成此階段 · 可隨時選擇更高階段。'
-                : language === 'en'
-                  ? `${learning.nextLevelXp} XP to complete this stage`
-                  : language === 'zh-Hans'
-                    ? `再得 ${learning.nextLevelXp} XP 即完成此阶段`
-                    : `再得 ${learning.nextLevelXp} XP 即完成此階段`}
+                {learning.selectedStageXp >= 100
+                  ? uiText(
+                      language,
+                      'Stage complete · choose a higher stage anytime.',
+                      '已完成此階段 · 可隨時選擇更高階段。',
+                      '已完成此阶段 · 可随时选择更高阶段。',
+                    )
+                  : xpRemaining(language, learning.nextLevelXp)}
             </Text>
           </View>
         </Surface>
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {language === 'en'
-              ? 'Choose a learning stage'
-              : language === 'zh-Hans'
-                ? '自選學習階段'
-                : '自選學習階段'}
+            {uiText(language, 'Choose a learning stage', '自選學習階段', '自选学习阶段')}
           </Text>
           <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            {language === 'en'
-              ? 'Each stage has its own word bank, games, stories and XP.'
-              : language === 'zh-Hans'
-                ? '每個階段都有獨立詞語庫、遊戲、故事及 XP。'
-                : '每個階段都有獨立詞語庫、遊戲、故事及 XP。'}
+            {uiText(
+              language,
+              'Each stage has its own word bank, games, stories and XP.',
+              '每個階段都有獨立詞語庫、遊戲、故事及 XP。',
+              '每个阶段都有独立词语库、游戏、故事及 XP。',
+            )}
           </Text>
         </View>
         <View style={styles.ageGrid}>
           {[1, 2, 3, 4].map((stage) => {
             const selected = learning.selectedStage === stage;
-            const stageTitle =
-              language === 'en'
-                ? stageNames[stage - 1][0]
-                : language === 'zh-Hans'
-                  ? stageNames[stage - 1][2]
-                  : stageNames[stage - 1][1];
+            const stageTitle = pickText(language, stageNames[stage - 1]);
             return (
               <Pressable
                 key={stage}
@@ -327,11 +351,12 @@ export default function ParentScreen() {
                 onPress={() => {
                   void learning.selectStage(stage).catch(() =>
                     setNotice(
-                      language === 'en'
-                        ? 'Could not save the selected stage. Please retry.'
-                        : language === 'zh-Hans'
-                          ? '未能儲存所選階段，請重試。'
-                          : '未能儲存所選階段，請重試。',
+                      uiText(
+                        language,
+                        'Could not save the selected stage. Please retry.',
+                        '未能儲存所選階段，請重試。',
+                        '未能保存所选阶段，请重试。',
+                      ),
                     ),
                   );
                 }}
@@ -348,11 +373,7 @@ export default function ParentScreen() {
                   {stageTitle}
                 </Text>
                 <Text style={[styles.ageNote, { color: colors.mutedForeground }]}>
-                  {language === 'en'
-                    ? `Stage ${stage} · ages ${stageAges[stage - 1]}`
-                    : language === 'zh-Hans'
-                      ? `第 ${stage} 阶段 · ${stageAges[stage - 1]} 岁`
-                      : `第 ${stage} 階段 · ${stageAges[stage - 1]} 歲`}
+                  {`${stagePrefix(language, stage)} · ${ageText(language, stageAges[stage - 1])}`}
                 </Text>
                 <Text style={[styles.ageNote, { color: colors.primary, fontWeight: '700' }]}>
                   {learning.xpByStage[stage - 1] ?? 0} / 100 XP
@@ -366,11 +387,12 @@ export default function ParentScreen() {
         </View>
         {!subscription.isPremium ? (
           <Text style={[styles.sectionHelper, { color: colors.mutedForeground }]}>
-            {language === 'en'
-              ? 'An active subscription is required to select stages and save XP.'
-              : language === 'zh-Hans'
-                ? '訂閱啟用後即可自選階段並儲存 XP。'
-                : '訂閱啟用後即可自選階段並儲存 XP。'}
+            {uiText(
+              language,
+              'An active subscription is required to select stages and save XP.',
+              '啟用訂閱後即可自選階段並儲存 XP。',
+              '启用订阅后即可自选阶段并保存 XP。',
+            )}
           </Text>
         ) : null}
 
@@ -431,7 +453,7 @@ export default function ParentScreen() {
 
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {language === 'en' ? 'Membership benefits' : language === 'zh-Hans' ? '會員內容' : '會員內容'}
+            {uiText(language, 'Membership benefits', '會員內容', '会员内容')}
           </Text>
         </View>
         <Surface style={styles.membershipCard}>

@@ -26,21 +26,29 @@ import {
   getStageContent,
   pathTheme,
   stageAges,
+  translateInterface,
   type StageStory,
+  type PlaygroundLanguage,
   type VocabEntry,
 } from '@workspace/learning-content';
 
 const WORDS_PER_PATH = 20;
 
 function localized(
-  language: 'en' | 'zh-Hant' | 'zh-Hans',
-  values: { en: string; 'zh-Hant': string; 'zh-Hans': string },
+  language: PlaygroundLanguage,
+  values: Record<string, string>,
 ) {
-  return values[language];
+  return values[language] ?? translateInterface(language, values.en);
 }
 
-function tr(language: 'en' | 'zh-Hant' | 'zh-Hans', en: string, hant: string, hans: string) {
-  return language === 'en' ? en : language === 'zh-Hant' ? hant : hans;
+function tr(language: PlaygroundLanguage, en: string, hant: string, hans: string) {
+  return language === 'en'
+    ? en
+    : language === 'zh-Hant'
+      ? hant
+      : language === 'zh-Hans'
+        ? hans
+        : translateInterface(language, en);
 }
 
 function WordCard({ word, simplified }: { word: VocabEntry; simplified: boolean }) {
@@ -142,7 +150,7 @@ export default function LessonsScreen() {
 
   const playReading = () => {
     if (!currentReading) return;
-    const text = currentReading.text[language];
+    const text = localized(language, currentReading.text);
     void Speech.stop();
     Speech.speak(text, {
       language: simplified ? 'zh-CN' : 'zh-TW',
@@ -164,7 +172,11 @@ export default function LessonsScreen() {
   };
 
   const displayStoryTitle = (story: StageStory) =>
-    simplified ? story.title.simp : story.title.trad;
+    localized(language, {
+      en: story.title.en,
+      'zh-Hant': story.title.trad,
+      'zh-Hans': story.title.simp,
+    });
 
   const submitLookup = () => {
     const text = lookupText.trim();
@@ -376,7 +388,7 @@ export default function LessonsScreen() {
                   <Text style={[styles.pathNumberText, { color: colors.warmInk }]}>{index + 1}</Text>
                 </View>
                 <Text style={[styles.storyTitle, { color: colors.foreground }]} numberOfLines={1}>
-                  {language === 'en' ? story.title.en : displayStoryTitle(story)}
+                  {displayStoryTitle(story)}
                 </Text>
                 <Ionicons name="play-circle-outline" size={22} color={colors.primary} />
               </Pressable>
@@ -458,7 +470,7 @@ export default function LessonsScreen() {
               </View>
               <ScrollView contentContainerStyle={styles.readingBody}>
                 <Text style={[styles.readingText, { color: colors.foreground }]}>
-                  {currentReading.text[language]}
+                  {localized(language, currentReading.text)}
                 </Text>
               </ScrollView>
               <View style={styles.audioControls}>

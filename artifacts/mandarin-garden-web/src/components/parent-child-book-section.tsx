@@ -8,6 +8,7 @@ import { parentChildBooks } from '@/lib/parent-child-books';
 import { getStageContent } from '@/lib/playground-content';
 import { useMembership } from '@/hooks/use-learning';
 import { scriptFor, speakMandarin, stopSpeech, type Script } from '@/lib/speech';
+import { translateInterface } from '@workspace/learning-content';
 
 export function ParentChildBookSection({ language, age }: { language: Language; age: string }) {
   const membership = useMembership();
@@ -26,7 +27,29 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
   const memberStory = memberStories.find((item) => item.id === memberStoryId) ?? memberStories[0];
   const memberStoryText = script === 'simp' ? memberStory.simp : memberStory.trad;
   const memberStoryTitle = (title: { en: string; trad: string; simp: string }) =>
-    language === 'en' ? title.en : language === 'zh-Hans' ? title.simp : title.trad;
+    language === 'en'
+      ? title.en
+      : language === 'zh-Hans'
+        ? title.simp
+        : language === 'zh-Hant'
+          ? title.trad
+          : translateInterface(language, title.en);
+  const bookTitle = (title: { en: string; trad: string; simp: string }) =>
+    language === 'en'
+      ? title.en
+      : language === 'zh-Hans'
+        ? title.simp
+        : language === 'zh-Hant'
+          ? title.trad
+          : translateInterface(language, title.en);
+  const promptText = (prompt: { en: string; 'zh-Hant': string; 'zh-Hans': string }) =>
+    language === 'en'
+      ? prompt.en
+      : language === 'zh-Hant'
+        ? prompt['zh-Hant']
+        : language === 'zh-Hans'
+          ? prompt['zh-Hans']
+          : translateInterface(language, prompt.en);
   const membershipError = membership.accountQuery.isError || membership.billing.isError;
 
   useEffect(() => { setSelectedId(normalizeAgeStage(age)); }, [age]);
@@ -86,7 +109,7 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
             >
               <span className={`picture-book-cover picture-book-cover-${item.id}`} aria-hidden="true">{item.cover}</span>
               <span className="picture-book-tile-copy">
-                <strong>{item.title[language]}</strong>
+                <strong>{bookTitle({ en: item.title.en, trad: item.title['zh-Hant'], simp: item.title['zh-Hans'] })}</strong>
                 <small>{label}</small>
               </span>
               <ArrowRight size={15} aria-hidden="true" />
@@ -107,13 +130,13 @@ export function ParentChildBookSection({ language, age }: { language: Language; 
             <span className="eyebrow">{ageLabels(language)[ageStages.indexOf(book.id)]}</span>
             <span>{tr(language, `Page ${pageIndex + 1}`, `第 ${pageIndex + 1} 頁`, `第 ${pageIndex + 1} 页`)}</span>
           </div>
-          <h3>{book.title[language]}</h3>
+          <h3>{bookTitle({ en: book.title.en, trad: book.title['zh-Hant'], simp: book.title['zh-Hans'] })}</h3>
           <p className="picture-book-text" lang={script === 'simp' ? 'zh-Hans' : 'zh-Hant'} data-testid="picture-book-text">{storyText}</p>
           <p className="picture-book-pinyin">{page.pinyin}</p>
           {language === 'en' && <p className="picture-book-translation">{page.en}</p>}
           <div className="picture-book-prompt">
             <strong>{tr(language, 'Talk together', '親子聊一聊', '亲子聊一聊')}</strong>
-            <p>{page.prompt[language]}</p>
+            <p>{promptText(page.prompt)}</p>
           </div>
           <div className="picture-book-controls">
             <div className="picture-book-script" role="group" aria-label={tr(language, 'Chinese characters', '中文文字', '中文文字')}>

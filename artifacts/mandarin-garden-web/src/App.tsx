@@ -28,6 +28,7 @@ import DisclaimerPage from '@/pages/disclaimer';
 import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
+import { interfaceLanguageOptions } from '@workspace/learning-content';
 import type { LearningQuestion, LearningRoundInput } from '@workspace/api-client-react';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
@@ -44,15 +45,16 @@ const clerkProxyUrl =
 if (!clerkPubKey) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in the web runtime.');
 }
-const languages: { value: Language; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'zh-Hant', label: '繁體中文' },
-  { value: 'zh-Hans', label: '简体中文' },
-];
+const languages = interfaceLanguageOptions;
 const signOutLabels: Record<Language, string> = {
   en: 'Sign out',
   'zh-Hant': '登出',
   'zh-Hans': '退出登录',
+  es: 'Cerrar sesión',
+  fr: 'Se déconnecter',
+  ja: 'ログアウト',
+  ko: '로그아웃',
+  pt: 'Terminar sessão',
 };
 const themes = [
   { id: 'meadow', name: 'Meadow', color: '#5b8a61' },
@@ -64,11 +66,24 @@ const themes = [
 const icons = { message: MessageCircle, apple: Apple, paw: PawPrint, heart: Heart, compass: Compass };
 type ThemeId = 'meadow' | 'terracotta' | 'ocean' | 'lavender' | 'sunshine';
 
+function wordCounter(language: Language, current: number, total: number) {
+  const number = current + 1;
+  if (language === 'en') return `WORD ${number} OF ${total}`;
+  if (language === 'zh-Hant') return `第 ${number} 個詞語 · 共 ${total} 個`;
+  if (language === 'zh-Hans') return `第 ${number} 个词语 · 共 ${total} 个`;
+  if (language === 'es') return `PALABRA ${number} DE ${total}`;
+  if (language === 'fr') return `MOT ${number} SUR ${total}`;
+  if (language === 'ja') return `単語 ${number} / ${total}`;
+  if (language === 'ko') return `단어 ${number} / ${total}`;
+  return `PALAVRA ${number} DE ${total}`;
+}
+
 function usePreferences() {
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('mg-language') as Language) || 'en');
   const [theme, setTheme] = useState<ThemeId>(() => (localStorage.getItem('mg-theme') as ThemeId) || 'meadow');
   const [age, setAge] = useState(() => normalizeAgeStage(localStorage.getItem('mg-age')));
   useEffect(() => { localStorage.setItem('mg-age', age); }, [age]);
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
   const saveLanguage = (value: Language) => { localStorage.setItem('mg-language', value); setLanguage(value); };
   const saveTheme = (value: ThemeId) => { localStorage.setItem('mg-theme', value); setTheme(value); };
   const saveAge = (value: string) => { setAge(normalizeAgeStage(value)); };
@@ -93,6 +108,11 @@ export const tagline: Record<Language, string> = {
   en: 'Make learning Mandarin easier every day',
   'zh-Hant': '讓每天學習漢語更輕鬆',
   'zh-Hans': '让每天学习汉语更轻松',
+  es: 'Aprende mandarín con más facilidad cada día',
+  fr: 'Apprenez le mandarin plus facilement chaque jour',
+  ja: '毎日の中国語学習をもっと楽しく',
+  ko: '매일 중국어를 더 쉽게 배워요',
+  pt: 'Aprenda mandarim com mais facilidade todos os dias',
 };
 
 function useUserScopedCache() {
@@ -265,7 +285,7 @@ function PracticeSection({ language, age, onAgeChange }: { language: Language; a
           {ageStages.map((value, index) => <option key={value} value={value}>{copy[language].levelAges[index]}</option>)}
         </select>
         <Link href={`/reading/${normalizeAgeStage(age)}`} className="free-reading-link" data-testid="link-free-reading">
-          <div className="practice-heading"><span className="practice-icon reading-icon"><BookOpen size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'A LITTLE READING' : language === 'zh-Hant' ? '讀一小段' : '读一小段'}</div><h2>{reading.title[language]}</h2></div></div>
+          <div className="practice-heading"><span className="practice-icon reading-icon"><BookOpen size={18} /></span><div><div className="eyebrow">{tr(language, 'A LITTLE READING', '讀一小段', '读一小段')}</div><h2>{reading.title[language]}</h2></div></div>
           <p className="reading-text">{reading.text[language]}</p>
           <div className="reading-meta"><span>{copy[language].levelAges[ageStages.indexOf(normalizeAgeStage(age))]} · {tr(language, 'Free reading', '免費閱讀', '免费阅读')}</span><span>{reading.minutes} {tr(language, 'min', '分鐘', '分钟')}</span></div>
           <span className="button-secondary free-reading-open">{tr(language, 'Read and listen', '閱讀並聆聽', '阅读并聆听')} <ArrowRight size={14} /></span>
@@ -382,7 +402,7 @@ function PremiumPinyinMatchCard({ language, age, onAgeChange, membership }: { la
   const restart = () => { setRound(0); setPicked(null); setScore(0); setSavedAnswers(0); setSeed((value) => value + 1); };
   return (
     <section className="practice-card quiz-card home-pinyin-card" data-testid="home-pinyin-match">
-        <div className="practice-heading"><span className="practice-icon"><Sparkles size={18} /></span><div><div className="eyebrow">{language === 'en' ? 'PLAY & REMEMBER' : language === 'zh-Hant' ? '玩一玩，記得更牢' : '玩一玩，记得更牢'}</div><h2>{language === 'en' ? 'A tiny pinyin match' : language === 'zh-Hant' ? '拼音小配對' : '拼音小配对'}</h2></div></div>
+        <div className="practice-heading"><span className="practice-icon"><Sparkles size={18} /></span><div><div className="eyebrow">{tr(language, 'PLAY & REMEMBER', '玩一玩，記得更牢', '玩一玩，记得更牢')}</div><h2>{tr(language, 'A tiny pinyin match', '拼音小配對', '拼音小配对')}</h2></div></div>
         <label className="pinyin-stage-picker" htmlFor="pinyin-age-stage">
           <span>{tr(language, 'Choose an age stage', '選擇年齡階段', '选择年龄阶段')}</span>
           <select id="pinyin-age-stage" className="select-control" value={normalizeAgeStage(age)} onChange={(event) => onAgeChange(event.target.value)}>
@@ -391,22 +411,46 @@ function PremiumPinyinMatchCard({ language, age, onAgeChange, membership }: { la
         </label>
         {membership.premium && !challenge ? (
           <div role="status">{issueFailed
-            ? <>{tr(language, 'This round could not start.', '目前無法開始新的一輪。', '目前无法开始新的一轮。')} <button className="text-next" onClick={restart}>{language === 'en' ? 'Retry' : language === 'zh-Hant' ? '重試' : '重试'}</button></>
+            ? <>{tr(language, 'This round could not start.', '目前無法開始新的一輪。', '目前无法开始新的一轮。')} <button className="text-next" onClick={restart}>{tr(language, 'Retry', '重試', '重试')}</button></>
             : tr(language, 'Preparing your questions…', '正在準備題目…', '正在准备题目…')}</div>
         ) : null}
         {finished ? (
-          <div className="quiz-result"><div className="quiz-score">{score}<span> / {gameLength}</span></div><p className="round-xp">+{score * XP_PER_CORRECT} XP</p><p>{language === 'en' ? 'Lovely work. Every try helps a word take root.' : language === 'zh-Hant' ? '做得真好，每一次練習都讓詞語更熟悉。' : '做得真好，每一次练习都让词语更熟悉。'}</p>{saveState === 'saving' ? <p role="status">{language === 'en' ? 'Saving XP…' : language === 'zh-Hant' ? '正在儲存 XP…' : '正在保存 XP…'}</p> : null}{saveState === 'saved' ? <p role="status">{language === 'en' ? 'XP saved to this stage.' : language === 'zh-Hant' ? 'XP 已儲存到此階段。' : 'XP 已保存到此阶段。'}</p> : null}{saveState === 'error' ? <p role="alert">{language === 'en' ? 'Some XP could not be saved.' : language === 'zh-Hant' ? '部分 XP 未能儲存。' : '部分 XP 未能保存。'} <button className="text-next" onClick={retryFailedAnswers}>{language === 'en' ? 'Retry' : language === 'zh-Hant' ? '重試' : '重试'}</button></p> : null}<button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {language === 'en' ? 'Play again' : language === 'zh-Hant' ? '再玩一輪' : '再玩一轮'}</button></div>
+          <div className="quiz-result">
+            <div className="quiz-score">{score}<span> / {gameLength}</span></div>
+            <p className="round-xp">+{score * XP_PER_CORRECT} XP</p>
+            <p>{tr(language, 'Lovely work. Every try helps a word take root.', '做得真好，每一次練習都讓詞語更熟悉。', '做得真好，每一次练习都让词语更熟悉。')}</p>
+            {saveState === 'saving' ? <p role="status">{tr(language, 'Saving XP…', '正在儲存 XP…', '正在保存 XP…')}</p> : null}
+            {saveState === 'saved' ? <p role="status">{tr(language, 'XP saved to this stage.', 'XP 已儲存到此階段。', 'XP 已保存到此阶段。')}</p> : null}
+            {saveState === 'error' ? <p role="alert">{tr(language, 'Some XP could not be saved.', '部分 XP 未能儲存。', '部分 XP 未能保存。')} <button className="text-next" onClick={retryFailedAnswers}>{tr(language, 'Retry', '重試', '重试')}</button></p> : null}
+            <button className="button-secondary" onClick={restart}><RotateCcw size={14} /> {tr(language, 'Play again', '再玩一輪', '再玩一轮')}</button>
+          </div>
         ) : current ? (
           <>
             <div className="quiz-question">
-              <span className="question-count">{language === 'en' ? `WORD ${round + 1} OF ${gameLength}` : language === 'zh-Hant' ? `第 ${round + 1} 個詞語 · 共 ${gameLength} 個` : `第 ${round + 1} 个词语 · 共 ${gameLength} 个`}</span>
+              <span className="question-count">{wordCounter(language, round, gameLength)}</span>
               <strong>{current.pinyin}</strong>
-              <span>{language === 'en' ? 'Find the matching characters' : language === 'zh-Hant' ? '找出相配的漢字' : '找出相配的汉字'}</span>
+              <span>{tr(language, 'Find the matching characters', '找出相配的漢字', '找出相配的汉字')}</span>
             </div>
             <div className="quiz-options">
               {choices.map((choice) => <button key={choice.id} className={`quiz-option ${picked === choice.id ? choice.id === (premiumCurrent?.correctOption ?? current.id) ? 'correct' : 'incorrect' : ''} ${picked && choice.id === (premiumCurrent?.correctOption ?? current.id) ? 'correct' : ''}`} onClick={() => select(choice.id)} disabled={Boolean(picked)}>{language === 'zh-Hans' ? choice.simplified : choice.hanzi}</button>)}
             </div>
-            {picked ? <div className={`quiz-feedback ${picked === (premiumCurrent?.correctOption ?? current.id) ? 'good' : ''}`}>{picked === (premiumCurrent?.correctOption ?? current.id) ? `${language === 'en' ? 'That’s the one.' : language === 'zh-Hant' ? '答對了！' : '答对了！'}${membership.premium ? ` +${XP_PER_CORRECT} XP` : ''}` : (language === 'en' ? `This one is ${current.hanzi}.` : `答案是 ${language === 'zh-Hans' ? current.simplified : current.hanzi}。`)}{membership.premium && saveState === 'saving' ? <span role="status"> · {language === 'en' ? 'Saving…' : language === 'zh-Hant' ? '儲存中…' : '保存中…'}</span> : null} <button className="text-next" onClick={advance}>{round === gameLength - 1 ? (language === 'en' ? 'See results' : language === 'zh-Hant' ? '看結果' : '看结果') : (language === 'en' ? 'Next word' : language === 'zh-Hant' ? '下一個詞語' : '下一个词语')} <ArrowRight size={13} /></button></div> : null}
+            {picked ? (
+              <div className={`quiz-feedback ${picked === (premiumCurrent?.correctOption ?? current.id) ? 'good' : ''}`}>
+                {picked === (premiumCurrent?.correctOption ?? current.id)
+                  ? `${tr(language, 'That’s the one.', '答對了！', '答对了！')}${membership.premium ? ` +${XP_PER_CORRECT} XP` : ''}`
+                  : language === 'en'
+                    ? `This one is ${current.hanzi}.`
+                    : `${tr(language, 'Correct answer:', '答案是：', '答案是：')} ${language === 'zh-Hans' ? current.simplified : current.hanzi}`}
+                {membership.premium && saveState === 'saving' ? <span role="status"> · {tr(language, 'Saving…', '儲存中…', '保存中…')}</span> : null}
+                {' '}
+                <button className="text-next" onClick={advance}>
+                  {round === gameLength - 1
+                    ? tr(language, 'See results', '看結果', '看结果')
+                    : tr(language, 'Next word', '下一個詞語', '下一个词语')}
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            ) : null}
           </>
         ) : null}
     </section>

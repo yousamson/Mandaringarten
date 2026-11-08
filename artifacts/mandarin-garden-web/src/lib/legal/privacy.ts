@@ -3,7 +3,7 @@ import type { Language } from '../garden-data';
 export type LegalSection = { h: string; p: string[] };
 export type LegalDoc = { title: string; summary: string; sections: LegalSection[] };
 
-export const privacyPolicy: Record<Language, LegalDoc> = {
+const basePrivacyPolicy: Record<'en' | 'zh-Hant' | 'zh-Hans', LegalDoc> = {
   en: {
     title: 'Privacy Policy',
     summary: 'A short guide to the information Mandarin Garden uses to provide accounts, learning progress, payments and support.',
@@ -124,4 +124,13 @@ export const privacyPolicy: Record<Language, LegalDoc> = {
       ] },
     ],
   },
+};
+
+export const privacyPolicy: Record<Language, LegalDoc> = {
+  ...basePrivacyPolicy,
+  es: basePrivacyPolicy.en,
+  fr: basePrivacyPolicy.en,
+  ja: basePrivacyPolicy.en,
+  ko: basePrivacyPolicy.en,
+  pt: basePrivacyPolicy.en,
 };

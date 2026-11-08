@@ -27,7 +27,7 @@ import {
   type LearningQuestion,
   type LearningRound,
 } from '@workspace/api-client-react';
-import { getStageContent, modeCopy, pickText } from '@workspace/learning-content';
+import { getStageContent, modeCopy, pickText, translateInterface } from '@workspace/learning-content';
 import type { GameMode } from '@workspace/learning-content/games';
 import { shuffle } from '@workspace/learning-content/games';
 
@@ -71,7 +71,13 @@ export default function GamesScreen() {
   const colors = useColors();
   const { language } = useLanguage();
   const t = (en: string, hant: string, hans: string) =>
-    language === 'en' ? en : language === 'zh-Hant' ? hant : hans;
+    language === 'en'
+      ? en
+      : language === 'zh-Hant'
+        ? hant
+        : language === 'zh-Hans'
+          ? hans
+          : translateInterface(language, en);
   const subscription = useSubscription();
   const routeParams = useLocalSearchParams<{ mode?: string }>();
   const learning = useLearning();

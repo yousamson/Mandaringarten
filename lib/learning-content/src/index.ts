@@ -20,6 +20,13 @@ export {
   stageNotes,
 } from './presentation';
 export type { AgeStage, FreeReading, LocalizedText, PlaygroundLanguage } from './presentation';
+export {
+  interfaceLanguageOptions,
+  localizeInterfaceMap,
+  localizeInterfaceRecord,
+  translateInterface,
+} from './interface-localization';
+export type { InterfaceLanguage } from './interface-localization';
 export const playgroundStages: StageContent[] = [stage1, stage2, stage3, stage4];
 export const STAGE_NUMBERS: StageNumber[] = [1, 2, 3, 4];
 

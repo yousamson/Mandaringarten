@@ -1,6 +1,11 @@
 import { ageLabels } from './age-stages';
 import { cleanProductCopy } from './product-language';
-export type Language = 'en' | 'zh-Hant' | 'zh-Hans';
+import {
+  localizeInterfaceRecord,
+  translateInterface,
+  type InterfaceLanguage,
+} from '@workspace/learning-content';
+export type Language = InterfaceLanguage;
 export type LessonWord = {
   id: string;
   hanzi: string;
@@ -23,13 +28,13 @@ export type GardenLesson = {
 };
 
 const w = (id: string, hanzi: string, simplified: string, pinyin: string, meaning: string, tradSentence: string, simpleSentence: string, sentencePinyin: string, category: string): LessonWord => ({
-  id, hanzi, simplified, pinyin, meaning: { en: meaning, 'zh-Hant': hanzi, 'zh-Hans': simplified },
+  id, hanzi, simplified, pinyin, meaning: localizeInterfaceRecord({ en: meaning, 'zh-Hant': hanzi, 'zh-Hans': simplified }),
   sentence: tradSentence, sentenceSimplified: simpleSentence, sentencePinyin, category,
 });
 
 export const lessons: GardenLesson[] = [
   {
-    id: 'greetings', title: { en: 'Hello, friend', 'zh-Hant': '打招呼', 'zh-Hans': '打招呼' }, subtitle: { en: 'A few kind words to begin', 'zh-Hant': '認識新朋友', 'zh-Hans': '认识新朋友' }, category: 'daily', icon: 'message',
+    id: 'greetings', title: localizeInterfaceRecord({ en: 'Hello, friend', 'zh-Hant': '打招呼', 'zh-Hans': '打招呼' }), subtitle: localizeInterfaceRecord({ en: 'A few kind words to begin', 'zh-Hant': '認識新朋友', 'zh-Hans': '认识新朋友' }), category: 'daily', icon: 'message',
     premium: false, words: [
       w('ni-hao', '你好', '你好', 'nǐ hǎo', 'Hello', '你好，我叫小樂。', '你好，我叫小乐。', 'nǐ hǎo, wǒ jiào xiǎo lè.', 'daily'),
       w('zao-shang-hao', '早上好', '早上好', 'zǎo shàng hǎo', 'Good morning', '早上好，我們一起出門吧。', '早上好，我们一起出门吧。', 'zǎo shàng hǎo, wǒ men yì qǐ chū mén ba.', 'daily'),
@@ -38,7 +43,7 @@ export const lessons: GardenLesson[] = [
     ],
   },
   {
-    id: 'fruit', title: { en: 'Fruit & colors', 'zh-Hant': '好吃水果', 'zh-Hans': '好吃水果' }, subtitle: { en: 'Look, taste and name', 'zh-Hant': '看看顏色和味道', 'zh-Hans': '看看颜色和味道' }, category: 'food', icon: 'apple',
+    id: 'fruit', title: localizeInterfaceRecord({ en: 'Fruit & colors', 'zh-Hant': '好吃水果', 'zh-Hans': '好吃水果' }), subtitle: localizeInterfaceRecord({ en: 'Look, taste and name', 'zh-Hant': '看看顏色和味道', 'zh-Hans': '看看颜色和味道' }), category: 'food', icon: 'apple',
     premium: false, words: [
       w('ping-guo', '蘋果', '苹果', 'píng guǒ', 'Apple', '我想吃一個蘋果。', '我想吃一个苹果。', 'wǒ xiǎng chī yí ge píng guǒ.', 'food'),
       w('xiang-jiao', '香蕉', '香蕉', 'xiāng jiāo', 'Banana', '香蕉是黃色的。', '香蕉是黄色的。', 'xiāng jiāo shì huáng sè de.', 'food'),
@@ -47,7 +52,7 @@ export const lessons: GardenLesson[] = [
     ],
   },
   {
-    id: 'animals', title: { en: 'Little neighbours', 'zh-Hant': '可愛動物', 'zh-Hans': '可爱动物' }, subtitle: { en: 'Who lives nearby?', 'zh-Hant': '牠們住在哪裡？', 'zh-Hans': '它们住在哪里？' }, category: 'world', icon: 'paw',
+    id: 'animals', title: localizeInterfaceRecord({ en: 'Little neighbours', 'zh-Hant': '可愛動物', 'zh-Hans': '可爱动物' }), subtitle: localizeInterfaceRecord({ en: 'Who lives nearby?', 'zh-Hant': '牠們住在哪裡？', 'zh-Hans': '它们住在哪里？' }), category: 'world', icon: 'paw',
     premium: true, words: [
       w('mao', '貓', '猫', 'māo', 'Cat', '小貓在窗邊睡覺。', '小猫在窗边睡觉。', 'xiǎo māo zài chuāng biān shuì jiào.', 'world'),
       w('gou', '狗', '狗', 'gǒu', 'Dog', '小狗喜歡散步。', '小狗喜欢散步。', 'xiǎo gǒu xǐ huan sàn bù.', 'world'),
@@ -56,7 +61,7 @@ export const lessons: GardenLesson[] = [
     ],
   },
   {
-    id: 'family', title: { en: 'My close circle', 'zh-Hant': '我的家人', 'zh-Hans': '我的家人' }, subtitle: { en: 'The people we love', 'zh-Hant': '介紹最親近的人', 'zh-Hans': '介绍最亲近的人' }, category: 'family', icon: 'heart',
+    id: 'family', title: localizeInterfaceRecord({ en: 'My close circle', 'zh-Hant': '我的家人', 'zh-Hans': '我的家人' }), subtitle: localizeInterfaceRecord({ en: 'The people we love', 'zh-Hant': '介紹最親近的人', 'zh-Hans': '介绍最亲近的人' }), category: 'family', icon: 'heart',
     premium: true, words: [
       w('mama', '媽媽', '妈妈', 'mā ma', 'Mum', '媽媽陪我看書。', '妈妈陪我看书。', 'mā ma péi wǒ kàn shū.', 'family'),
       w('baba', '爸爸', '爸爸', 'bà ba', 'Dad', '爸爸和我去公園。', '爸爸和我去公园。', 'bà ba hé wǒ qù gōng yuán.', 'family'),
@@ -65,7 +70,7 @@ export const lessons: GardenLesson[] = [
     ],
   },
   {
-    id: 'playtime', title: { en: 'Make & play', 'zh-Hant': '玩一玩，動一動', 'zh-Hans': '玩一玩，动一动' }, subtitle: { en: 'Move, sing and make-believe', 'zh-Hant': '唱唱跳跳，開心想像', 'zh-Hans': '唱唱跳跳，开心想象' }, category: 'leisure', icon: 'message',
+    id: 'playtime', title: localizeInterfaceRecord({ en: 'Make & play', 'zh-Hant': '玩一玩，動一動', 'zh-Hans': '玩一玩，动一动' }), subtitle: localizeInterfaceRecord({ en: 'Move, sing and make-believe', 'zh-Hant': '唱唱跳跳，開心想像', 'zh-Hans': '唱唱跳跳，开心想象' }), category: 'leisure', icon: 'message',
     premium: true, words: [
       w('wan', '玩', '玩', 'wán', 'Play', '我們一起玩積木。', '我们一起玩积木。', 'wǒ men yì qǐ wán jī mù.', 'leisure'),
       w('chang-ge', '唱歌', '唱歌', 'chàng gē', 'Sing', '大家一起唱歌。', '大家一起唱歌。', 'dà jiā yì qǐ chàng gē.', 'leisure'),
@@ -74,7 +79,7 @@ export const lessons: GardenLesson[] = [
     ],
   },
   {
-    id: 'outside', title: { en: 'Out and about', 'zh-Hant': '出門去看看', 'zh-Hans': '出门去看看' }, subtitle: { en: 'A little walk, many words', 'zh-Hant': '街上有什麼？', 'zh-Hans': '街上有什么？' }, category: 'world', icon: 'compass',
+    id: 'outside', title: localizeInterfaceRecord({ en: 'Out and about', 'zh-Hant': '出門去看看', 'zh-Hans': '出门去看看' }), subtitle: localizeInterfaceRecord({ en: 'A little walk, many words', 'zh-Hant': '街上有什麼？', 'zh-Hans': '街上有什么？' }), category: 'world', icon: 'compass',
     premium: true, words: [
       w('che', '車', '车', 'chē', 'Car', '我們坐車去公園。', '我们坐车去公园。', 'wǒ men zuò chē qù gōng yuán.', 'world'),
       w('gong-yuan', '公園', '公园', 'gōng yuán', 'Park', '公園裡有很多樹。', '公园里有很多树。', 'gōng yuán lǐ yǒu hěn duō shù.', 'world'),
@@ -89,6 +94,11 @@ export const categoryNames: Record<Language, Record<string, string>> = {
   en: { all: 'All', daily: 'Everyday', food: 'Food & drink', family: 'Family', leisure: 'Play & make', world: 'Around me' },
   'zh-Hant': { all: '全部', daily: '日常生活', food: '吃喝', family: '家人朋友', leisure: '休閒活動', world: '身邊世界' },
   'zh-Hans': { all: '全部', daily: '日常生活', food: '吃喝', family: '家人朋友', leisure: '休闲活动', world: '身边世界' },
+  es: { all: 'Todo', daily: 'Cotidiano', food: 'Comida y bebida', family: 'Familia', leisure: 'Jugar y crear', world: 'Mi entorno' },
+  fr: { all: 'Tout', daily: 'Quotidien', food: 'Aliments et boissons', family: 'Famille', leisure: 'Jeux et créations', world: 'Mon environnement' },
+  ja: { all: 'すべて', daily: '毎日のこと', food: '食べ物と飲み物', family: '家族', leisure: '遊びと創作', world: '身の回り' },
+  ko: { all: '전체', daily: '일상', food: '음식과 음료', family: '가족', leisure: '놀이와 만들기', world: '주변 세상' },
+  pt: { all: 'Tudo', daily: 'Dia a dia', food: 'Comida e bebida', family: 'Família', leisure: 'Brincar e criar', world: 'Meu ambiente' },
 };
 
 const baseCopy = {
@@ -100,11 +110,29 @@ const baseCopy = {
     navHome: '乐园首页', navWords: '词语小径', navParent: '家长专区', signIn: '登录', welcome: '每天一点点汉语', headline: '让好奇心慢慢发芽。', intro: '为小小学习者准备的轻松汉语练习，大人就在身边陪伴。', start: '从“你好”开始', browse: '逛逛乐园', today: '温柔的十分钟日常', lessons: '挑一条小路出发', lessonsHint: '点选课程，听一听、说一说，让词语成为自己的。', learn: '个词语等你发现', free: '免费开始', premium: '完整学习路径', path: '陪孩子一起长大的学习路', pathHint: '四个阶段自由选择，每一步都多认识一点世界。', levels: ['小芽学徒', '词语探险家', '短句小能手', '汉语小读者'], levelAges: ['2–4 岁', '3–5 岁', '6–8 岁', '9–12 岁'], levelNotes: ['单字及生活词汇', '听说启蒙', '词语短句', '阅读表达'], join: '看看家庭会员', minutes: '4 个词语 · 约 5 分钟', locked: '加入会员即可开启这堂课', back: '回到乐园', word: '词语', listen: '听一听', sentence: '放进短句里', next: '学会了，下一个', finish: '完成这堂课', complete: '真棒，完成一轮了。', completeHint: '四个新词语已经住进记忆里。', return: '挑选另一堂课', parentTitle: '陪伴孩子自在成长。', parentSubtitle: '为陪伴学习的大人准备的几项贴心设置。', interface: '界面语言', interfaceHint: '选择菜单和按钮使用的语言。', age: '学习阶段', ageHint: '依孩子年龄推荐合适的学习路径。', theme: '乐园色彩', membership: '家庭会员', premiumActive: '完整学习路径已开启', freePlan: '免费乐园', monthly: '月度会员', price: 'US$9.99', perMonth: '/ 月', benefits: ['完整学习乐园：四个阶段、800 个词语', '生活词语、拼音与实用短句', '五种游戏与 40 篇朗读故事，任选阶段'], upgrade: '开启完整乐园', manage: '管理订阅', paymentNote: '安全付款由 Stripe 处理，可随时前往账单入口管理或取消。', account: '家长账户', signedOut: '登录或创建账户即可管理会员方案。新账户须付款成功后才会成为会员；免费课程无需登录即可使用。', signUp: '创建账户', due: '下次续订', cancelAt: '已设置取消', active: '会员有效', loading: '正在查看会员状态…', retry: '再试一次', failed: '无法加载会员状态，请重试。', checkoutError: '目前无法开始结账，请再试一次。', portalError: '目前无法打开账单管理，请再试一次。', category: '一座小小学习乐园', footer: '每天一小步，词语带你看世界。' },
 };
 
+type Copy = typeof baseCopy.en;
+const localizedCopy = (language: Exclude<Language, 'en' | 'zh-Hant' | 'zh-Hans'>): Copy => {
+  const translated = Object.fromEntries(
+    Object.entries(baseCopy.en).map(([key, value]) => [
+      key,
+      Array.isArray(value)
+        ? value.map((item) => translateInterface(language, item))
+        : translateInterface(language, value as string),
+    ]),
+  ) as Copy;
+  return { ...translated, levelAges: ageLabels(language) };
+};
+
 export const copy = cleanProductCopy({
   en: { ...baseCopy.en, levelAges: ageLabels('en') },
   'zh-Hant': { ...baseCopy['zh-Hant'], levelAges: ageLabels('zh-Hant') },
   'zh-Hans': { ...baseCopy['zh-Hans'], levelAges: ageLabels('zh-Hans') },
-});
+  es: localizedCopy('es'),
+  fr: localizedCopy('fr'),
+  ja: localizedCopy('ja'),
+  ko: localizedCopy('ko'),
+  pt: localizedCopy('pt'),
+}) as Record<Language, Copy>;
 
 export const levels = [
   { age: '2-3', words: ['門|门|mén|door', '手|手|shǒu|hand', '媽媽|妈妈|mā ma|mum', '水|水|shuǐ|water'] },

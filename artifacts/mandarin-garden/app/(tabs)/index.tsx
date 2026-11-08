@@ -23,12 +23,19 @@ import {
   pathTheme,
   stageAges,
   stageNames,
+  translateInterface,
   type PlaygroundLanguage,
 } from '@workspace/learning-content';
 import type { GameMode } from '@workspace/learning-content/games';
 
 function tr(language: PlaygroundLanguage, en: string, hant: string, hans: string) {
-  return language === 'en' ? en : language === 'zh-Hant' ? hant : hans;
+  return language === 'en'
+    ? en
+    : language === 'zh-Hant'
+      ? hant
+      : language === 'zh-Hans'
+        ? hans
+        : translateInterface(language, en);
 }
 
 export default function HomeScreen() {
@@ -260,7 +267,13 @@ export default function HomeScreen() {
               >
                 <Ionicons name="headset-outline" size={18} color={colors.primary} />
                 <Text style={[styles.storyTitle, { color: colors.foreground }]} numberOfLines={1}>
-                  {language === 'en' ? story.title.en : language === 'zh-Hans' ? story.title.simp : story.title.trad}
+                  {language === 'en'
+                    ? story.title.en
+                    : language === 'zh-Hant'
+                      ? story.title.trad
+                      : language === 'zh-Hans'
+                        ? story.title.simp
+                        : translateInterface(language, story.title.en)}
                 </Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.primary} />
               </Pressable>
