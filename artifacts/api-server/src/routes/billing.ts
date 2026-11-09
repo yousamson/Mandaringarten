@@ -32,6 +32,9 @@ const PREMIUM_LOOKUP_KEY = "mandarin_garden_premium_monthly";
 const PREMIUM_AMOUNT = 999;
 const PREMIUM_CURRENCY = "usd";
 const PREMIUM_INTERVAL = "month";
+const FIRST_SUBSCRIPTION_TRIAL_DAYS = 3;
+const TRIAL_CHECKOUT_POLICY = "first-subscription-3-day-v1";
+const STANDARD_CHECKOUT_POLICY = "monthly-no-trial-v1";
 const cachePremiumPrice = createReadCache<StripePrice>(60 * 1000);
 
 const router: IRouter = Router();
@@ -161,7 +164,11 @@ async function getPremiumPrice(): Promise<StripePrice> {
 }
 
 async function listSubscriptions(customerId: string) {
-  const [price, subscriptions] = await Promise.all([
+  return (await getCustomerSubscriptions(customerId)).premium;
+}
+
+async function getCustomerSubscriptions(customerId: string) {
+  const [price, result] = await Promise.all([
     getPremiumPrice(),
     stripeRequest<{ data: StripeSubscription[] }>(
       `/v1/subscriptions?${new URLSearchParams({
@@ -172,9 +179,12 @@ async function listSubscriptions(customerId: string) {
     ),
   ]);
 
-  return subscriptions.data.filter((subscription) =>
-    subscription.items?.data?.some((item) => item.price?.id === price.id),
-  );
+  return {
+    all: result.data,
+    premium: result.data.filter((subscription) =>
+      subscription.items?.data?.some((item) => item.price?.id === price.id),
+    ),
+  };
 }
 
 function periodEnd(subscription: StripeSubscription | undefined): number | null {
@@ -330,7 +340,8 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
 
   try {
     const account = await getOrCreateCustomer(userId);
-    const subscriptions = await listSubscriptions(account.stripeCustomerId);
+    const { all: allSubscriptions, premium: subscriptions } =
+      await getCustomerSubscriptions(account.stripeCustomerId);
     const managedSubscription = subscriptions.find((subscription) =>
       ["active", "trialing", "past_due", "unpaid"].includes(
         subscription.status,
@@ -340,6 +351,19 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Manage the existing subscription in the billing portal." });
       return;
     }
+    // Incomplete subscriptions only represent unfinished/failed checkout
+    // attempts; they do not consume the account's one-time introductory trial.
+    const hasCompletedSubscription = (subscription: StripeSubscription) =>
+      !["incomplete", "incomplete_expired"].includes(subscription.status);
+    const trialEligible = !allSubscriptions.some(
+      (subscription) =>
+        hasCompletedSubscription(subscription) &&
+        (subscription.metadata?.plan === "premium_monthly" ||
+          subscriptions.includes(subscription)),
+    );
+    const checkoutPolicy = trialEligible
+      ? TRIAL_CHECKOUT_POLICY
+      : STANDARD_CHECKOUT_POLICY;
     const consent = await withAccountWrite(userId, async (tx) => {
       const [saved] = await tx.insert(checkoutConsentsTable).values({
       clerkUserId: userId, policyVersion: POLICY_VERSION,
@@ -373,14 +397,20 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
     // Converted sessions retain their original presentment currency. Retire
     // earlier sessions instead of reusing a localized price after this fix.
     for (const session of userSessions) {
-      if (session.metadata?.currencyPolicy !== "usd-only-v1" || session.metadata?.policyVersion !== POLICY_VERSION) {
+      if (
+        session.metadata?.currencyPolicy !== "usd-only-v1" ||
+        session.metadata?.policyVersion !== POLICY_VERSION ||
+        session.metadata?.trialPolicy !== checkoutPolicy
+      ) {
         await stripeRequest(`/v1/checkout/sessions/${session.id}/expire`, {
           method: "POST", form: new URLSearchParams(),
         });
       }
     }
     const openSession = userSessions.find((session) =>
-      session.metadata?.currencyPolicy === "usd-only-v1" && session.metadata?.policyVersion === POLICY_VERSION);
+      session.metadata?.currencyPolicy === "usd-only-v1" &&
+      session.metadata?.policyVersion === POLICY_VERSION &&
+      session.metadata?.trialPolicy === checkoutPolicy);
     if (openSession?.url) {
       await db.update(checkoutConsentsTable).set({ stripeSessionId: openSession.id })
         .where(eq(checkoutConsentsTable.id, consent.id));
@@ -414,13 +444,28 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
       "metadata[plan]": "premium_monthly",
       "metadata[policyVersion]": POLICY_VERSION,
       "metadata[currencyPolicy]": "usd-only-v1",
+      "metadata[trialPolicy]": checkoutPolicy,
       "adaptive_pricing[enabled]": "false",
-      "custom_text[submit][message]": "Monthly subscription fees are non-refundable except where applicable law requires otherwise. Cancel future renewals in the billing portal.",
+      "custom_text[submit][message]": trialEligible
+        ? "Trial starts after checkout; then US$9.99/month unless cancelled."
+        : "US$9.99/month until cancelled. Fees are non-refundable except where required by law.",
       "subscription_data[metadata][clerkUserId]": userId,
       "subscription_data[metadata][plan]": "premium_monthly",
+      "subscription_data[metadata][trialPolicy]": checkoutPolicy,
       success_url: returnUrls.successUrl,
       cancel_url: returnUrls.cancelUrl,
     });
+    if (trialEligible) {
+      form.set("payment_method_collection", "always");
+      form.set(
+        "subscription_data[trial_period_days]",
+        String(FIRST_SUBSCRIPTION_TRIAL_DAYS),
+      );
+      form.set(
+        "subscription_data[trial_settings][end_behavior][missing_payment_method]",
+        "cancel",
+      );
+    }
     const session = await stripeRequest<{ id: string; url: string | null }>(
       "/v1/checkout/sessions",
       {

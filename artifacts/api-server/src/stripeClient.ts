@@ -17,6 +17,7 @@ export type StripePrice = {
 export type StripeSubscription = {
   id: string;
   status: string;
+  metadata?: Record<string, string>;
   current_period_end?: number;
   cancel_at_period_end?: boolean;
   cancel_at?: number | null;

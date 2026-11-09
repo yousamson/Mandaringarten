@@ -42,6 +42,7 @@ export function MembershipPanel({ l }: { l: Language }) {
   const returnedFromPortal = new URLSearchParams(window.location.search).get('billing') === 'returned';
   const active = isAdmin || (status.data?.isPremium ?? false);
   const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid'].includes(status.data?.subscriptionStatus ?? '');
+  const isTrialing = status.data?.subscriptionStatus === 'trialing';
   const checking = Boolean(isSignedIn && (account.query.isLoading || (!account.data && !account.query.isError) || (!isAdmin && status.isLoading)));
   useEffect(() => {
     if (!plan.isLoading) {
@@ -144,7 +145,11 @@ export function MembershipPanel({ l }: { l: Language }) {
       <p className="panel-desc" data-testid="text-membership-state">{membershipDescription}</p>
       {account.query.isError && isSignedIn ? <div className="alert"><p>{tr(l, 'We could not confirm account access.', '目前無法確認帳戶權限。', '目前无法确认账户权限。')}</p><button className="button-secondary" onClick={() => void account.query.refetch()} data-testid="button-retry-access">{t.retry}</button></div> : null}
       {!isAdmin && status.isError && isSignedIn ? <div className="alert"><p>{t.failed}</p><button className="button-secondary" onClick={() => void status.refetch()} data-testid="button-retry-billing">{t.retry}</button></div> : null}
-      {!isAdmin && status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? `${status.data.cancelAtPeriodEnd ? tr(l, 'Access until', '可使用至', '可使用至') : t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
+      {!isAdmin && status.data && isSignedIn && active ? <div className="setting-row"><div><div className="setting-name">{isTrialing ? tr(l, 'Free trial', '免費試用中', '免费试用中') : status.data.cancelAtPeriodEnd ? t.cancelAt : t.active}</div><div className="setting-detail">{date ? isTrialing
+        ? status.data.cancelAtPeriodEnd
+          ? tr(l, `Trial ends ${date}; renewal is cancelled.`, `試用期於 ${date} 結束，已取消續訂。`, `试用期于 ${date} 结束，已取消续订。`)
+          : tr(l, `Trial ends ${date}; first charge is US$9.99/month unless cancelled.`, `試用期於 ${date} 結束；如未取消，將首次扣款 US$9.99/月。`, `试用期于 ${date} 结束；如未取消，将首次扣款 US$9.99/月。`)
+        : `${status.data.cancelAtPeriodEnd ? tr(l, 'Access until', '可使用至', '可使用至') : t.due}: ${date}` : status.data.subscriptionStatus}</div></div><span className="status-pill">{t.premiumActive}</span></div> : null}
       {!isAdmin && !plan.isError ? <div className="plan-price">{plan.isLoading && planTimedOut ? tr(l, 'The subscription price is taking longer to load.', '月費方案載入較慢。', '月费方案加载较慢。') : plan.isLoading ? tr(l, 'Loading subscription price…', '正在載入訂閱價格…', '正在加载订阅价格…') : priceLabel} <small>{t.perMonth}</small></div> : null}
       {!isAdmin && plan.isLoading && planTimedOut ? <div className="alert" role="status"><button className="button-secondary" onClick={() => { setPlanTimedOut(false); void plan.refetch(); }} data-testid="button-retry-plan-timeout">{t.retry}</button></div> : null}
       {!isAdmin && plan.isError ? <div className="alert"><p>{billingCopy[l].priceUnavailable}</p><button className="button-secondary" onClick={() => void plan.refetch()}>{t.retry}</button></div> : null}
@@ -166,7 +171,7 @@ export function MembershipPanel({ l }: { l: Language }) {
                 <ConsentCheck checked={privacyOk} onChange={setPrivacyOk} testId="check-checkout-privacy"><PrivacyAgreement l={l} /></ConsentCheck>
                 <ConsentCheck checked={disclaimerOk} onChange={setDisclaimerOk} testId="check-checkout-disclaimer"><DisclaimerAgreement l={l} /></ConsentCheck>
                 <ConsentCheck checked={noRefundOk} onChange={setNoRefundOk} testId="check-checkout-norefund">
-                  {tr(l, 'I understand membership renews monthly until cancelled, cancellation takes effect at the end of the paid period, and payments are non-refundable except where mandatory law requires a refund or I was charged in error (see the ', '我了解會員每月自動續訂直至取消，取消於已付費期間結束時生效，且費用恕不退還；但強制性法律規定須退款或錯誤收費者除外（詳見', '我了解会员每月自动续订直至取消，取消于已付费期间结束时生效，且费用恕不退还；但强制性法律规定须退款或错误收费者除外（详见')}<DocLink to="/disclaimer">{disclaimerName(l)}</DocLink>{tr(l, ').', '）。', '）。')}
+                  {tr(l, 'For an eligible first subscription, Stripe checkout collects a payment method and starts a 3-day free trial. No monthly subscription fee is charged during the trial. After 3 days, it automatically renews at US$9.99/month unless you cancel before the trial ends. Previously subscribed accounts are not eligible. Membership renews monthly until cancelled; cancellation takes effect at the end of the current trial or paid period. Subscription fees are non-refundable except where mandatory law requires a refund or you were charged in error (see the ', '首次符合資格的訂閱，Stripe 結帳會登記付款方式並開始 3 天免費試用；試用期間不收月費。3 天期滿後，訂閱會按 US$9.99/月自動續訂，除非您在試用期結束前自行取消。曾經訂閱的帳戶不適用首次試用。會員訂閱會每月續訂直至取消；取消於目前試用期或已付費期間結束時生效。已繳訂閱費用恕不退還，但強制性法律規定須退款或錯誤收費者除外（詳見', '首次符合资格的订阅，Stripe 结账会登记付款方式并开始 3 天免费试用；试用期间不收月费。3 天期满后，订阅会按 US$9.99/月自动续订，除非您在试用期结束前自行取消。曾经订阅的账户不适用首次试用。会员订阅会每月续订直至取消；取消于当前试用期或已付费期间结束时生效。已缴订阅费用恕不退还，但强制性法律规定须退款或错误收费者除外（详见')}<DocLink to="/disclaimer">{disclaimerName(l)}</DocLink>{tr(l, ').', '）。', '）。')}
                 </ConsentCheck>
               </div>
               <button className={`button-primary ${busy ? 'busy' : ''}`} onClick={initiateCheckout} disabled={!canCheckout} data-testid="button-upgrade">{busy ? t.loading : checkoutResult === 'cancelled' ? t.retry : t.upgrade} <ArrowRight size={15} /></button>

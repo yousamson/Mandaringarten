@@ -346,6 +346,67 @@ test("checkout submits the exact test price returned by successful plan validati
       globalThis.__billingRouteTestState.checkoutForms[0].get("line_items[0][price]"),
       "price_checkout_validation",
     );
+    assert.equal(
+      globalThis.__billingRouteTestState.checkoutForms[0].get("payment_method_collection"),
+      "always",
+    );
+    assert.equal(
+      globalThis.__billingRouteTestState.checkoutForms[0].get("subscription_data[trial_period_days]"),
+      "3",
+    );
+    assert.equal(
+      globalThis.__billingRouteTestState.checkoutForms[0].get("subscription_data[trial_settings][end_behavior][missing_payment_method]"),
+      "cancel",
+    );
+    assert.equal(
+      globalThis.__billingRouteTestState.checkoutForms[0].get("metadata[trialPolicy]"),
+      "first-subscription-3-day-v1",
+    );
+    assert.match(
+      globalThis.__billingRouteTestState.checkoutForms[0].get("custom_text[submit][message]"),
+      /US\$9\.99\/month/,
+    );
+  } finally {
+    if (previousMode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousMode;
+  }
+});
+
+test("a previous subscription skips the first-subscription trial", async () => {
+  const previousMode = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
+  setFixture(fixturePrice);
+  globalThis.__billingRouteTestState.subscriptions = [{
+    id: "sub_previous",
+    status: "canceled",
+    metadata: { plan: "premium_monthly" },
+    items: { data: [{ price: { id: "price_previous_monthly" } }] },
+  }];
+
+  try {
+    const response = await fetch(`${baseUrl}/api/billing/checkout`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost:3000",
+      },
+      body: JSON.stringify({
+        returnUrl: "http://localhost:3000/parent",
+        privacyAccepted: true,
+        disclaimerAccepted: true,
+        noRefundAccepted: true,
+        policyVersion: "2026-10-29.1",
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    const checkoutForm = globalThis.__billingRouteTestState.checkoutForms[0];
+    assert.equal(checkoutForm.has("subscription_data[trial_period_days]"), false);
+    assert.equal(checkoutForm.has("payment_method_collection"), false);
+    assert.equal(
+      checkoutForm.get("metadata[trialPolicy]"),
+      "monthly-no-trial-v1",
+    );
   } finally {
     if (previousMode === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousMode;
@@ -436,7 +497,11 @@ test("declined incomplete checkout can be retried and activates only after Strip
       mode: "subscription",
       status: "open",
       url: "https://checkout.stripe.test/retry",
-      metadata: { currencyPolicy: "usd-only-v1", policyVersion: "test-policy" },
+      metadata: {
+        currencyPolicy: "usd-only-v1",
+        policyVersion: "test-policy",
+        trialPolicy: "first-subscription-3-day-v1",
+      },
     }];
 
     const reuseResponse = await createCheckout();

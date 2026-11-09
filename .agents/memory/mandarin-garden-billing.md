@@ -61,6 +61,12 @@ Before sandbox testing, verify Stripe mode through the application's connector t
 
 **How to apply:** read the selected price's `livemode` through the same transport as checkout before submitting any test payment. If it is live, stop and resolve development connection routing without modifying live subscriptions.
 
+Eligible first-time subscribers receive one 3-day trial after completing Stripe Checkout with a payment method. No monthly subscription fee is collected during the trial; after it ends, Stripe renews at US$9.99/month unless the member cancels before the trial ends. Previously completed subscriptions are not eligible; incomplete or expired checkout attempts do not consume the trial.
+
+**Why:** the user chose a three-day trial, starting only after Stripe collects a payment method, with automatic monthly renewal and cancellation required to avoid the first charge.
+
+**How to apply:** disclose the trial length, payment method requirement, first charge timing, monthly price, and cancellation requirement before registration and checkout. Do not imply account creation alone starts the trial. Check subscription history before offering the one-time trial, and show the trial end/first charge date after checkout.
+
 Public daily challenges should use existing free lesson words and age-stage samples, not the complete paid vocabulary banks.
 
 **Why:** the daily teaser should bring in visitors without gradually giving away the member-only word libraries.
