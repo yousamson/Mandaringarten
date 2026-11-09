@@ -8,25 +8,26 @@ import {
   useGetLearningProgress,
   issueLearningRound,
   recordLearningRound,
+  recordGardenCare,
   useUpdateLearningProgress,
 } from '@workspace/api-client-react';
-import type { LearningProgress, LearningRound, LearningRoundInput, LearningRoundRequest } from '@workspace/api-client-react';
+import type { GardenCareInput, LearningProgress, LearningRound, LearningRoundInput, LearningRoundRequest } from '@workspace/api-client-react';
 import { acknowledgeRound, OUTBOX_EVENT, pendingRounds, queueRound } from '@/lib/progress-outbox';
 import { toStage, type StageNumber } from '@/lib/playground-content';
 import { useAccountAccess } from '@/hooks/use-account';
+import { XP_COMPLETE, XP_PER_CORRECT, XP_PER_INCORRECT, type GardenCareType, type GardenStatus } from '@workspace/learning-content';
 
-export const XP_COMPLETE = 100;
-export const XP_PER_CORRECT = 5;
+export { XP_COMPLETE, XP_PER_CORRECT, XP_PER_INCORRECT };
 
-export type NormalizedProgress = { selectedStage: StageNumber; xpByStage: [number, number, number, number]; totalXp: number };
+export type NormalizedProgress = { selectedStage: StageNumber; xpByStage: [number, number, number, number]; totalXp: number; garden: GardenStatus };
 
-export function normalizeProgress(data: { selectedStage: number; xpByStage: number[] } | undefined | null): NormalizedProgress | null {
+export function normalizeProgress(data: LearningProgress | undefined | null): NormalizedProgress | null {
   if (!data) return null;
   const xp = [0, 1, 2, 3].map((i) => {
     const v = Number(data.xpByStage?.[i] ?? 0);
     return Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
   }) as [number, number, number, number];
-  return { selectedStage: toStage(data.selectedStage), xpByStage: xp, totalXp: xp.reduce((a, b) => a + b, 0) };
+  return { selectedStage: toStage(data.selectedStage), xpByStage: xp, totalXp: xp.reduce((a, b) => a + b, 0), garden: data.garden };
 }
 
 export function useMembership() {
@@ -90,16 +91,17 @@ export function useRecordRound(uid: string | null) {
       const token = await getToken();
       if (!token || currentUser.current !== uid) throw new Error('Sign in to save progress.');
       const result = await recordLearningRound(data, { headers: { Authorization: `Bearer ${token}` } });
-      if (!result.correct) throw new Error('The answer was not confirmed by the server.');
       try { acknowledgeRound(uid, data.roundId, data.questionId); } catch { /* replay is server-idempotent */ }
       if (currentUser.current === uid) {
         client.setQueryData<LearningProgress>(progressQueryKey(uid), (current) => current ? {
-          selectedStage: current.selectedStage,
-          xpByStage: result.xpByStage.map((xp, index) => Math.max(xp, current.xpByStage[index] ?? 0)),
-        } : { selectedStage: result.selectedStage, xpByStage: result.xpByStage });
+          ...current,
+          selectedStage: result.selectedStage,
+          xpByStage: result.xpByStage,
+          garden: result.garden,
+        } : { selectedStage: result.selectedStage, xpByStage: result.xpByStage, garden: result.garden });
         void client.invalidateQueries({ queryKey: progressQueryKey(uid) });
       }
-      return { selectedStage: result.selectedStage, xpByStage: result.xpByStage };
+      return result;
     },
   });
   const record = (input: LearningRoundInput, callbacks?: { onSuccess?: () => void; onError?: () => void }) => {
@@ -112,6 +114,29 @@ export function useRecordRound(uid: string | null) {
     );
   };
   return { record, replay: mutation.mutateAsync, isPending: mutation.isPending };
+}
+
+export function useGardenCare(uid: string | null) {
+  const client = useQueryClient();
+  const { getToken, userId } = useAuth();
+  const currentUser = useRef(userId);
+  currentUser.current = userId;
+  const mutation = useMutation({
+    mutationFn: async (type: GardenCareType) => {
+      if (!uid || currentUser.current !== uid) throw new Error('Account changed.');
+      const token = await getToken();
+      if (!token || currentUser.current !== uid) throw new Error('Sign in to care for the garden.');
+      return recordGardenCare({ type } satisfies GardenCareInput, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: (result) => {
+      if (!uid || currentUser.current !== uid) return;
+      client.setQueryData(progressQueryKey(uid), result);
+      void client.invalidateQueries({ queryKey: progressQueryKey(uid) });
+    },
+  });
+  return { care: mutation.mutateAsync, isPending: mutation.isPending, error: mutation.error, reset: mutation.reset };
 }
 
 export function useIssueLearningRound(uid: string | null) {

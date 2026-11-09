@@ -15,7 +15,7 @@ import { useUser } from '@clerk/expo';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen, PageTitle, Surface } from '@/components/LearningUI';
-import { useLearning, XP_PER_CORRECT } from '@/context/LearningContext';
+import { useLearning, XP_PER_CORRECT, XP_PER_INCORRECT } from '@/context/LearningContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useColors } from '@/hooks/useColors';
 import { useSubscription } from '@/lib/subscriptions';
@@ -101,7 +101,7 @@ export default function GamesScreen() {
   const [focusTargetVisible, setFocusTargetVisible] = useState(false);
   const [built, setBuilt] = useState<number[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
-  const [savedCount, setSavedCount] = useState(0);
+  const [answerXpDeltas, setAnswerXpDeltas] = useState<Record<string, number>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [pendingAnswer, setPendingAnswer] = useState<{
     roundId: string;
@@ -121,6 +121,7 @@ export default function GamesScreen() {
   }, [freeQuestions, round, script, subscription.isPremium]);
   const question = questions[index];
   const finished = questions.length > 0 && index >= questions.length;
+  const roundXpDelta = Object.values(answerXpDeltas).reduce((sum, delta) => sum + delta, 0);
 
   useEffect(() => {
     if (question?.kind !== 'choice' || question.mode !== 'focus') {
@@ -152,7 +153,7 @@ export default function GamesScreen() {
     setPicked(null);
     setBuilt([]);
     setCorrectCount(0);
-    setSavedCount(0);
+    setAnswerXpDeltas({});
     setSaveState('idle');
     setPendingAnswer(null);
     if (!subscription.isPremium) {
@@ -185,8 +186,7 @@ export default function GamesScreen() {
   const answer = (value: string) => {
     if (!question || picked || (question.mode === 'focus' && focusTargetVisible)) return;
     setPicked(value);
-    if (value !== question.answer) return;
-    setCorrectCount((count) => count + 1);
+    if (value === question.answer) setCorrectCount((count) => count + 1);
     if (!round) return;
     const request = { roundId: round.roundId, questionId: question.id, answer: value };
     setPendingAnswer(request);
@@ -195,16 +195,14 @@ export default function GamesScreen() {
       { data: request },
       {
         onSuccess: (result) => {
-          if (result.correct) {
-            setSavedCount((count) => count + 1);
-            setSaveState('saved');
-            setPendingAnswer(null);
-            void queryClient.invalidateQueries({
-              queryKey: [...getGetLearningProgressQueryKey(), user?.id ?? 'signed-out'],
-            });
-          } else {
-            setSaveState('failed');
-          }
+          setAnswerXpDeltas((current) => Object.hasOwn(current, question.id)
+            ? current
+            : { ...current, [question.id]: result.xpDelta });
+          setSaveState('saved');
+          setPendingAnswer(null);
+          void queryClient.invalidateQueries({
+            queryKey: [...getGetLearningProgressQueryKey(), user?.id ?? 'signed-out'],
+          });
         },
         onError: () => setSaveState('failed'),
       },
@@ -226,16 +224,14 @@ export default function GamesScreen() {
       { data: pendingAnswer },
       {
         onSuccess: (result) => {
-          if (result.correct) {
-            setSavedCount((count) => count + 1);
-            setSaveState('saved');
-            setPendingAnswer(null);
-            void queryClient.invalidateQueries({
-              queryKey: [...getGetLearningProgressQueryKey(), user?.id ?? 'signed-out'],
-            });
-          } else {
-            setSaveState('failed');
-          }
+          setAnswerXpDeltas((current) => Object.hasOwn(current, pendingAnswer.questionId)
+            ? current
+            : { ...current, [pendingAnswer.questionId]: result.xpDelta });
+          setSaveState('saved');
+          setPendingAnswer(null);
+          void queryClient.invalidateQueries({
+            queryKey: [...getGetLearningProgressQueryKey(), user?.id ?? 'signed-out'],
+          });
         },
         onError: () => setSaveState('failed'),
       },
@@ -407,7 +403,7 @@ export default function GamesScreen() {
           <Surface style={styles.membershipNote}>
             <Ionicons name="lock-closed-outline" size={18} color={colors.warmInk} />
             <Text style={[styles.modeHint, { color: colors.mutedForeground, flex: 1 }]}>
-              {t('Members can choose any stage and play all six modes. Correct answers earn 5 XP.', '會員可自選階段及體驗六種遊戲；答對每題可得 5 XP。', '会员可自选阶段及体验六种游戏；答对每题可得 5 XP。')}
+              {t('Members can choose any stage and play all six modes. Correct answers earn 1 XP; wrong answers deduct 1 XP.', '會員可自選階段及體驗六種遊戲；答對每題得 1 XP，答錯扣 1 XP。', '会员可自选阶段及体验六种游戏；答对每题得 1 XP，答错扣 1 XP。')}
             </Text>
           </Surface>
         ) : null}
@@ -462,7 +458,7 @@ export default function GamesScreen() {
               </Text>
               <Text style={[styles.resultXp, { color: colors.primary }]}>
                 {subscription.isPremium
-                  ? `+${savedCount * XP_PER_CORRECT} XP ${t('saved', '已儲存', '已保存')}`
+                  ? `${roundXpDelta > 0 ? '+' : ''}${roundXpDelta} XP ${t('net change', '淨變化', '净变化')}`
                   : t('Free practice · XP is saved with membership', '免費練習 · 會員答題 XP 會儲存至帳戶', '免费练习 · 会员答题 XP 会保存到账户')}
               </Text>
               {subscription.isPremium && saveState === 'saving' ? (
@@ -486,7 +482,7 @@ export default function GamesScreen() {
                     {picked === question.answer
                       ? subscription.isPremium
                         ? saveState === 'saved'
-                          ? `+${XP_PER_CORRECT} XP ${t('saved', '已儲存', '已保存')} · `
+                          ? `${(answerXpDeltas[question.id] ?? (picked === question.answer ? XP_PER_CORRECT : -XP_PER_INCORRECT)) > 0 ? '+' : ''}${answerXpDeltas[question.id] ?? (picked === question.answer ? XP_PER_CORRECT : -XP_PER_INCORRECT)} XP ${t('saved', '已儲存', '已保存')} · `
                           : saveState === 'saving'
                             ? `${t('Saving progress…', '正在儲存進度…', '正在保存进度…')} · `
                             : ''

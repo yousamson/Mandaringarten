@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GardenState } from './gardenState';
 
 export interface LearningAnswerResult {
   correct: boolean;
@@ -19,4 +20,10 @@ export interface LearningAnswerResult {
      * @items.minimum 0
      */
   xpByStage: number[];
+  /**
+     * @minimum -1
+     * @maximum 1
+     */
+  xpDelta: number;
+  garden: GardenState;
 }

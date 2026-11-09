@@ -92,11 +92,32 @@ export const getLearningProgressResponseXpByStageItemMin = 0;
 export const getLearningProgressResponseXpByStageMin = 4;
 export const getLearningProgressResponseXpByStageMax = 4;
 
+export const getLearningProgressResponseGardenGrowthDaysMin = 0;
+export const getLearningProgressResponseGardenGrowthDaysMax = 30;
+
+export const getLearningProgressResponseGardenStreakDaysMin = 0;
+export const getLearningProgressResponseGardenStreakDaysMax = 30;
+
+export const getLearningProgressResponseGardenDaysSinceCareMin = 0;
+
+export const getLearningProgressResponseGardenXpNeededMin = 0;
+export const getLearningProgressResponseGardenXpNeededMax = 20;
+
 
 
 export const GetLearningProgressResponse = zod.object({
   "selectedStage": zod.int().min(1).max(getLearningProgressResponseSelectedStageMax),
-  "xpByStage": zod.array(zod.int().min(getLearningProgressResponseXpByStageItemMin)).min(getLearningProgressResponseXpByStageMin).max(getLearningProgressResponseXpByStageMax)
+  "xpByStage": zod.array(zod.int().min(getLearningProgressResponseXpByStageItemMin)).min(getLearningProgressResponseXpByStageMin).max(getLearningProgressResponseXpByStageMax),
+  "garden": zod.object({
+  "growthDays": zod.int().min(getLearningProgressResponseGardenGrowthDaysMin).max(getLearningProgressResponseGardenGrowthDaysMax),
+  "streakDays": zod.int().min(getLearningProgressResponseGardenStreakDaysMin).max(getLearningProgressResponseGardenStreakDaysMax),
+  "lastCareDate": zod.coerce.date().nullable(),
+  "lastCareType": zod.union([zod.literal('water'),zod.literal('fertilize'),zod.literal(null)]).nullable(),
+  "daysSinceCare": zod.int().min(getLearningProgressResponseGardenDaysSinceCareMin).nullable(),
+  "caredToday": zod.boolean(),
+  "careAvailable": zod.boolean(),
+  "xpNeeded": zod.int().min(getLearningProgressResponseGardenXpNeededMin).max(getLearningProgressResponseGardenXpNeededMax)
+})
 })
 
 
@@ -119,11 +140,32 @@ export const updateLearningProgressResponseXpByStageItemMin = 0;
 export const updateLearningProgressResponseXpByStageMin = 4;
 export const updateLearningProgressResponseXpByStageMax = 4;
 
+export const updateLearningProgressResponseGardenGrowthDaysMin = 0;
+export const updateLearningProgressResponseGardenGrowthDaysMax = 30;
+
+export const updateLearningProgressResponseGardenStreakDaysMin = 0;
+export const updateLearningProgressResponseGardenStreakDaysMax = 30;
+
+export const updateLearningProgressResponseGardenDaysSinceCareMin = 0;
+
+export const updateLearningProgressResponseGardenXpNeededMin = 0;
+export const updateLearningProgressResponseGardenXpNeededMax = 20;
+
 
 
 export const UpdateLearningProgressResponse = zod.object({
   "selectedStage": zod.int().min(1).max(updateLearningProgressResponseSelectedStageMax),
-  "xpByStage": zod.array(zod.int().min(updateLearningProgressResponseXpByStageItemMin)).min(updateLearningProgressResponseXpByStageMin).max(updateLearningProgressResponseXpByStageMax)
+  "xpByStage": zod.array(zod.int().min(updateLearningProgressResponseXpByStageItemMin)).min(updateLearningProgressResponseXpByStageMin).max(updateLearningProgressResponseXpByStageMax),
+  "garden": zod.object({
+  "growthDays": zod.int().min(updateLearningProgressResponseGardenGrowthDaysMin).max(updateLearningProgressResponseGardenGrowthDaysMax),
+  "streakDays": zod.int().min(updateLearningProgressResponseGardenStreakDaysMin).max(updateLearningProgressResponseGardenStreakDaysMax),
+  "lastCareDate": zod.coerce.date().nullable(),
+  "lastCareType": zod.union([zod.literal('water'),zod.literal('fertilize'),zod.literal(null)]).nullable(),
+  "daysSinceCare": zod.int().min(updateLearningProgressResponseGardenDaysSinceCareMin).nullable(),
+  "caredToday": zod.boolean(),
+  "careAvailable": zod.boolean(),
+  "xpNeeded": zod.int().min(updateLearningProgressResponseGardenXpNeededMin).max(updateLearningProgressResponseGardenXpNeededMax)
+})
 })
 
 
@@ -144,12 +186,37 @@ export const recordLearningRoundResponseXpByStageItemMin = 0;
 export const recordLearningRoundResponseXpByStageMin = 4;
 export const recordLearningRoundResponseXpByStageMax = 4;
 
+export const recordLearningRoundResponseXpDeltaMin = -1;
+export const recordLearningRoundResponseXpDeltaMax = 1;
+
+export const recordLearningRoundResponseGardenGrowthDaysMin = 0;
+export const recordLearningRoundResponseGardenGrowthDaysMax = 30;
+
+export const recordLearningRoundResponseGardenStreakDaysMin = 0;
+export const recordLearningRoundResponseGardenStreakDaysMax = 30;
+
+export const recordLearningRoundResponseGardenDaysSinceCareMin = 0;
+
+export const recordLearningRoundResponseGardenXpNeededMin = 0;
+export const recordLearningRoundResponseGardenXpNeededMax = 20;
+
 
 
 export const RecordLearningRoundResponse = zod.object({
   "correct": zod.boolean(),
   "selectedStage": zod.int().min(1).max(recordLearningRoundResponseSelectedStageMax),
-  "xpByStage": zod.array(zod.int().min(recordLearningRoundResponseXpByStageItemMin)).min(recordLearningRoundResponseXpByStageMin).max(recordLearningRoundResponseXpByStageMax)
+  "xpByStage": zod.array(zod.int().min(recordLearningRoundResponseXpByStageItemMin)).min(recordLearningRoundResponseXpByStageMin).max(recordLearningRoundResponseXpByStageMax),
+  "xpDelta": zod.int().min(recordLearningRoundResponseXpDeltaMin).max(recordLearningRoundResponseXpDeltaMax),
+  "garden": zod.object({
+  "growthDays": zod.int().min(recordLearningRoundResponseGardenGrowthDaysMin).max(recordLearningRoundResponseGardenGrowthDaysMax),
+  "streakDays": zod.int().min(recordLearningRoundResponseGardenStreakDaysMin).max(recordLearningRoundResponseGardenStreakDaysMax),
+  "lastCareDate": zod.coerce.date().nullable(),
+  "lastCareType": zod.union([zod.literal('water'),zod.literal('fertilize'),zod.literal(null)]).nullable(),
+  "daysSinceCare": zod.int().min(recordLearningRoundResponseGardenDaysSinceCareMin).nullable(),
+  "caredToday": zod.boolean(),
+  "careAvailable": zod.boolean(),
+  "xpNeeded": zod.int().min(recordLearningRoundResponseGardenXpNeededMin).max(recordLearningRoundResponseGardenXpNeededMax)
+})
 })
 
 
@@ -190,6 +257,46 @@ export const IssueLearningRoundResponse = zod.object({
   "chunks": zod.array(zod.string()).optional(),
   "clue": zod.string().optional()
 })).min(1).max(issueLearningRoundResponseQuestionsMax)
+})
+
+
+export const RecordGardenCareBody = zod.object({
+  "type": zod.enum(['water', 'fertilize'])
+})
+
+export const recordGardenCareResponseSelectedStageMax = 4;
+
+export const recordGardenCareResponseXpByStageItemMin = 0;
+
+export const recordGardenCareResponseXpByStageMin = 4;
+export const recordGardenCareResponseXpByStageMax = 4;
+
+export const recordGardenCareResponseGardenGrowthDaysMin = 0;
+export const recordGardenCareResponseGardenGrowthDaysMax = 30;
+
+export const recordGardenCareResponseGardenStreakDaysMin = 0;
+export const recordGardenCareResponseGardenStreakDaysMax = 30;
+
+export const recordGardenCareResponseGardenDaysSinceCareMin = 0;
+
+export const recordGardenCareResponseGardenXpNeededMin = 0;
+export const recordGardenCareResponseGardenXpNeededMax = 20;
+
+
+
+export const RecordGardenCareResponse = zod.object({
+  "selectedStage": zod.int().min(1).max(recordGardenCareResponseSelectedStageMax),
+  "xpByStage": zod.array(zod.int().min(recordGardenCareResponseXpByStageItemMin)).min(recordGardenCareResponseXpByStageMin).max(recordGardenCareResponseXpByStageMax),
+  "garden": zod.object({
+  "growthDays": zod.int().min(recordGardenCareResponseGardenGrowthDaysMin).max(recordGardenCareResponseGardenGrowthDaysMax),
+  "streakDays": zod.int().min(recordGardenCareResponseGardenStreakDaysMin).max(recordGardenCareResponseGardenStreakDaysMax),
+  "lastCareDate": zod.coerce.date().nullable(),
+  "lastCareType": zod.union([zod.literal('water'),zod.literal('fertilize'),zod.literal(null)]).nullable(),
+  "daysSinceCare": zod.int().min(recordGardenCareResponseGardenDaysSinceCareMin).nullable(),
+  "caredToday": zod.boolean(),
+  "careAvailable": zod.boolean(),
+  "xpNeeded": zod.int().min(recordGardenCareResponseGardenXpNeededMin).max(recordGardenCareResponseGardenXpNeededMax)
+})
 })
 
 

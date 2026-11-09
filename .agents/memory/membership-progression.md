@@ -9,6 +9,12 @@ Premium monthly membership includes all four stages. Paid parents may freely sel
 
 **How to apply:** gate paid learning content by subscription, not earned XP. Save each correct web answer against the stage actually played with a stable retry ID, and update the visible stage total after saving. Use account-owned saved progress for stage selection and completion. Across all website pages, call the product 學習樂園 and avoid 課程/课程 and 費用/费用; use learning content and 訂閱/订阅 instead.
 
+For the garden game, each correct answer earns 1 XP and each incorrect answer removes 1 XP, with balances never below zero. Watering or fertilizing costs 20 XP from the currently selected learning stage. One care action is allowed daily; 10 consecutive care days produce the first bloom and 30 produce a full garden. Missed care gradually reduces growth after five days and returns the garden to seed after 30 days.
+
+**Why:** the user explicitly set the answer reward, penalty, care cost, daily growth milestones, and missed-day decay behavior.
+
+**How to apply:** keep the server ledger authoritative across web and Expo, preserve old XP records during migrations, and use the same selected-stage balance for care deductions.
+
 **Why:** the user wants consistent garden and subscription terminology throughout the website.
 
 The four age stages are 2–3, 4–5, 6–8 and 9–12 years. Free reading cards change with the selected age stage.

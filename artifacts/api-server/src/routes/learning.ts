@@ -3,13 +3,22 @@ import { randomUUID } from "node:crypto";
 import { getAuth } from "@clerk/express";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { db, learningChallengesTable, learningProgressTable, learningRoundsTable, legalConsentsTable } from "@workspace/db";
-import { AcceptLegalConsentBody, IssueLearningRoundBody, IssueLearningRoundResponse, RecordLearningRoundBody, RecordLearningRoundResponse, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
+import { AcceptLegalConsentBody, IssueLearningRoundBody, IssueLearningRoundResponse, RecordLearningRoundBody, RecordLearningRoundResponse, RecordGardenCareBody, UpdateLearningProgressBody, GetLearningProgressResponse } from "@workspace/api-zod";
 import { buildRound, type GameMode, type Script } from "@workspace/learning-content/games";
+import {
+  advanceGardenCare,
+  getGardenStatus,
+  GARDEN_CARE_XP_COST,
+  XP_PER_CORRECT,
+  XP_PER_INCORRECT,
+  type GardenCareType,
+  type GardenProgress,
+} from "@workspace/learning-content";
 import { hasCurrentConsent, POLICY_VERSION } from "../legal";
 import { hasPremiumMembership } from "./billing";
 import { withAccountWrite } from "../account-lifecycle";
 import { isAdministrator } from "../admin";
-import { mergeLegacyProgress } from "../learning-progress";
+import { calculateXpBalances, deriveLegacyBaseline, mergeLegacyProgress } from "../learning-progress";
 
 const router: IRouter = Router();
 export const LEARNING_CHALLENGE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -28,8 +37,62 @@ router.use(["/learning", "/legal"], (req, res, next) => {
   next();
 });
 
-function output(row: typeof learningProgressTable.$inferSelect) {
-  return GetLearningProgressResponse.parse({ selectedStage: row.selectedStage, xpByStage: row.xpByStage });
+function gardenProgress(row: typeof learningProgressTable.$inferSelect): GardenProgress {
+  return {
+    growthDays: row.gardenGrowthDays,
+    streakDays: row.gardenStreakDays,
+    lastCareDate: row.gardenLastCareDate,
+    lastCareType: row.gardenLastCareType === "water" || row.gardenLastCareType === "fertilize"
+      ? row.gardenLastCareType
+      : null,
+  };
+}
+
+function output(row: typeof learningProgressTable.$inferSelect, now = new Date()) {
+  const selectedStageXp = row.xpByStage[row.selectedStage - 1] ?? 0;
+  return GetLearningProgressResponse.parse({
+    selectedStage: row.selectedStage,
+    xpByStage: row.xpByStage,
+    garden: getGardenStatus(gardenProgress(row), now.toISOString().slice(0, 10), selectedStageXp),
+  });
+}
+
+async function xpDeltaByStage(tx: Parameters<typeof withAccountWrite>[1] extends (tx: infer T) => Promise<unknown> ? T : never, userId: string) {
+  const rows = await tx.select({
+    stage: learningRoundsTable.stage,
+    xp: sql<number>`coalesce(sum(${learningRoundsTable.xpDelta}), 0)`.mapWith(Number),
+  }).from(learningRoundsTable)
+    .where(eq(learningRoundsTable.clerkUserId, userId))
+    .groupBy(learningRoundsTable.stage);
+  const totals = [0, 0, 0, 0];
+  for (const row of rows) totals[row.stage - 1] = row.xp;
+  return totals;
+}
+
+async function ensureXpLedger(
+  tx: Parameters<typeof withAccountWrite>[1] extends (tx: infer T) => Promise<unknown> ? T : never,
+  row: typeof learningProgressTable.$inferSelect,
+) {
+  if (row.xpLedgerVersion >= 1) return row;
+  const history = await xpDeltaByStage(tx, row.clerkUserId);
+  const [migrated] = await tx.update(learningProgressTable).set({
+    legacyXpByStage: deriveLegacyBaseline(row.xpByStage, history),
+    xpLedgerVersion: 1,
+    updatedAt: new Date(),
+  }).where(eq(learningProgressTable.clerkUserId, row.clerkUserId)).returning();
+  return migrated;
+}
+
+async function reconcileXp(
+  tx: Parameters<typeof withAccountWrite>[1] extends (tx: infer T) => Promise<unknown> ? T : never,
+  row: typeof learningProgressTable.$inferSelect,
+) {
+  const history = await xpDeltaByStage(tx, row.clerkUserId);
+  const xpByStage = calculateXpBalances(row.legacyXpByStage, history, row.xpSpentByStage);
+  if (xpByStage.every((xp, index) => xp === row.xpByStage[index])) return row;
+  const [updated] = await tx.update(learningProgressTable).set({ xpByStage, updatedAt: new Date() })
+    .where(eq(learningProgressTable.clerkUserId, row.clerkUserId)).returning();
+  return updated;
 }
 
 router.get("/legal/consent", async (req, res) => {
@@ -57,8 +120,8 @@ router.get("/learning/progress", async (req, res) => {
   }
   const progress = await withAccountWrite(userId, async (tx) => {
     await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
-    const [row] = await tx.select().from(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
-    return row;
+    const [row] = await tx.select().from(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId)).for("update");
+    return reconcileXp(tx, await ensureXpLedger(tx, row));
   });
   res.json(output(progress));
 });
@@ -83,24 +146,22 @@ router.put("/learning/progress", async (req, res) => {
   const userId = getAuth(req).userId!;
   const saved = await withAccountWrite(userId, async (tx) => {
     await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
-    const [current] = await tx.select().from(learningProgressTable)
+    const [stored] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
-    let xpByStage = [...current.xpByStage];
+    const current = await reconcileXp(tx, await ensureXpLedger(tx, stored));
+    let legacyXpByStage = [...current.legacyXpByStage];
     const migrate = parsed.data.legacyXpTotal !== undefined;
     if (migrate) {
-      const rounds = await tx.select({
-        stage: learningRoundsTable.stage,
-        xp: sql<number>`coalesce(sum(${learningRoundsTable.correctCount}) * 5, 0)`.mapWith(Number),
-      }).from(learningRoundsTable).where(eq(learningRoundsTable.clerkUserId, userId))
-        .groupBy(learningRoundsTable.stage);
-      const earned = [0, 0, 0, 0];
-      for (const round of rounds) earned[round.stage - 1] = round.xp;
-      xpByStage = mergeLegacyProgress(xpByStage, parsed.data.legacyXpTotal!, earned);
+      legacyXpByStage = mergeLegacyProgress(legacyXpByStage, parsed.data.legacyXpTotal!, [0, 0, 0, 0]);
     }
+    const answerXpByStage = await xpDeltaByStage(tx, userId);
+    const xpByStage = calculateXpBalances(legacyXpByStage, answerXpByStage, current.xpSpentByStage);
     const [updated] = await tx.update(learningProgressTable).set({
       // Importing older browser XP must not overwrite a newer parent selection.
       selectedStage: parsed.data.legacyXpTotal !== undefined ? current.selectedStage : parsed.data.selectedStage,
       xpByStage,
+      legacyXpByStage,
+      xpLedgerVersion: 1,
       legacyImported: current.legacyImported || migrate,
       updatedAt: new Date(),
     }).where(eq(learningProgressTable.clerkUserId, userId)).returning();
@@ -141,8 +202,9 @@ router.post("/learning/round", async (req, res) => {
   const userId = getAuth(req).userId!;
   const saved = await withAccountWrite(userId, async (tx) => {
     await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
-    const [current] = await tx.select().from(learningProgressTable)
+    const [stored] = await tx.select().from(learningProgressTable)
       .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
+    const current = await reconcileXp(tx, await ensureXpLedger(tx, stored));
     const [challenge] = await tx.select().from(learningChallengesTable).where(and(
       eq(learningChallengesTable.clerkUserId, userId),
       eq(learningChallengesTable.roundId, parsed.data.roundId),
@@ -152,9 +214,7 @@ router.post("/learning/round", async (req, res) => {
       return { expired: true as const };
     }
     if (!Object.hasOwn(challenge.answers, parsed.data.questionId)) return null;
-    if (challenge.answers[parsed.data.questionId] !== parsed.data.answer) {
-      return { progress: current, correct: false };
-    }
+    const correct = challenge.answers[parsed.data.questionId] === parsed.data.answer;
     const [existing] = await tx.select().from(learningRoundsTable).where(and(
       eq(learningRoundsTable.clerkUserId, userId), eq(learningRoundsTable.roundId, parsed.data.questionId),
     )).limit(1);
@@ -162,11 +222,16 @@ router.post("/learning/round", async (req, res) => {
       return existing.challengeId === parsed.data.roundId &&
         existing.submittedAnswer === parsed.data.answer &&
         existing.stage === challenge.stage && existing.mode === challenge.mode &&
-        existing.correctCount === 1
-        ? { progress: current, correct: true }
+        existing.correctCount === (correct ? 1 : 0)
+        ? { progress: current, correct, xpDelta: existing.xpDelta }
         : null;
     }
-    // Award only a server-checked correct answer to the stage recorded at issue time.
+    const stageIndex = challenge.stage - 1;
+    const xpByStage = [...current.xpByStage];
+    const xpDelta = correct
+      ? XP_PER_CORRECT
+      : -Math.min(XP_PER_INCORRECT, xpByStage[stageIndex] ?? 0);
+    xpByStage[stageIndex] = Math.max(0, (xpByStage[stageIndex] ?? 0) + xpDelta);
     await tx.insert(learningRoundsTable).values({
       clerkUserId: userId,
       roundId: parsed.data.questionId,
@@ -174,13 +239,12 @@ router.post("/learning/round", async (req, res) => {
       submittedAnswer: parsed.data.answer,
       stage: challenge.stage,
       mode: challenge.mode,
-      correctCount: 1,
+      correctCount: correct ? 1 : 0,
+      xpDelta,
     });
-    const xpByStage = [...current.xpByStage];
-    xpByStage[challenge.stage - 1] += 5;
     const [updated] = await tx.update(learningProgressTable).set({ xpByStage, updatedAt: new Date() })
       .where(eq(learningProgressTable.clerkUserId, userId)).returning();
-    return { progress: updated, correct: true };
+    return { progress: updated, correct, xpDelta };
   });
   if (!saved) {
     res.status(404).json({
@@ -196,7 +260,50 @@ router.post("/learning/round", async (req, res) => {
     });
     return;
   }
-  res.json(RecordLearningRoundResponse.parse({ ...output(saved.progress), correct: saved.correct }));
+  res.json(RecordLearningRoundResponse.parse({ ...output(saved.progress), correct: saved.correct, xpDelta: saved.xpDelta }));
+});
+
+router.post("/learning/garden/care", async (req, res) => {
+  const parsed = RecordGardenCareBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Choose watering or fertilizer." }); return; }
+  const userId = getAuth(req).userId!;
+  const saved = await withAccountWrite(userId, async (tx) => {
+    await tx.insert(learningProgressTable).values({ clerkUserId: userId }).onConflictDoNothing();
+    const [stored] = await tx.select().from(learningProgressTable)
+      .where(eq(learningProgressTable.clerkUserId, userId)).for("update");
+    const current = await reconcileXp(tx, await ensureXpLedger(tx, stored));
+    const selectedXp = current.xpByStage[current.selectedStage - 1] ?? 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const status = getGardenStatus(gardenProgress(current), today, selectedXp);
+    if (status.caredToday) return { error: "already-cared" as const };
+    if (selectedXp < GARDEN_CARE_XP_COST) return { error: "insufficient-xp" as const };
+
+    const type = parsed.data.type as GardenCareType;
+    const nextGarden = advanceGardenCare(gardenProgress(current), type, today);
+    const xpByStage = [...current.xpByStage];
+    const xpSpentByStage = [...current.xpSpentByStage];
+    const stageIndex = current.selectedStage - 1;
+    xpByStage[stageIndex] -= GARDEN_CARE_XP_COST;
+    xpSpentByStage[stageIndex] += GARDEN_CARE_XP_COST;
+    const [updated] = await tx.update(learningProgressTable).set({
+      xpByStage,
+      xpSpentByStage,
+      gardenGrowthDays: nextGarden.growthDays,
+      gardenStreakDays: nextGarden.streakDays,
+      gardenLastCareDate: nextGarden.lastCareDate,
+      gardenLastCareType: nextGarden.lastCareType,
+      updatedAt: new Date(),
+    }).where(eq(learningProgressTable.clerkUserId, userId)).returning();
+    return { progress: updated };
+  });
+  if ("error" in saved) {
+    const message = saved.error === "already-cared"
+      ? "The garden has already been cared for today."
+      : "Earn 20 XP in the selected stage before caring for the garden.";
+    res.status(409).json({ error: message, code: saved.error === "already-cared" ? "GARDEN_CARED_TODAY" : "GARDEN_XP_REQUIRED" });
+    return;
+  }
+  res.json(output(saved.progress));
 });
 
 const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {

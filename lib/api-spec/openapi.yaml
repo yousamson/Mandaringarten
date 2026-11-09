@@ -203,6 +203,27 @@ paths:
         "401": { description: Authentication required }
         "403": { description: Membership and legal consent required }
         "503": { description: Saved progress is temporarily unavailable }
+  /learning/garden/care:
+    post:
+      operationId: recordGardenCare
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GardenCareInput" }
+      responses:
+        "200":
+          description: Garden care applied and XP updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningProgress" }
+        "400": { description: Invalid care action }
+        "401": { description: Authentication required }
+        "403": { description: Membership and legal consent required }
+        "409": { description: More XP is needed or the garden was already cared for today }
+        "503": { description: Saved progress is temporarily unavailable }
   /legal/consent:
     get:
       operationId: getLegalConsent
@@ -440,7 +461,7 @@ components:
       required: [url]
     LearningProgress:
       type: object
-      required: [selectedStage, xpByStage]
+      required: [selectedStage, xpByStage, garden]
       properties:
         selectedStage: { type: integer, minimum: 1, maximum: 4 }
         xpByStage:
@@ -448,6 +469,26 @@ components:
           minItems: 4
           maxItems: 4
           items: { type: integer, minimum: 0 }
+        garden: { $ref: "#/components/schemas/GardenState" }
+    GardenState:
+      type: object
+      required: [growthDays, streakDays, lastCareDate, lastCareType, daysSinceCare, caredToday, careAvailable, xpNeeded]
+      properties:
+        growthDays: { type: integer, minimum: 0, maximum: 30 }
+        streakDays: { type: integer, minimum: 0, maximum: 30 }
+        lastCareDate: { type: ["string", "null"], format: date }
+        lastCareType:
+          type: ["string", "null"]
+          enum: [water, fertilize, null]
+        daysSinceCare: { type: ["integer", "null"], minimum: 0 }
+        caredToday: { type: boolean }
+        careAvailable: { type: boolean }
+        xpNeeded: { type: integer, minimum: 0, maximum: 20 }
+    GardenCareInput:
+      type: object
+      required: [type]
+      properties:
+        type: { type: string, enum: [water, fertilize] }
     LearningProgressInput:
       type: object
       required: [selectedStage]
@@ -511,7 +552,7 @@ components:
           items: { $ref: "#/components/schemas/LearningQuestion" }
     LearningAnswerResult:
       type: object
-      required: [correct, selectedStage, xpByStage]
+      required: [correct, selectedStage, xpByStage, xpDelta, garden]
       properties:
         correct: { type: boolean }
         selectedStage: { type: integer, minimum: 1, maximum: 4 }
@@ -520,6 +561,8 @@ components:
           minItems: 4
           maxItems: 4
           items: { type: integer, minimum: 0 }
+        xpDelta: { type: integer, minimum: -1, maximum: 1 }
+        garden: { $ref: "#/components/schemas/GardenState" }
     LegalConsentStatus:
       type: object
       required: [accepted, policyVersion]

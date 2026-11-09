@@ -5,7 +5,7 @@ import type { Language } from '@/lib/garden-data';
 import type { Question } from '@/lib/playground-games';
 import { modeCopy, pick, tr, type GameMode } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
-import { useIssueLearningRound, useRecordRound, XP_PER_CORRECT } from '@/hooks/use-learning';
+import { useIssueLearningRound, useRecordRound, XP_PER_CORRECT, XP_PER_INCORRECT } from '@/hooks/use-learning';
 import { FOCUS_CARDS_PER_STAGE, focusRevealMilliseconds, TOTAL_FOCUS_CARDS } from '@workspace/learning-content/games';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -40,6 +40,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   const [focusTargetVisible, setFocusTargetVisible] = useState(false);
   const [built, setBuilt] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
+  const [answerXpDeltas, setAnswerXpDeltas] = useState<Record<string, number>>({});
   const [pendingSaves, setPendingSaves] = useState(0);
   const [savedAnswers, setSavedAnswers] = useState(0);
   const [failedAnswers, setFailedAnswers] = useState<LearningRoundInput[]>([]);
@@ -60,6 +61,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
     setPicked(null);
     setBuilt([]);
     setCorrect(0);
+    setAnswerXpDeltas({});
     setSavedAnswers(0);
     void issueRef.current({ stage, mode, script }).then((round) => {
       if (round.stage !== stage || round.mode !== mode) {
@@ -73,6 +75,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
   }, [stage, mode, script, seed, uid]);
 
   const done = Boolean(challenge && idx >= questions.length);
+  const roundXpDelta = Object.values(answerXpDeltas).reduce((sum, delta) => sum + delta, 0);
   const save: SaveState = pendingSaves > 0 ? 'saving' : failedAnswers.length ? 'error' : savedAnswers > 0 ? 'saved' : 'idle';
   const q: DisplayQuestion | undefined = questions[idx];
 
@@ -90,7 +93,14 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
     if (savingIds.current.has(input.questionId)) return;
     savingIds.current.add(input.questionId);
     setPendingSaves((count) => count + 1);
-    const request = saveQueue.current.then(async () => { await replayRef.current(input); });
+    const request = saveQueue.current.then(async () => {
+      const result = await replayRef.current(input);
+      if (activeRoundIdRef.current === ownerRoundId) {
+        setAnswerXpDeltas((current) => Object.hasOwn(current, input.questionId)
+          ? current
+          : { ...current, [input.questionId]: result.xpDelta });
+      }
+    });
     saveQueue.current = request.then(() => undefined, () => undefined);
     const finish = () => {
       savingIds.current.delete(input.questionId);
@@ -123,12 +133,12 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
     setPicked(value);
     if (value === q.answer) {
       setCorrect((count) => count + 1);
-      saveAnswer({
-        roundId: challenge.roundId,
-        questionId: q.id,
-        answer: value,
-      }, challenge.roundId);
     }
+    saveAnswer({
+      roundId: challenge.roundId,
+      questionId: q.id,
+      answer: value,
+    }, challenge.roundId);
   };
   const next = () => { setIdx((i) => i + 1); setPicked(null); setBuilt([]); };
   const restart = () => { setSeed((value) => value + 1); setIdx(0); setPicked(null); setBuilt([]); setCorrect(0); setSavedAnswers(0); };
@@ -163,7 +173,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
       {done ? (
         <div className="round-result" data-testid="round-result">
           <div className="quiz-score">{correct}<span> / {questions.length}</span></div>
-          <p className="round-xp">+{correct * XP_PER_CORRECT} XP</p>
+          <p className="round-xp">{roundXpDelta > 0 ? '+' : ''}{roundXpDelta} XP</p>
           <div className={`save-state ${save}`} role="status" data-testid="status-round-save">
             {save === 'saving' ? tr(l, 'Saving XP to your account…', '正在把 XP 儲存到帳戶…', '正在把 XP 保存到账户…')
               : save === 'saved' ? <><Check size={13} /> {tr(l, 'XP saved to this stage', 'XP 已儲存到此階段', 'XP 已保存到此阶段')}</>
@@ -194,7 +204,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
           </div>
           {picked ? (
             <div className={`quiz-feedback ${picked === q.answer ? 'good' : ''}`}>
-              <span>{picked === q.answer ? `+${XP_PER_CORRECT} XP · ` : `${tr(l, 'Answer', '答案', '答案')}: `}<b className="hz">{q.speakText}</b> · {q.word.pinyin} · {q.word.en}</span>
+              <span>{picked === q.answer ? `+${XP_PER_CORRECT} XP · ` : `−${XP_PER_INCORRECT} XP · `}<b className="hz">{q.speakText}</b> · {q.word.pinyin} · {q.word.en}</span>
               <button className="text-next" onClick={next} data-testid="button-next-question">{idx === questions.length - 1 ? tr(l, 'Finish', '完成', '完成') : tr(l, 'Next', '下一題', '下一题')} <ArrowRight size={13} /></button>
             </div>
           ) : null}
@@ -224,7 +234,7 @@ export function GameRound({ stage, mode, l, uid }: { stage: number; mode: GameMo
           ) : null}
           {picked ? (
             <div className={`quiz-feedback ${picked === q.answer ? 'good' : ''}`}>
-              <span>{picked === q.answer ? `+${XP_PER_CORRECT} XP` : <>{tr(l, 'Answer', '答案', '答案')}: <b className="hz">{q.answer}</b></>}</span>
+              <span>{picked === q.answer ? `+${XP_PER_CORRECT} XP` : <>−{XP_PER_INCORRECT} XP · {tr(l, 'Answer', '答案', '答案')}: <b className="hz">{q.answer}</b></>}</span>
               <button className="text-next" onClick={next} data-testid="button-next-question">{idx === questions.length - 1 ? tr(l, 'Finish', '完成', '完成') : tr(l, 'Next', '下一題', '下一题')} <ArrowRight size={13} /></button>
             </div>
           ) : null}

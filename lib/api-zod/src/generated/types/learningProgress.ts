@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GardenState } from './gardenState';
 
 export interface LearningProgress {
   /**
@@ -18,4 +19,5 @@ export interface LearningProgress {
      * @items.minimum 0
      */
   xpByStage: number[];
+  garden: GardenState;
 }

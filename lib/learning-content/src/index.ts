@@ -27,6 +27,19 @@ export {
   translateInterface,
 } from './interface-localization';
 export type { InterfaceLanguage } from './interface-localization';
+export {
+  advanceGardenCare,
+  daysBetweenUtcDays,
+  getGardenStatus,
+  GARDEN_BLOOM_DAYS,
+  GARDEN_CARE_XP_COST,
+  GARDEN_FULL_GROWTH_DAYS,
+  utcDayKey,
+  XP_COMPLETE,
+  XP_PER_CORRECT,
+  XP_PER_INCORRECT,
+} from './progression';
+export type { GardenCareType, GardenProgress, GardenStatus } from './progression';
 export const playgroundStages: StageContent[] = [stage1, stage2, stage3, stage4];
 export const STAGE_NUMBERS: StageNumber[] = [1, 2, 3, 4];
 

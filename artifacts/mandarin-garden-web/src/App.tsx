@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useStat
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, Show, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X, Droplets, Shovel } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { PwaInstallButton } from '@/components/pwa-install-button';
@@ -20,7 +20,7 @@ import { StagePathPlayer } from '@/components/stage-path-player';
 import { DailyChallengeCard } from '@/components/playground/daily-challenge-card';
 import { ParentChildBookSection } from '@/components/parent-child-book-section';
 import { TranslationLookup } from '@/components/translation-lookup';
-import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useIssueLearningRound, useRecordRound, useSelectStage, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
+import { useLearningProgress, useLegacyProgressMigration, usePendingRoundSync, useMembership, useIssueLearningRound, useRecordRound, useSelectStage, useGardenCare, XP_COMPLETE, XP_PER_CORRECT } from '@/hooks/use-learning';
 import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
 import FreeReadingPage from '@/pages/free-reading';
@@ -28,7 +28,7 @@ import DisclaimerPage from '@/pages/disclaimer';
 import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
-import { interfaceLanguageOptions } from '@workspace/learning-content';
+import { interfaceLanguageOptions, translateInterface } from '@workspace/learning-content';
 import type { LearningQuestion, LearningRoundInput } from '@workspace/api-client-react';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
@@ -220,6 +220,11 @@ function LegacySync({ l }: { l: Language }) {
 type Copy = typeof copy.en;
 function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; onAgeChange: (value: string) => void; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
   const recommendedLevel = ageStages.indexOf(normalizeAgeStage(age));
+  const membership = useMembership();
+  const progressQuery = useLearningProgress(membership.uid, membership.premium);
+  const gardenCare = useGardenCare(membership.uid);
+  const progress = progressQuery.progress;
+  const selectedXp = progress ? progress.xpByStage[progress.selectedStage - 1] ?? 0 : 0;
   return (
     <main className="page-shell">
       <section className="hero">
@@ -232,8 +237,60 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           </div>
           <div className="hero-note"><Sparkles size={14} /> {t.today}</div>
         </div>
-        <div className="hero-art" data-age-stage={normalizeAgeStage(age)}>
-          <img className="hero-flower-image" src={`/images/mandarin-cosmos-${normalizeAgeStage(age)}.png`} alt={tr(language, `Cosmos flower growing for ${t.levelAges[recommendedLevel]}`, `${t.levelAges[recommendedLevel]}成長階段的波斯菊`, `${t.levelAges[recommendedLevel]}成长阶段的波斯菊`)} width="480" height="390" fetchPriority="high" />
+        <div className="hero-art">
+          <div className="garden-experience">
+            <GardenArtwork growthDays={membership.premium ? progress?.garden.growthDays ?? 0 : 0} daysSinceCare={progress?.garden.daysSinceCare ?? null} language={language} />
+            <section className="garden-care-card" aria-label={homeText(language, 'Garden care', '花園照料', '花园照料')} data-testid="section-garden-care">
+              <div className="garden-care-heading">
+                <div>
+                  <div className="eyebrow">{homeText(language, 'YOUR LITTLE GARDEN', '你的小花園', '你的小花园')}</div>
+                  <h2>{homeText(language, 'Growing, day by day', '每天一點點，慢慢長大', '每天一点点，慢慢长大')}</h2>
+                </div>
+                {membership.premium && progress ? <span className="garden-day-count" data-testid="status-garden-days">{progress.garden.growthDays}<small> / 30 {homeText(language, 'days', '天', '天')}</small></span> : null}
+              </div>
+              {membership.checking || (membership.premium && progressQuery.isLoading && !progress) ? (
+                <div className="garden-care-skeleton" role="status" data-testid="status-garden-loading"><span /><span /></div>
+              ) : membership.premium && progressQuery.isError && !progress ? (
+                <div className="garden-care-error" role="alert" data-testid="status-garden-error">
+                  <p>{homeText(language, 'Your garden could not load just now.', '花園暫時無法載入。', '花园暂时无法加载。')}</p>
+                  <button type="button" className="text-next" onClick={() => void progressQuery.refetch()} data-testid="button-retry-garden">{homeText(language, 'Try again', '再試一次', '再试一次')}</button>
+                </div>
+              ) : membership.premium && progress ? (
+                <>
+                  <div className="garden-reminder" role="status" data-testid="status-garden-reminder">
+                    <span className="garden-reminder-mark"><Sprout size={16} /></span>
+                    <p>{gardenReminder(language, progress.garden.caredToday, progress.garden.daysSinceCare)}</p>
+                  </div>
+                  <div className="garden-xp-row" data-testid="status-garden-xp">
+                    <span>{homeText(language, 'Selected stage XP', '目前階段 XP', '当前阶段 XP')} <strong>{selectedXp}</strong></span>
+                    <span>{homeText(language, 'Care costs', '照料需要', '照料需要')} <strong>20 XP</strong></span>
+                  </div>
+                  <div className="garden-xp-track" aria-hidden="true"><span style={{ transform: `scaleX(${Math.min(1, selectedXp / 20)})` }} /></div>
+                  {gardenCare.error ? <p className="garden-action-error" role="alert" data-testid="status-garden-care-error">{homeText(language, 'Care could not be saved. Please try again.', '未能儲存照料紀錄，請再試一次。', '未能保存照料记录，请再试一次。')}</p> : null}
+                  {progress.garden.caredToday ? (
+                    <p className="garden-done" role="status" data-testid="status-garden-cared">{homeText(language, 'You cared for the garden today. Come back tomorrow to help it grow.', '今天已照料花園。明天再來，陪它繼續成長。', '今天已照料花园。明天再来，陪它继续成长。')}</p>
+                  ) : (
+                    <>
+                      {selectedXp < 20 ? <p className="garden-need-xp" data-testid="status-garden-xp-needed">{homeText(language, 'Earn a little more XP to care for your garden.', '再累積一點 XP，就能照料花園。', '再积累一点 XP，就能照料花园。')}</p> : null}
+                      <div className="garden-care-actions">
+                        <button type="button" className="garden-care-button water" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('water').catch(() => undefined); }} data-testid="button-garden-water">
+                          <Droplets size={16} /> {gardenCare.isPending ? homeText(language, 'Saving…', '儲存中…', '保存中…') : homeText(language, 'Water', '澆水', '浇水')}
+                        </button>
+                        <button type="button" className="garden-care-button feed" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('fertilize').catch(() => undefined); }} data-testid="button-garden-fertilize">
+                          <Shovel size={16} /> {homeText(language, 'Fertilize', '施肥', '施肥')}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="garden-member-copy" data-testid="status-garden-membership">{homeText(language, 'Join the garden to nurture a flower with your daily practice.', '加入花園，用每天的練習照料一朵小花。', '加入花园，用每天的练习照料一朵小花。')}</p>
+                  <Link href="/membership" className="garden-member-link" data-testid="link-garden-membership">{homeText(language, 'Grow your garden', '開始種下花園', '开始种下花园')} <ArrowRight size={15} /></Link>
+                </>
+              )}
+            </section>
+          </div>
         </div>
       </section>
       <TranslationLookup language={language} />
@@ -271,6 +328,76 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
         </div>
       </section>
     </main>
+  );
+}
+
+function homeText(language: Language, english: string, traditional: string, simplified: string) {
+  if (language === 'zh-Hant') return traditional;
+  if (language === 'zh-Hans') return simplified;
+  return language === 'en' ? english : translateInterface(language, english);
+}
+
+function gardenReminder(language: Language, caredToday: boolean, daysSinceCare: number | null) {
+  if (caredToday) return homeText(language, 'A lovely day to learn together. Your garden is cared for.', '今天適合一起學習。花園已經照料好了。', '今天适合一起学习。花园已经照料好了。');
+  if (daysSinceCare !== null && daysSinceCare >= 5) {
+    return homeText(language, 'Your garden is waiting. It has been {days} days since its last care.', `花園正在等你。距離上次照料已 ${daysSinceCare} 天。`, `花园正在等你。距离上次照料已 ${daysSinceCare} 天。`).replace('{days}', String(daysSinceCare));
+  }
+  return homeText(language, 'A little care today helps your garden keep growing.', '今天照料一點點，花園就能繼續成長。', '今天照料一点点，花园就能继续成长。');
+}
+
+function GardenArtwork({ growthDays, daysSinceCare, language }: { growthDays: number; daysSinceCare: number | null; language: Language }) {
+  const days = Math.max(0, Math.min(30, Math.floor(growthDays)));
+  const plantCount = days >= 24 ? 5 : days >= 15 ? 3 : days >= 6 ? 2 : days > 0 ? 1 : 0;
+  const flowerCount = days >= 30 ? 5 : days >= 22 ? 4 : days >= 15 ? 3 : days >= 10 ? 1 : 0;
+  const plants = [
+    { x: 120, height: 93, tilt: -12, leaf: -1 },
+    { x: 205, height: 124, tilt: -4, leaf: 1 },
+    { x: 286, height: 112, tilt: 7, leaf: -1 },
+    { x: 365, height: 138, tilt: 3, leaf: 1 },
+    { x: 430, height: 88, tilt: 12, leaf: -1 },
+  ].slice(0, plantCount);
+  return (
+    <div className="garden-artwork" data-growth-days={days} data-testid="art-garden-growth" role="img" aria-label={homeText(language, `${days} days of garden growth`, `花園已成長 ${days} 天`, `花园已成长 ${days} 天`)}>
+      <svg viewBox="0 0 520 260" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="gardenSky" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#f5edda" /><stop offset="1" stopColor="#e8efdd" /></linearGradient>
+          <linearGradient id="gardenGround" x1="0" x2="1"><stop offset="0" stopColor="#8ca579" /><stop offset=".5" stopColor="#718f67" /><stop offset="1" stopColor="#a2b18a" /></linearGradient>
+          <linearGradient id="gardenPetal" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#f1b08f" /><stop offset="1" stopColor="#d57e68" /></linearGradient>
+        </defs>
+        <path d="M48 226c25-81 63-122 118-137 48-13 92 1 126-13 45-19 106-2 148 29 30 23 40 70 34 121H48Z" fill="url(#gardenSky)" />
+        <circle cx="390" cy="74" r="29" fill="#e8c980" opacity=".74" />
+        <path d="M0 197c76-27 133-22 203 2 84 29 154 24 317-16v77H0Z" fill="#dce6cc" />
+        <path d="M0 222c84-35 143-16 220 2 96 23 180 10 300-19v55H0Z" fill="url(#gardenGround)" />
+        <path d="M18 240c79-23 123-5 191 6m76-15c65 20 129 16 216-8" fill="none" stroke="#bfd0a7" strokeWidth="2" opacity=".8" />
+        {plants.map((plant, index) => {
+          const height = Math.max(14, plant.height * Math.min(1, days / (index === 0 ? 8 : index === 1 ? 12 : 18)));
+          const stemTop = 225 - height;
+          const showFlower = index < flowerCount;
+          return (
+            <g key={plant.x} transform={`rotate(${plant.tilt} ${plant.x} 226)`}>
+              <path d={`M${plant.x} 228 Q${plant.x - 2} ${stemTop + height * .42} ${plant.x} ${stemTop}`} fill="none" stroke="#557957" strokeWidth="4" strokeLinecap="round" />
+              {height > 25 ? <path d={`M${plant.x - 2} ${stemTop + height * .56} Q${plant.x - 36} ${stemTop + height * .42} ${plant.x - 42} ${stemTop + height * .57} Q${plant.x - 22} ${stemTop + height * .77} ${plant.x - 2} ${stemTop + height * .65}`} fill="#93ae7b" stroke="#6e9165" strokeWidth="1" /> : null}
+              {height > 42 ? <path d={`M${plant.x + 2} ${stemTop + height * .77} Q${plant.x + 32} ${stemTop + height * .63} ${plant.x + 39} ${stemTop + height * .77} Q${plant.x + 19} ${stemTop + height * .94} ${plant.x + 2} ${stemTop + height * .85}`} fill="#a6b989" stroke="#75966a" strokeWidth="1" /> : null}
+              {showFlower ? <g transform={`translate(${plant.x} ${stemTop - 4})`}>
+                <ellipse rx="6" ry="13" cy="-12" fill="url(#gardenPetal)" />
+                <ellipse rx="6" ry="13" cy="12" fill="url(#gardenPetal)" />
+                <ellipse rx="6" ry="13" cx="-12" fill="url(#gardenPetal)" transform="rotate(90 -12 0)" />
+                <ellipse rx="6" ry="13" cx="12" fill="url(#gardenPetal)" transform="rotate(90 12 0)" />
+                <ellipse rx="5" ry="11" cx="-9" cy="-9" fill="#e99a7d" transform="rotate(-45 -9 -9)" />
+                <ellipse rx="5" ry="11" cx="9" cy="-9" fill="#e99a7d" transform="rotate(45 9 -9)" />
+                <circle r="6" fill="#e8c76e" />
+              </g> : null}
+            </g>
+          );
+        })}
+        {days === 0 ? <g className="garden-seed" transform="translate(260 216)">
+          <ellipse cx="0" cy="13" rx="15" ry="7" fill="#c8a875" />
+          <path d="M0 9c-2-14 4-22 12-25M1 2c-8-8-15-7-18-1 8 7 13 7 18 1Z" fill="#88a06b" stroke="#67865d" strokeWidth="2" strokeLinecap="round" />
+        </g> : null}
+        <path d="M95 224c-7-12-13-11-16-8 3 10 9 14 16 14m330-5c4-13 10-14 15-11-2 10-8 15-15 17" fill="#6f9265" opacity=".9" />
+      </svg>
+      <div className="garden-art-caption"><span>{days === 0 ? homeText(language, 'A seed, ready for you', '一顆種子，等你來照料', '一颗种子，等你来照料') : days >= 30 ? homeText(language, 'A garden in full bloom', '花園盛放', '花园盛放') : days >= 10 ? homeText(language, 'The first flowers are here', '第一朵花已盛開', '第一朵花已盛开') : homeText(language, 'A little more each day', '每天都長大一點', '每天都长大一点')}</span><span>{days} / 30</span></div>
+    </div>
   );
 }
 

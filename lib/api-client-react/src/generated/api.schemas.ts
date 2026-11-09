@@ -82,6 +82,46 @@ export interface PortalResult {
   url: string;
 }
 
+/**
+ * @nullable
+ */
+export type GardenStateLastCareType = typeof GardenStateLastCareType[keyof typeof GardenStateLastCareType] | null;
+
+
+export const GardenStateLastCareType = {
+  water: 'water',
+  fertilize: 'fertilize',
+} as const;
+
+export interface GardenState {
+  /**
+     * @minimum 0
+     * @maximum 30
+     */
+  growthDays: number;
+  /**
+     * @minimum 0
+     * @maximum 30
+     */
+  streakDays: number;
+  /** @nullable */
+  lastCareDate: string | null;
+  /** @nullable */
+  lastCareType: GardenStateLastCareType;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  daysSinceCare: number | null;
+  caredToday: boolean;
+  careAvailable: boolean;
+  /**
+     * @minimum 0
+     * @maximum 20
+     */
+  xpNeeded: number;
+}
+
 export interface LearningProgress {
   /**
      * @minimum 1
@@ -94,6 +134,19 @@ export interface LearningProgress {
      * @items.minimum 0
      */
   xpByStage: number[];
+  garden: GardenState;
+}
+
+export type GardenCareInputType = typeof GardenCareInputType[keyof typeof GardenCareInputType];
+
+
+export const GardenCareInputType = {
+  water: 'water',
+  fertilize: 'fertilize',
+} as const;
+
+export interface GardenCareInput {
+  type: GardenCareInputType;
 }
 
 export interface LearningProgressInput {
@@ -230,6 +283,12 @@ export interface LearningAnswerResult {
      * @items.minimum 0
      */
   xpByStage: number[];
+  /**
+     * @minimum -1
+     * @maximum 1
+     */
+  xpDelta: number;
+  garden: GardenState;
 }
 
 export interface LegalConsentStatus {

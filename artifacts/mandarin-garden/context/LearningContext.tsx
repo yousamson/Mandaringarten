@@ -12,14 +12,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetLearningProgressQueryKey,
   useGetLearningProgress,
+  useRecordGardenCare,
   useUpdateLearningProgress,
 } from '@workspace/api-client-react';
-import { normalizeAgeStage } from '@workspace/learning-content';
+import { normalizeAgeStage, XP_PER_CORRECT, XP_PER_INCORRECT, type GardenCareType, type GardenStatus } from '@workspace/learning-content';
 import { useSubscription } from '@/lib/subscriptions';
 import type { AgeBand } from '@/data/vocabulary';
 
 const STORAGE_KEY = 'mandarin-garden-learning-v1';
-export const XP_PER_CORRECT = 5;
+export { XP_PER_CORRECT, XP_PER_INCORRECT };
 
 type LearningState = {
   ageBand: AgeBand;
@@ -39,8 +40,10 @@ type LearningContextValue = LearningState & {
   selectedStage: number;
   xpByStage: number[];
   selectedStageXp: number;
+  garden: GardenStatus | null;
   progressLoading: boolean;
   selectStage: (stage: number) => Promise<void>;
+  careForGarden: (type: GardenCareType) => Promise<void>;
   setAgeBand: (ageBand: AgeBand) => void;
   awardCorrectAnswer: (countsForCurriculum?: boolean) => void;
   markWordLearned: (wordId: string) => void;
@@ -114,6 +117,7 @@ export function LearningProvider({
     },
   });
   const updateProgress = useUpdateLearningProgress();
+  const gardenCareMutation = useRecordGardenCare();
   const [state, setState] = useState<LearningState>(initialState);
   const [hydrated, setHydrated] = useState(false);
 
@@ -162,6 +166,7 @@ export function LearningProvider({
     ? (progressQuery.data?.xpByStage ?? [0, 0, 0, 0])
     : [0, 0, 0, 0];
   const selectedStageXp = xpByStage[selectedStage - 1] ?? 0;
+  const garden = isPremium ? (progressQuery.data?.garden ?? null) : null;
 
   const selectStage = useCallback(
     async (stage: number) => {
@@ -178,6 +183,13 @@ export function LearningProvider({
     },
     [isPremium, progressKey, queryClient, updateProgress],
   );
+
+  const careForGarden = useCallback(async (type: GardenCareType) => {
+    if (!isPremium) throw new Error('An active membership is required to care for the garden.');
+    const updated = await gardenCareMutation.mutateAsync({ data: { type } });
+    queryClient.setQueryData(progressKey, updated);
+    void queryClient.invalidateQueries({ queryKey: progressKey });
+  }, [gardenCareMutation, isPremium, progressKey, queryClient]);
 
   const markWordLearned = useCallback((wordId: string) => {
     setState((current) => {
@@ -232,9 +244,11 @@ export function LearningProvider({
       selectedStage,
       xpByStage,
       selectedStageXp,
+      garden,
       progressLoading: progressQuery.isLoading,
       nextLevelXp: Math.max(0, 100 - selectedStageXp),
       selectStage,
+      careForGarden,
       setAgeBand,
       awardCorrectAnswer,
       markWordLearned,
@@ -247,8 +261,10 @@ export function LearningProvider({
     selectedStage,
     selectedStageXp,
     xpByStage,
+    garden,
     progressQuery.isLoading,
     selectStage,
+    careForGarden,
     setAgeBand,
     awardCorrectAnswer,
     markWordLearned,
