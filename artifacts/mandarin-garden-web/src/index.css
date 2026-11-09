@@ -1122,3 +1122,42 @@ a { color: inherit; text-decoration: none; }
     text-align: center;
   }
 }
+
+/* Keep Chinese copy and long consent text inside narrow mobile layouts. */
+.page-shell,
+.topbar,
+.brand-text,
+.auth-stage > *,
+.auth-intro,
+.auth-panel,
+.consent-card,
+.consent-check,
+.consent-text,
+.parent-grid > *,
+.panel {
+  min-width: 0;
+}
+
+.consent-check {
+  grid-template-columns: 22px minmax(0, 1fr);
+}
+
+.consent-text,
+.auth-intro h1,
+.auth-intro p,
+.consent-card h2,
+.parent-grid h1,
+.parent-grid h2 {
+  overflow-wrap: anywhere;
+}
+
+.button-primary,
+.button-secondary {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.nav-links.is-open {
+  min-width: 0;
+}

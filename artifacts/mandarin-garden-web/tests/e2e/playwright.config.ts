@@ -6,7 +6,7 @@ const systemChromium = '/repl/tools/bin/chromium';
 
 export default defineConfig({
   testDir: '.',
-  testMatch: 'account-deletion.spec.ts',
+  testMatch: '**/*.spec.ts',
   outputDir: '/tmp/mandarin-garden-account-deletion-results',
   fullyParallel: true,
   reporter: 'list',
