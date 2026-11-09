@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: 42 42% 96%;
+  --foreground: 155 25% 21%;
+  --border: 42 25% 85%;
+  --input: 42 25% 85%;
+  --ring: 152 34% 42%;
+  --card: 43 38% 99%;
+  --card-foreground: 155 25% 21%;
+  --primary: 151 34% 37%;
+  --primary-foreground: 45 40% 98%;
+  --secondary: 39 56% 88%;
+  --secondary-foreground: 155 25% 24%;
+  --muted: 42 27% 91%;
+  --muted-foreground: 153 12% 48%;
+  --accent: 20 65% 78%;
+  --accent-foreground: 18 38% 27%;
+  --destructive: 3 65% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --popover: 43 38% 99%;
+  --popover-foreground: 155 25% 21%;
+  --app-font-sans: 'DM Sans', 'Noto Sans TC', sans-serif;
+  --app-font-serif: 'Fraunces', 'Noto Sans TC', serif;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: 157 20% 13%;
+  --foreground: 44 35% 92%;
+  --border: 157 15% 26%;
+  --input: 157 15% 26%;
+  --ring: 151 34% 55%;
+  --card: 156 19% 17%;
+  --card-foreground: 44 35% 92%;
+  --primary: 151 38% 55%;
+  --primary-foreground: 157 20% 12%;
+  --secondary: 157 15% 25%;
+  --secondary-foreground: 44 35% 92%;
+  --muted: 157 15% 23%;
+  --muted-foreground: 44 14% 70%;
+  --accent: 20 55% 55%;
+  --accent-foreground: 20 20% 10%;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body {
+  background: #f6f4e9;
+  color: hsl(var(--foreground));
+  font-family: var(--app-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.garden-preview-frame {
+  min-height: 100vh;
+  display: grid;
+  align-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at 16% 18%, #e7efdc 0, transparent 34%),
+    radial-gradient(ellipse at 90% 82%, #f2e8d5 0, transparent 35%),
+    #f6f4e9;
+}
+.garden-artwork {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #f2eedf;
+  box-shadow: inset 0 0 0 1px #e7e2d2, 0 16px 34px #53644812;
+}
+.garden-artwork::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(145deg, #ffffff20, transparent 52%, #5364480a);
+}
+.garden-artwork svg { display: block; width: 100%; height: auto; }
+.garden-art-caption {
+  position: absolute;
+  inset: auto 14px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 1;
+  color: #53684e;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .025em;
+}
+.garden-art-caption span:last-child { color: #7c8d70; font-variant-numeric: tabular-nums; }
