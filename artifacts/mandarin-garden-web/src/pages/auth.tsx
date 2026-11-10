@@ -65,7 +65,7 @@ export default function AuthPage({ mode, language: l }: { mode: Mode; language: 
           ) : (
             <div className="clerk-frame" data-testid={`clerk-${mode}`}>
               {isRegister
-                ? <SignUp routing="path" path="/register" signInUrl="/sign-in" fallbackRedirectUrl="/membership" forceRedirectUrl="/membership" />
+                ? <SignUp routing="path" path="/register" signInUrl="/sign-in" fallbackRedirectUrl="/membership?signup=completed" forceRedirectUrl="/membership?signup=completed" />
                 : <SignIn routing="path" path="/sign-in" signUpUrl="/register" fallbackRedirectUrl="/parent" />}
             </div>
           )}

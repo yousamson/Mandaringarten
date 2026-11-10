@@ -34,8 +34,10 @@ export const useCreateBillingPortal = () => emptyMutation;
 export const useCreateSupportThread = () => emptyMutation;
 export const useSendSupportMessage = () => emptyMutation;
 export const useUpdateLearningProgress = () => emptyMutation;
+export const useLookupTranslation = () => emptyMutation;
 export const issueLearningRound = async () => { throw new Error('Not available in browser layout tests.'); };
 export const recordLearningRound = async () => { throw new Error('Not available in browser layout tests.'); };
+export const recordGardenCare = async () => { throw new Error('Not available in browser layout tests.'); };
 
 export function useDeleteAccount() {
   return {

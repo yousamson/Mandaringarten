@@ -8,6 +8,7 @@ import { ConsentCheck, DisclaimerAgreement, DocLink, PrivacyAgreement, disclaime
 import { accessQueryKey, useAccountAccess } from '@/hooks/use-account';
 import { billingCopy } from '@/lib/billing-copy';
 import { copy, type Language } from '@/lib/garden-data';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { LEGAL_VERSION } from '@/lib/legal-config';
 import { tr } from '@/lib/playground-copy';
 
@@ -38,8 +39,11 @@ export function MembershipPanel({ l }: { l: Language }) {
   const [disclaimerOk, setDisclaimerOk] = useState(false);
   const [noRefundOk, setNoRefundOk] = useState(false);
   const [planTimedOut, setPlanTimedOut] = useState(false);
-  const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
-  const returnedFromPortal = new URLSearchParams(window.location.search).get('billing') === 'returned';
+  const queryParams = new URLSearchParams(window.location.search);
+  const checkoutResult = queryParams.get('checkout');
+  const checkoutAnalyticsRef = queryParams.get('checkout_ref');
+  const signupResult = queryParams.get('signup');
+  const returnedFromPortal = queryParams.get('billing') === 'returned';
   const active = isAdmin || (status.data?.isPremium ?? false);
   const hasSubscription = ['active', 'trialing', 'past_due', 'unpaid'].includes(status.data?.subscriptionStatus ?? '');
   const isTrialing = status.data?.subscriptionStatus === 'trialing';
@@ -58,6 +62,8 @@ export function MembershipPanel({ l }: { l: Language }) {
   const canCheckout = !isAdmin && statusReady && Boolean(plan.data) && !plan.isError && allAccepted && !busy;
   const priceLabel = plan.data?.priceLabel ?? billingCopy[l].priceUnavailable;
   const [pollExpired, setPollExpired] = useState(false);
+  const signupTracked = useRef(false);
+  const subscriptionTracked = useRef(false);
   const pending = checkoutResult === 'success' && Boolean(isSignedIn) && !active;
   const checkoutNotice =
     checkoutResult === 'cancelled' ? billingCopy[l].checkoutCancelled
@@ -89,6 +95,59 @@ export function MembershipPanel({ l }: { l: Language }) {
     });
   }, [returnedFromPortal, isSignedIn, isAdmin, client, uid]);
 
+  // Clerk redirects here only after a successful registration. Remove the flag
+  // after recording it so a reload cannot count the same registration twice.
+  useEffect(() => {
+    if (signupResult !== 'completed' || !isSignedIn || !user?.id || signupTracked.current) return;
+    signupTracked.current = true;
+    trackAnalyticsEvent('signup_completed');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('signup');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [signupResult, isSignedIn, user?.id]);
+
+  useEffect(() => {
+    if (checkoutResult !== 'cancelled') return;
+    try {
+      window.sessionStorage.removeItem('mg-analytics-pending-checkout');
+    } catch {
+      // Analytics cleanup must not affect the cancellation result.
+    }
+  }, [checkoutResult]);
+
+  // Count a subscription only after the return from checkout is confirmed as
+  // active/trialing, and only for the checkout attempt started in this tab.
+  useEffect(() => {
+    const subscriptionStatus = status.data?.subscriptionStatus;
+    if (
+      checkoutResult !== 'success' ||
+      !isSignedIn ||
+      isAdmin ||
+      !['active', 'trialing'].includes(subscriptionStatus ?? '') ||
+      !checkoutAnalyticsRef ||
+      subscriptionTracked.current
+    ) return;
+
+    let pendingRef: string | null = null;
+    try {
+      pendingRef = window.sessionStorage.getItem('mg-analytics-pending-checkout');
+    } catch {
+      return;
+    }
+    if (pendingRef !== checkoutAnalyticsRef) return;
+
+    subscriptionTracked.current = true;
+    trackAnalyticsEvent('subscription_started', {
+      plan: 'premium_monthly',
+      status: subscriptionStatus!,
+    });
+    try {
+      window.sessionStorage.removeItem('mg-analytics-pending-checkout');
+    } catch {
+      // The membership update remains successful if browser storage is blocked.
+    }
+  }, [checkoutResult, isSignedIn, isAdmin, status.data?.subscriptionStatus, checkoutAnalyticsRef]);
+
   // After returning from Stripe: refetch now, then poll briefly while the payment is being confirmed.
   useEffect(() => {
     if (!pending) return;
@@ -109,6 +168,7 @@ export function MembershipPanel({ l }: { l: Language }) {
         if (!client.getQueryData<{ isPremium: boolean }>(accessQueryKey(uid))?.isPremium) return;
         const url = new URL(window.location.href);
         url.searchParams.delete('checkout');
+        url.searchParams.delete('checkout_ref');
         window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
       });
     }
@@ -118,11 +178,28 @@ export function MembershipPanel({ l }: { l: Language }) {
     setError('');
     if (!isSignedIn || isAdmin || !plan.data || !allAccepted) return;
     setWorking(true);
+    let checkoutRef: string | null = null;
+    try {
+      checkoutRef = window.crypto.randomUUID();
+      window.sessionStorage.setItem('mg-analytics-pending-checkout', checkoutRef);
+    } catch {
+      // Checkout remains available when browser storage is disabled.
+    }
+    const successUrl = new URL('/parent', window.location.origin);
+    successUrl.searchParams.set('checkout', 'success');
+    if (checkoutRef) successUrl.searchParams.set('checkout_ref', checkoutRef);
     checkout.mutate(
-      { data: { privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true, policyVersion: LEGAL_VERSION, successUrl: `${window.location.origin}/parent?checkout=success`, cancelUrl: `${window.location.origin}/membership?checkout=cancelled` } },
+      { data: { privacyAccepted: true, disclaimerAccepted: true, noRefundAccepted: true, policyVersion: LEGAL_VERSION, successUrl: successUrl.toString(), cancelUrl: `${window.location.origin}/membership?checkout=cancelled` } },
       {
         onSuccess: (result) => { window.location.assign(result.url); },
         onError: (err) => {
+          try {
+            if (checkoutRef && window.sessionStorage.getItem('mg-analytics-pending-checkout') === checkoutRef) {
+              window.sessionStorage.removeItem('mg-analytics-pending-checkout');
+            }
+          } catch {
+            // Browser storage failures must not hide the checkout error.
+          }
           setError(isForbidden(err) ? tr(l, 'Your account agreements need to be confirmed first. Please reload the page to review them.', '請先確認帳戶同意事項，重新載入頁面即可查看。', '请先确认账户同意事项，重新加载页面即可查看。') : t.checkoutError);
           setWorking(false);
         },
