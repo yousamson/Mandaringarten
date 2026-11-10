@@ -595,8 +595,18 @@ a { color: inherit; text-decoration: none; }
 .legal-contact dd { margin: 0; }
 .legal-missing { color: #8a5a1c !important; font-style: italic; }
 .legal-source { border-top: 1px solid #e5e1d4; margin-top: 18px; padding-top: 16px; font-size: 12.5px; color: #77735f; line-height: 1.6; }
+.legal-page,
+.legal-page :is(h1, h2, p, a, dt, dd, .legal-langs, .legal-source) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .footer-legal { display: inline-flex; gap: 16px; flex-wrap: wrap; }
 .footer-legal a { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 430px) {
+  .legal-contact { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .legal-contact dd { margin-bottom: 8px; }
+}
 
 @media (max-width: 900px) {
   .stage-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }

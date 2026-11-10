@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const languages = ['zh-Hans', 'zh-Hant'] as const;
 const widths = [320, 375] as const;
-const routes = ['/', '/parent', '/sign-in', '/register'] as const;
+const routes = ['/', '/parent', '/sign-in', '/register', '/privacy', '/disclaimer'] as const;
 
 for (const language of languages) {
   for (const width of widths) {
@@ -19,6 +19,50 @@ for (const language of languages) {
           await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
           `document overflow on ${route} at ${width}px in ${language}`,
         ).toBe(true);
+
+        if (route === '/privacy' || route === '/disclaimer') {
+          const legalPage = page.locator('main.legal-page');
+          await expect(legalPage).toHaveAttribute('lang', language);
+          await page.evaluate(() => {
+            const fallback = document.querySelector('.legal-body section:last-child .legal-missing');
+            if (!fallback) return;
+
+            const details = document.createElement('dl');
+            details.className = 'legal-contact';
+            const entries = [
+              ['Operator', 'Mandarin Garden Family Learning Support'],
+              ['Email', 'privacy-support-for-families@mandaringarden.example'],
+              ['Address', '123456789 Long Road, Family Learning District, Example Region'],
+            ];
+            for (const [label, value] of entries) {
+              const term = document.createElement('dt');
+              term.textContent = label;
+              const description = document.createElement('dd');
+              if (label === 'Email') {
+                const link = document.createElement('a');
+                link.className = 'doc-link';
+                link.href = `mailto:${value}`;
+                link.textContent = value;
+                description.append(link);
+              } else {
+                description.textContent = value;
+              }
+              details.append(term, description);
+            }
+            fallback.replaceWith(details);
+          });
+          const legalContentOverflow = await legalPage.locator(
+            '.legal-head :is(h1, p), .legal-body :is(h2, p, a, dt, dd), .legal-missing, .legal-source',
+          ).evaluateAll((elements) =>
+            elements.filter((element) => {
+              const rect = element.getBoundingClientRect();
+              return rect.left < -1 || rect.right > window.innerWidth + 1 ||
+                element.scrollWidth > element.clientWidth + 1 ||
+                element.scrollHeight > element.clientHeight + 1;
+            }).map((element) => element.textContent?.trim()),
+          );
+          expect(legalContentOverflow, `${route} content overflow at ${width}px in ${language}`).toEqual([]);
+        }
 
         const headingOverflow = await page.locator('main :is(h1, h2)').evaluateAll((headings) =>
           headings.filter((element) => {
