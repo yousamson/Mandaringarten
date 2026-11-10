@@ -2,11 +2,25 @@ import { expect, test } from '@playwright/test';
 
 const languages = ['zh-Hans', 'zh-Hant'] as const;
 const widths = [320, 375] as const;
-const routes = ['/', '/parent', '/sign-in', '/register', '/privacy', '/disclaimer'] as const;
+const routes = [
+  '/',
+  '/learn',
+  '/challenge',
+  '/playground',
+  '/stories',
+  '/translation',
+  '/garden',
+  '/parent',
+  '/sign-in',
+  '/register',
+  '/privacy',
+  '/disclaimer',
+] as const;
 
 for (const language of languages) {
   for (const width of widths) {
     test(`${language} layouts fit at ${width}px`, async ({ page }) => {
+      test.setTimeout(90_000);
       await page.setViewportSize({ width, height: 640 });
       await page.addInitScript((value) => localStorage.setItem('mg-language', value), language);
       await page.goto('/');

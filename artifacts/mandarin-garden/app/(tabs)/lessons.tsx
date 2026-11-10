@@ -70,7 +70,7 @@ function WordCard({ word, simplified }: { word: VocabEntry; simplified: boolean 
   );
 }
 
-export default function LessonsScreen() {
+export default function LessonsScreen({ section = 'words' }: { section?: 'words' | 'stories' | 'translation' }) {
   const colors = useColors();
   const { language } = useLanguage();
   const t = (key: string) => translate(language, key);
@@ -88,6 +88,9 @@ export default function LessonsScreen() {
   const translationLookup = useLookupTranslation();
   const translationErrorStatus = (translationLookup.error as { status?: number } | null)?.status;
   const freeReading = freeReadings[learning.ageBand];
+  const showWords = section === 'words';
+  const showStories = section === 'stories';
+  const showTranslation = section === 'translation';
   const scriptForStory = (story: StageStory) => simplified ? story.simp : story.trad;
   const currentReading = showFreeReading
     ? { title: freeReading.title, text: freeReading.text }
@@ -201,15 +204,23 @@ export default function LessonsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <PageTitle
-          eyebrow={tr(language, 'LEARNING PLAYGROUND', '學習樂園', '学习乐园')}
-          title={tr(language, 'Word paths & stories', '詞語小徑與短篇故事', '词语小径与短篇故事')}
-          subtitle={subscription.isPremium
+      <PageTitle
+        eyebrow={tr(language, 'LEARNING GARDEN', '學習樂園', '学习乐园')}
+        title={showWords
+          ? tr(language, 'Word paths', '詞語小徑', '词语小径')
+          : showStories
+            ? tr(language, 'Stories to share', '一起讀故事', '一起读故事')
+            : tr(language, 'Word finder', '字詞小幫手', '字词小帮手')}
+        subtitle={showWords
+          ? subscription.isPremium
             ? tr(language, `Stage ${stage} · ages ${stageAges[stage - 1]}`, `第 ${stage} 階段 · ${stageAges[stage - 1]} 歲`, `第 ${stage} 阶段 · ${stageAges[stage - 1]} 岁`)
-            : tr(language, 'Free reading is available. Membership opens all stages.', '可免費閱讀；會員可使用全部學習階段。', '可免费阅读；会员可使用全部学习阶段。')}
-        />
+            : tr(language, 'Free reading is available. Membership opens all stages.', '可免費閱讀；會員可使用全部學習階段。', '可免费阅读；会员可使用全部学习阶段。')
+          : showStories
+            ? tr(language, 'Choose a short story and listen together.', '挑選短篇故事，一起閱讀與聆聽。', '挑选短篇故事，一起阅读与聆听。')
+            : tr(language, 'Look up a word or short phrase between English and Chinese.', '查找中英文單字或短句的翻譯。', '查找中英文单词或短句的翻译。')}
+      />
 
-        <View style={[styles.translationCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="translation-lookup">
+      {showTranslation ? <View style={[styles.translationCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="translation-lookup">
           <View style={styles.translationHeading}>
             <View style={[styles.translationIcon, { backgroundColor: colors.secondary }]}>
               <Ionicons name="language-outline" size={19} color={colors.primary} />
@@ -281,9 +292,9 @@ export default function LessonsScreen() {
               '免費服務由所有使用者共用，每日約 5,000 字元。輸入文字及所選中文版本會傳送至 MyMemory；其可能長期保存內容並與合作夥伴分享。請勿輸入個人或敏感資料。',
               '免费服务由所有用户共用，每日约 5,000 字符。输入文字及所选中文版本会发送至 MyMemory；其可能长期保存内容并与合作伙伴分享。请勿输入个人或敏感信息。')}
           </Text>
-        </View>
+      </View> : null}
 
-        <Surface style={styles.freeCard}>
+      {showStories ? <Surface style={styles.freeCard}>
           <View style={styles.freeIcon}><Ionicons name="book-outline" size={21} color={colors.primary} /></View>
           <View style={styles.freeCopy}>
             <Text style={[styles.cardEyebrow, { color: colors.primary }]}>
@@ -305,9 +316,9 @@ export default function LessonsScreen() {
               {tr(language, 'Read', '閱讀', '阅读')}
             </Text>
           </Pressable>
-        </Surface>
+      </Surface> : null}
 
-        {!subscription.isPremium ? (
+      {showWords && !subscription.isPremium ? (
           <Surface style={styles.lockedCard}>
             <Ionicons name="lock-closed-outline" size={22} color={colors.warmInk} />
             <View style={{ flex: 1 }}>
@@ -321,101 +332,104 @@ export default function LessonsScreen() {
           </Surface>
         ) : null}
 
-        <View style={styles.sectionHeading}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {tr(language, 'Choose a word path', '挑一條詞語小徑', '挑一条词语小径')}
-          </Text>
-          {subscription.isPremium ? (
-            <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
-              {content.words.length} {tr(language, 'words', '個詞語', '个词语')}
+      {showWords ? (
+        <>
+          <View style={styles.sectionHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {tr(language, 'Choose a word path', '挑一條詞語小徑', '挑一条词语小径')}
             </Text>
-          ) : null}
-        </View>
-
-        {subscription.isPremium ? (
-          <View style={styles.pathGrid}>
-            {Array.from({ length: Math.ceil(content.words.length / WORDS_PER_PATH) }, (_, index) => (
-              <Pressable
-                key={index}
-                accessibilityRole="button"
-                onPress={() => setSelectedPath(index + 1)}
-                style={[
-                  styles.pathCard,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-              >
-                <View style={[styles.pathNumber, { backgroundColor: colors.secondary }]}>
-                  <Text style={[styles.pathNumberText, { color: colors.primary }]}>{index + 1}</Text>
-                </View>
-                <Text style={[styles.pathTitle, { color: colors.foreground }]} numberOfLines={2}>
-                  {pathTheme(language, stage, index + 1)}
-                </Text>
-                <Text style={[styles.pathSub, { color: colors.mutedForeground }]}>
-                  {Math.min(WORDS_PER_PATH, content.words.length - index * WORDS_PER_PATH)} {tr(language, 'words', '個詞語', '个词语')}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : (
-          <Surface style={styles.emptyCard}>
-            <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-              {tr(language, 'The themed word paths are available to active members.', '主題詞語小徑供有效會員使用。', '主题词语小径供有效会员使用。')}
-            </Text>
-          </Surface>
-        )}
-
-        <View style={styles.sectionHeading}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {tr(language, 'Short stories', '短篇故事', '短篇故事')}
-          </Text>
-          {subscription.isPremium ? (
-            <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
-              {content.stories.length} {tr(language, 'stories', '篇', '篇')}
-            </Text>
-          ) : null}
-        </View>
-
-        {subscription.isPremium ? (
-          <View style={styles.storyList}>
-            {content.stories.map((story, index) => (
-              <Pressable
-                key={story.id}
-                accessibilityRole="button"
-                onPress={() => setSelectedStory(story)}
-                style={[styles.storyRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-              >
-                <View style={[styles.storyNumber, { backgroundColor: colors.softAccent }]}>
-                  <Text style={[styles.pathNumberText, { color: colors.warmInk }]}>{index + 1}</Text>
-                </View>
-                <Text style={[styles.storyTitle, { color: colors.foreground }]} numberOfLines={1}>
-                  {displayStoryTitle(story)}
-                </Text>
-                <Ionicons name="play-circle-outline" size={22} color={colors.primary} />
-              </Pressable>
-            ))}
-          </View>
-        ) : (
-          <Surface style={styles.lockedCard}>
-            <Ionicons name="book-outline" size={22} color={colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.foreground }]}>
-                {localized(language, freeReading.title)}
+            {subscription.isPremium ? (
+              <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+                {content.words.length} {tr(language, 'words', '個詞語', '个词语')}
               </Text>
-              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-                {tr(language, 'Read the free story now. Membership includes 10 stories in each stage.', '可先閱讀免費短文；會員可閱讀每個階段的 10 篇故事。', '可先阅读免费短文；会员可阅读每个阶段的 10 篇故事。')}
-              </Text>
+            ) : null}
+          </View>
+          {subscription.isPremium ? (
+            <View style={styles.pathGrid}>
+              {Array.from({ length: Math.ceil(content.words.length / WORDS_PER_PATH) }, (_, index) => (
+                <Pressable
+                  key={index}
+                  accessibilityRole="button"
+                  onPress={() => setSelectedPath(index + 1)}
+                  style={[styles.pathCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <View style={[styles.pathNumber, { backgroundColor: colors.secondary }]}>
+                    <Text style={[styles.pathNumberText, { color: colors.primary }]}>{index + 1}</Text>
+                  </View>
+                  <Text style={[styles.pathTitle, { color: colors.foreground }]} numberOfLines={2}>
+                    {pathTheme(language, stage, index + 1)}
+                  </Text>
+                  <Text style={[styles.pathSub, { color: colors.mutedForeground }]}>
+                    {Math.min(WORDS_PER_PATH, content.words.length - index * WORDS_PER_PATH)} {tr(language, 'words', '個詞語', '个词语')}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={tr(language, 'Open free story', '開啟免費短文', '打开免费短文')}
-              testID="open-free-story"
-              onPress={() => setShowFreeReading(true)}
-              style={[styles.smallButton, { backgroundColor: colors.secondary }]}
-            >
-              <Ionicons name="play-circle-outline" size={24} color={colors.primary} />
-            </Pressable>
-          </Surface>
-        )}
+          ) : (
+            <Surface style={styles.emptyCard}>
+              <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                {tr(language, 'The themed word paths are available to active members.', '主題詞語小徑供有效會員使用。', '主题词语小径供有效会员使用。')}
+              </Text>
+            </Surface>
+          )}
+        </>
+      ) : null}
+
+      {showStories ? (
+        <>
+          <View style={styles.sectionHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {tr(language, 'Short stories', '短篇故事', '短篇故事')}
+            </Text>
+            {subscription.isPremium ? (
+              <Text style={[styles.sectionMeta, { color: colors.mutedForeground }]}>
+                {content.stories.length} {tr(language, 'stories', '篇', '篇')}
+              </Text>
+            ) : null}
+          </View>
+          {subscription.isPremium ? (
+            <View style={styles.storyList}>
+              {content.stories.map((story, index) => (
+                <Pressable
+                  key={story.id}
+                  accessibilityRole="button"
+                  onPress={() => setSelectedStory(story)}
+                  style={[styles.storyRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <View style={[styles.storyNumber, { backgroundColor: colors.softAccent }]}>
+                    <Text style={[styles.pathNumberText, { color: colors.warmInk }]}>{index + 1}</Text>
+                  </View>
+                  <Text style={[styles.storyTitle, { color: colors.foreground }]} numberOfLines={1}>
+                    {displayStoryTitle(story)}
+                  </Text>
+                  <Ionicons name="play-circle-outline" size={22} color={colors.primary} />
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Surface style={styles.lockedCard}>
+              <Ionicons name="book-outline" size={22} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                  {localized(language, freeReading.title)}
+                </Text>
+                <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+                  {tr(language, 'Read the free story now. Membership includes 10 stories in each stage.', '可先閱讀免費短文；會員可閱讀每個階段的 10 篇故事。', '可先阅读免费短文；会员可阅读每个阶段的 10 篇故事。')}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={tr(language, 'Open free story', '開啟免費短文', '打开免费短文')}
+                testID="open-free-story"
+                onPress={() => setShowFreeReading(true)}
+                style={[styles.smallButton, { backgroundColor: colors.secondary }]}
+              >
+                <Ionicons name="play-circle-outline" size={24} color={colors.primary} />
+              </Pressable>
+            </Surface>
+          )}
+        </>
+      ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
 

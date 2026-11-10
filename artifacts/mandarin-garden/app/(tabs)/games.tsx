@@ -24,6 +24,7 @@ import {
   getGetLearningProgressQueryKey,
   useIssueLearningRound,
   useRecordLearningRound,
+  type LearningAnswerResult,
   type LearningQuestion,
   type LearningRound,
 } from '@workspace/api-client-react';
@@ -163,7 +164,7 @@ export default function GamesScreen() {
       };
     }
     void issueRoundRef.current({ data: { stage, mode, script } })
-      .then((nextRound) => {
+      .then((nextRound: LearningRound) => {
         if (active) setRound(nextRound);
       })
       .catch(() => {
@@ -194,7 +195,7 @@ export default function GamesScreen() {
     recordAnswer.mutate(
       { data: request },
       {
-        onSuccess: (result) => {
+        onSuccess: (result: LearningAnswerResult) => {
           setAnswerXpDeltas((current) => Object.hasOwn(current, question.id)
             ? current
             : { ...current, [question.id]: result.xpDelta });
@@ -223,7 +224,7 @@ export default function GamesScreen() {
     recordAnswer.mutate(
       { data: pendingAnswer },
       {
-        onSuccess: (result) => {
+        onSuccess: (result: LearningAnswerResult) => {
           setAnswerXpDeltas((current) => Object.hasOwn(current, pendingAnswer.questionId)
             ? current
             : { ...current, [pendingAnswer.questionId]: result.xpDelta });

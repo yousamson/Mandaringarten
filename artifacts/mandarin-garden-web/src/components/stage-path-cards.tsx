@@ -8,7 +8,7 @@ import { playgroundModeHref } from '@/lib/playground-modes';
 import { scriptFor } from '@/lib/speech';
 
 /** Premium word paths, generated from the parent-selected stage's 200-word bank. */
-export function StagePathCards({ l }: { l: Language }) {
+export function StagePathCards({ l, showGames = true }: { l: Language; showGames?: boolean }) {
   const m = useMembership();
   const progress = useLearningProgress(m.uid, m.premium);
   const loading = m.checking || (m.premium && progress.isLoading);
@@ -46,7 +46,7 @@ export function StagePathCards({ l }: { l: Language }) {
           </Link>
         ))}
       </div>
-      <div className="stage-games" data-testid="stage-games">
+      {showGames && <div className="stage-games" data-testid="stage-games">
         <div className="section-head">
           <div>
             <div className="eyebrow">{stageLabel(l, stage)} · {stageAges[stage - 1]} {tr(l, 'years', '歲', '岁')}</div>
@@ -66,7 +66,7 @@ export function StagePathCards({ l }: { l: Language }) {
             </Link>
           ))}
         </div>
-      </div>
+      </div>}
     </section>
   );
 }

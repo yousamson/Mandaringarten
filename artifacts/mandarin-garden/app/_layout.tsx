@@ -31,7 +31,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!isLoaded) return;
     const inAuthFlow = segments[0] === '(auth)';
-    const inApp = segments[0] === '(tabs)';
+    const inApp = segments[0] === '(tabs)' || ['challenge', 'stories', 'translation', 'garden'].includes(String(segments[0]));
     if (!isSignedIn && inApp) router.replace('/(auth)/welcome');
     if (isSignedIn && inAuthFlow) router.replace('/(tabs)');
   }, [isLoaded, isSignedIn, router, segments]);
@@ -41,6 +41,10 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="challenge" options={{ headerShown: true }} />
+      <Stack.Screen name="stories" options={{ headerShown: true }} />
+      <Stack.Screen name="translation" options={{ headerShown: true }} />
+      <Stack.Screen name="garden" options={{ headerShown: true }} />
     </Stack>
   );
 }

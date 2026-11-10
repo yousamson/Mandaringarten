@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useStat
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, Show, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X, Droplets, Shovel } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Apple, BookOpen, Check, ChevronRight, Compass, Flower2, Heart, Inbox, Languages, Leaf, LogOut, Menu, MessageCircle, ShieldAlert, UserX, PawPrint, Play, RotateCcw, Sparkles, Sprout, Volume2, X, Droplets, Shovel, Map, Gamepad2, BookHeart } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { PwaInstallButton } from '@/components/pwa-install-button';
@@ -153,8 +153,9 @@ function Garden() {
           </Link>
           <nav className={`nav-links ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
             <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={close}>{t.navHome}</Link>
-            <a className="nav-link" href="/#lessons" onClick={close}>{t.navWords}</a>
+            <Link href="/learn" className={`nav-link ${path === '/learn' ? 'active' : ''}`} onClick={close}>{t.navWords}</Link>
             <Link href="/playground" className={`nav-link ${path === '/playground' || path === '/curriculum' ? 'active' : ''}`} onClick={close} data-testid="link-playground">{playgroundName[l]}</Link>
+            <Link href="/stories" className={`nav-link ${path === '/stories' ? 'active' : ''}`} onClick={close}>{homeText(l, 'Stories', '故事天地', '故事天地')}</Link>
             <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={close}>{t.navParent}</Link>
             {access.isSignedIn ? <Link href="/messages" className={`nav-link ${path === '/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-messages">{tr(l, 'Messages', '訊息', '消息')}</Link> : null}
             {access.isAdmin ? <Link href="/admin/messages" className={`nav-link ${path === '/admin/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin">{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</Link> : null}
@@ -173,13 +174,18 @@ function Garden() {
           <Route path="/privacy"><PrivacyPage language={l} /></Route>
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
           <Route path="/reading/:age"><FreeReadingPage language={l} /></Route>
+          <Route path="/learn">{guarded(<LearningPage language={l} t={t} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
+          <Route path="/challenge">{guarded(<ChallengePage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
+          <Route path="/stories">{guarded(<StoriesPage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
+          <Route path="/translation">{guarded(<TranslationPage language={l} />)}</Route>
+          <Route path="/garden">{guarded(<GardenPage language={l} />)}</Route>
           <Route path="/sign-in/*?"><AuthPage key="sign-in" mode="sign-in" language={l} /></Route>
           <Route path="/register/*?"><AuthPage key="register" mode="register" language={l} /></Route>
           <Route path="/membership"><AccountConsentBoundary language={l}><MembershipPage l={l} /></AccountConsentBoundary></Route>
           <Route path="/messages"><MessagesPage language={l} /></Route>
           <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
           <Route path="/account"><AccountPage language={l} /></Route>
-          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} onAgeChange={preferences.saveAge} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
+          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} />)}</Route>
           <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
           <Route path="/playground/words">{guarded(<WordBankPage language={l} />)}</Route>
           <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
@@ -218,100 +224,62 @@ function LegacySync({ l }: { l: Language }) {
 
 
 type Copy = typeof copy.en;
-function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setCategory }: { language: Language; t: Copy; age: string; onAgeChange: (value: string) => void; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
+function HomePage({ language, t, age }: { language: Language; t: Copy; age: string }) {
   const recommendedLevel = ageStages.indexOf(normalizeAgeStage(age));
-  const membership = useMembership();
-  const progressQuery = useLearningProgress(membership.uid, membership.premium);
-  const gardenCare = useGardenCare(membership.uid);
-  const progress = progressQuery.progress;
-  const selectedXp = progress ? progress.xpByStage[progress.selectedStage - 1] ?? 0 : 0;
+  const destinations = [
+    { href: '/challenge', icon: Sparkles, title: homeText(language, 'Daily challenge', '每日挑戰', '每日挑战'), description: homeText(language, 'Try a few free questions', '免費玩幾道小題', '免费玩几道小题'), tone: 'map-tone-sun' },
+    { href: '/learn', icon: Compass, title: homeText(language, 'Word paths', '詞語小徑', '词语小径'), description: homeText(language, 'Explore words by theme', '按主題探索詞語', '按主题探索词语'), tone: 'map-tone-leaf' },
+    { href: '/playground', icon: Gamepad2, title: homeText(language, 'Games', '遊戲樂園', '游戏乐园'), description: homeText(language, 'Play and practise', '邊玩邊練習', '边玩边练习'), tone: 'map-tone-lake' },
+    { href: '/stories', icon: BookHeart, title: homeText(language, 'Stories', '故事天地', '故事天地'), description: homeText(language, 'Read and listen together', '一起閱讀與聆聽', '一起阅读与聆听'), tone: 'map-tone-peach' },
+    { href: '/translation', icon: Languages, title: homeText(language, 'Word finder', '字詞小幫手', '字词小帮手'), description: homeText(language, 'Look up a word or phrase', '查找字詞和短句', '查找字词和短句'), tone: 'map-tone-lilac' },
+    { href: '/garden', icon: Flower2, title: homeText(language, 'My garden', '我的花園', '我的花园'), description: homeText(language, 'Care for a growing flower', '照料逐漸長大的花', '照料逐渐长大的花'), tone: 'map-tone-garden' },
+  ];
   return (
-    <main className="page-shell">
-      <section className="hero">
+    <main className="page-shell garden-home">
+      <section className="hero garden-map-hero">
         <div className="reveal">
-          <div className="eyebrow"><Flower2 size={14} /> {t.welcome}</div>
+          <div className="eyebrow"><Map size={14} /> {homeText(language, 'YOUR LEARNING GARDEN', '歡迎來到學習樂園', '欢迎来到学习乐园')}</div>
           <h1>{t.headline}</h1>
           <p className="hero-copy">{t.intro}</p>
           <div className="button-row">
-            <Link href="/lesson/greetings" className="button-primary">{t.start} <ArrowRight size={16} /></Link>
+            <Link href="/learn" className="button-primary" data-testid="link-map-first-step">{t.start} <ArrowRight size={16} /></Link>
           </div>
-          <div className="hero-note"><Sparkles size={14} /> {t.today}</div>
+          <div className="hero-note"><Sparkles size={14} /> {homeText(language, 'Choose a place to begin exploring.', '選一個地方，開始探索吧。', '选一个地方，开始探索吧。')}</div>
         </div>
-        <div className="hero-art">
-          <div className="garden-experience">
-            <GardenArtwork growthDays={membership.premium ? progress?.garden.growthDays ?? 0 : 0} daysSinceCare={progress?.garden.daysSinceCare ?? null} language={language} />
-            <section className="garden-care-card" aria-label={homeText(language, 'Garden care', '花園照料', '花园照料')} data-testid="section-garden-care">
-              <div className="garden-care-heading">
-                <div>
-                  <div className="eyebrow">{homeText(language, 'YOUR LITTLE GARDEN', '你的小花園', '你的小花园')}</div>
-                  <h2>{homeText(language, 'Growing, day by day', '每天一點點，慢慢長大', '每天一点点，慢慢长大')}</h2>
-                </div>
-                {membership.premium && progress ? <span className="garden-day-count" data-testid="status-garden-days">{progress.garden.growthDays}<small> / 30 {homeText(language, 'days', '天', '天')}</small></span> : null}
-              </div>
-              {membership.checking || (membership.premium && progressQuery.isLoading && !progress) ? (
-                <div className="garden-care-skeleton" role="status" data-testid="status-garden-loading"><span /><span /></div>
-              ) : membership.premium && progressQuery.isError && !progress ? (
-                <div className="garden-care-error" role="alert" data-testid="status-garden-error">
-                  <p>{homeText(language, 'Your garden could not load just now.', '花園暫時無法載入。', '花园暂时无法加载。')}</p>
-                  <button type="button" className="text-next" onClick={() => void progressQuery.refetch()} data-testid="button-retry-garden">{homeText(language, 'Try again', '再試一次', '再试一次')}</button>
-                </div>
-              ) : membership.premium && progress ? (
-                <>
-                  <div className="garden-reminder" role="status" data-testid="status-garden-reminder">
-                    <span className="garden-reminder-mark"><Sprout size={16} /></span>
-                    <p>{gardenReminder(language, progress.garden.caredToday, progress.garden.daysSinceCare)}</p>
-                  </div>
-                  <div className="garden-xp-row" data-testid="status-garden-xp">
-                    <span>{homeText(language, 'Selected stage XP', '目前階段 XP', '当前阶段 XP')} <strong>{selectedXp}</strong></span>
-                    <span>{homeText(language, 'Care costs', '照料需要', '照料需要')} <strong>20 XP</strong></span>
-                  </div>
-                  <div className="garden-xp-track" aria-hidden="true"><span style={{ transform: `scaleX(${Math.min(1, selectedXp / 20)})` }} /></div>
-                  {gardenCare.error ? <p className="garden-action-error" role="alert" data-testid="status-garden-care-error">{homeText(language, 'Care could not be saved. Please try again.', '未能儲存照料紀錄，請再試一次。', '未能保存照料记录，请再试一次。')}</p> : null}
-                  {progress.garden.caredToday ? (
-                    <p className="garden-done" role="status" data-testid="status-garden-cared">{homeText(language, 'You cared for the garden today. Come back tomorrow to help it grow.', '今天已照料花園。明天再來，陪它繼續成長。', '今天已照料花园。明天再来，陪它继续成长。')}</p>
-                  ) : (
-                    <>
-                      {selectedXp < 20 ? <p className="garden-need-xp" data-testid="status-garden-xp-needed">{homeText(language, 'Earn a little more XP to care for your garden.', '再累積一點 XP，就能照料花園。', '再积累一点 XP，就能照料花园。')}</p> : null}
-                      <div className="garden-care-actions">
-                        <button type="button" className="garden-care-button water" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('water').catch(() => undefined); }} data-testid="button-garden-water">
-                          <Droplets size={16} /> {gardenCare.isPending ? homeText(language, 'Saving…', '儲存中…', '保存中…') : homeText(language, 'Water', '澆水', '浇水')}
-                        </button>
-                        <button type="button" className="garden-care-button feed" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('fertilize').catch(() => undefined); }} data-testid="button-garden-fertilize">
-                          <Shovel size={16} /> {homeText(language, 'Fertilize', '施肥', '施肥')}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="garden-member-copy" data-testid="status-garden-membership">{homeText(language, 'Join the garden to nurture a flower with your daily practice.', '加入花園，用每天的練習照料一朵小花。', '加入花园，用每天的练习照料一朵小花。')}</p>
-                  <Link href="/membership" className="garden-member-link" data-testid="link-garden-membership">{homeText(language, 'Grow your garden', '開始種下花園', '开始种下花园')} <ArrowRight size={15} /></Link>
-                </>
-              )}
-            </section>
-          </div>
+        <div className="hero-art garden-map-art" aria-hidden="true">
+          <div className="garden-map-sun" />
+          <div className="garden-map-island"><Sprout size={76} strokeWidth={1.15} /></div>
+          <span className="garden-map-path path-one" />
+          <span className="garden-map-path path-two" />
+          <span className="garden-map-path path-three" />
+          <span className="garden-map-dot dot-one" />
+          <span className="garden-map-dot dot-two" />
+          <span className="garden-map-dot dot-three" />
         </div>
       </section>
-      <TranslationLookup language={language} />
-      <section id="lessons" className="reveal">
+      <section className="garden-map" aria-labelledby="garden-map-title" data-testid="garden-map">
         <div className="section-head">
-          <div><div className="eyebrow">{t.category}</div><h2>{t.lessons}</h2><p className="section-sub">{t.lessonsHint}</p></div>
-          <span className="status-pill">{t.minutes}</span>
+          <div>
+            <div className="eyebrow"><Map size={13} /> {homeText(language, 'PICK A PLACE', '挑選一個地方', '挑选一个地方')}</div>
+            <h2 id="garden-map-title">{homeText(language, 'Where shall we go?', '今天想去哪裡？', '今天想去哪里？')}</h2>
+            <p className="section-sub">{homeText(language, 'Tap a place on the map to explore.', '點選地圖上的地方，開始探索。', '点击地图上的地方，开始探索。')}</p>
+          </div>
+          <span className="status-pill">{t.levelAges[recommendedLevel]}</span>
         </div>
-        <div className="filter-row" role="group" aria-label={tr(language, 'Filter learning activities', '篩選學習內容', '筛选学习内容')}>
-          {categories.filter((item) => item === 'all' || lessons.some((lesson) => !lesson.premium && lesson.category === item)).map((item) => <button key={item} className={`filter-chip ${category === item ? 'selected' : ''}`} onClick={() => setCategory(item)} data-testid={`filter-${item}`}>{categoryNames[language][item]}</button>)}
-        </div>
-        <div className="lesson-grid">
-          {lessonsToShow.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} language={language} t={t} />)}
-        </div>
-        <div className="home-pinyin-placement">
-          <PinyinMatchCard key={normalizeAgeStage(age)} language={language} age={age} onAgeChange={onAgeChange} />
+        <div className="garden-map-grid">
+          {destinations.map(({ href, icon: Icon, title, description, tone }) => (
+            <Link key={href} href={href} className={`garden-map-card ${tone}`} data-testid={`link-map-${href.replaceAll('/', '').replaceAll('-', '')}`}>
+              <span className="garden-map-card-icon"><Icon size={22} strokeWidth={1.8} /></span>
+              <span className="garden-map-card-copy"><strong>{title}</strong><small>{description}</small></span>
+              <ArrowRight className="garden-map-arrow" size={17} aria-hidden="true" />
+            </Link>
+          ))}
         </div>
       </section>
-      <StagePathCards l={language} />
-      <PracticeSection language={language} age={age} onAgeChange={onAgeChange} />
-      <ParentChildBookSection language={language} age={age} />
+      <div className="garden-map-parent-link">
+        <span>{homeText(language, 'Grown-ups can visit the parent area for settings and progress.', '大人可前往家長專區管理設定與進度。', '大人可前往家长专区管理设置与进度。')}</span>
+        <Link href="/parent" className="button-secondary" data-testid="link-map-parent">{t.navParent} <ArrowRight size={14} /></Link>
+      </div>
       <section className="progress-band">
         <div>
           <div className="eyebrow">{t.path}</div>
@@ -327,6 +295,67 @@ function HomePage({ language, t, age, onAgeChange, lessonsToShow, category, setC
           ))}
         </div>
       </section>
+    </main>
+  );
+}
+
+function LearningPage({ language, t, lessonsToShow, category, setCategory }: { language: Language; t: Copy; lessonsToShow: GardenLesson[]; category: string; setCategory: (value: string) => void }) {
+  return (
+    <main className="page-shell" data-testid="learning-page">
+      <section className="page-title"><div className="eyebrow">{t.category}</div><h1>{t.lessons}</h1><p>{t.lessonsHint}</p></section>
+      <div className="filter-row" role="group" aria-label={tr(language, 'Filter learning activities', '篩選學習內容', '筛选学习内容')}>
+        {categories.filter((item) => item === 'all' || lessons.some((lesson) => !lesson.premium && lesson.category === item)).map((item) => <button key={item} className={`filter-chip ${category === item ? 'selected' : ''}`} onClick={() => setCategory(item)} data-testid={`filter-${item}`}>{categoryNames[language][item]}</button>)}
+      </div>
+      <div className="lesson-grid">
+        {lessonsToShow.map((lesson) => <LessonCard key={lesson.id} lesson={lesson} language={language} t={t} />)}
+      </div>
+      <div className="home-pinyin-placement"><StagePathCards l={language} showGames={false} /></div>
+    </main>
+  );
+}
+
+function ChallengePage({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
+  return <main className="page-shell" data-testid="challenge-page"><section className="page-title"><div className="eyebrow">{homeText(language, 'A LITTLE DAILY PRACTICE', '每日小挑戰', '每日小挑战')}</div><h1>{homeText(language, 'A little challenge, every day', '每天一個小挑戰', '每天一个小挑战')}</h1><p>{homeText(language, 'Try a few playful questions made for the age you choose.', '依所選年齡，玩幾道輕鬆的小題目。', '按所选年龄，玩几道轻松的小题目。')}</p></section><PinyinMatchCard language={language} age={age} onAgeChange={onAgeChange} /></main>;
+}
+
+function StoriesPage({ language, age, onAgeChange }: { language: Language; age: string; onAgeChange: (value: string) => void }) {
+  return <main className="page-shell" data-testid="stories-page"><section className="page-title"><div className="eyebrow">{homeText(language, 'READ & LISTEN', '閱讀與聆聽', '阅读与聆听')}</div><h1>{homeText(language, 'Stories to share', '一起讀故事', '一起读故事')}</h1><p>{homeText(language, 'Choose a short story or settle in with a picture book.', '挑選一篇短文，或和家人一起讀繪本。', '挑选一篇短文，或和家人一起读绘本。')}</p></section><PracticeSection language={language} age={age} onAgeChange={onAgeChange} /><ParentChildBookSection language={language} age={age} /></main>;
+}
+
+function TranslationPage({ language }: { language: Language }) {
+  return <main className="page-shell" data-testid="translation-page"><section className="page-title"><div className="eyebrow">{homeText(language, 'WORD FINDER', '字詞查找', '字词查找')}</div><h1>{homeText(language, 'Look up a word', '查找字詞翻譯', '查找字词翻译')}</h1><p>{homeText(language, 'Translate a word or short phrase between English and Chinese.', '查找中英文單字或短句的翻譯。', '查找中英文单词或短句的翻译。')}</p></section><TranslationLookup language={language} /></main>;
+}
+
+function GardenPage({ language }: { language: Language }) {
+  const membership = useMembership();
+  const progressQuery = useLearningProgress(membership.uid, membership.premium);
+  const gardenCare = useGardenCare(membership.uid);
+  const progress = progressQuery.progress;
+  const selectedXp = progress ? progress.xpByStage[progress.selectedStage - 1] ?? 0 : 0;
+  return (
+    <main className="page-shell" data-testid="garden-page">
+      <section className="page-title"><div className="eyebrow"><Flower2 size={14} /> {homeText(language, 'YOUR LITTLE GARDEN', '你的小花園', '你的小花园')}</div><h1>{homeText(language, 'Growing, day by day', '每天一點點，慢慢長大', '每天一点点，慢慢长大')}</h1><p>{homeText(language, 'Care for a flower as you keep practising.', '持續練習，也別忘了照料自己的花。', '持续练习，也别忘了照料自己的花。')}</p></section>
+      <div className="garden-page-content">
+        <GardenArtwork growthDays={membership.premium ? progress?.garden.growthDays ?? 0 : 0} daysSinceCare={progress?.garden.daysSinceCare ?? null} language={language} />
+        <section className="garden-care-card" aria-label={homeText(language, 'Garden care', '花園照料', '花园照料')} data-testid="section-garden-care">
+          <div className="garden-care-heading"><div><div className="eyebrow">{homeText(language, 'YOUR LITTLE GARDEN', '你的小花園', '你的小花园')}</div><h2>{homeText(language, 'Growing, day by day', '每天一點點，慢慢長大', '每天一点点，慢慢长大')}</h2></div>{membership.premium && progress ? <span className="garden-day-count" data-testid="status-garden-days">{progress.garden.growthDays}<small> / 30 {homeText(language, 'days', '天', '天')}</small></span> : null}</div>
+          {membership.checking || (membership.premium && progressQuery.isLoading && !progress) ? <div className="garden-care-skeleton" role="status" data-testid="status-garden-loading"><span /><span /></div>
+            : membership.premium && progressQuery.isError && !progress ? <div className="garden-care-error" role="alert" data-testid="status-garden-error"><p>{homeText(language, 'Your garden could not load just now.', '花園暫時無法載入。', '花园暂时无法加载。')}</p><button type="button" className="text-next" onClick={() => void progressQuery.refetch()} data-testid="button-retry-garden">{homeText(language, 'Try again', '再試一次', '再试一次')}</button></div>
+              : membership.premium && progress ? <>
+                <div className="garden-reminder" role="status" data-testid="status-garden-reminder"><span className="garden-reminder-mark"><Sprout size={16} /></span><p>{gardenReminder(language, progress.garden.caredToday, progress.garden.daysSinceCare)}</p></div>
+                <div className="garden-xp-row" data-testid="status-garden-xp"><span>{homeText(language, 'Selected stage XP', '目前階段 XP', '当前阶段 XP')} <strong>{selectedXp}</strong></span><span>{homeText(language, 'Care costs', '照料需要', '照料需要')} <strong>20 XP</strong></span></div>
+                <div className="garden-xp-track" aria-hidden="true"><span style={{ transform: `scaleX(${Math.min(1, selectedXp / 20)})` }} /></div>
+                {gardenCare.error ? <p className="garden-action-error" role="alert" data-testid="status-garden-care-error">{homeText(language, 'Care could not be saved. Please try again.', '未能儲存照料紀錄，請再試一次。', '未能保存照料记录，请再试一次。')}</p> : null}
+                {progress.garden.caredToday ? <p className="garden-done" role="status" data-testid="status-garden-cared">{homeText(language, 'You cared for the garden today. Come back tomorrow to help it grow.', '今天已照料花園。明天再來，陪它繼續成長。', '今天已照料花园。明天再来，陪它继续成长。')}</p> : <>
+                  {selectedXp < 20 ? <p className="garden-need-xp" data-testid="status-garden-xp-needed">{homeText(language, 'Earn a little more XP to care for your garden.', '再累積一點 XP，就能照料花園。', '再积累一点 XP，就能照料花园。')}</p> : null}
+                  <div className="garden-care-actions">
+                    <button type="button" className="garden-care-button water" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('water').catch(() => undefined); }} data-testid="button-garden-water"><Droplets size={16} /> {gardenCare.isPending ? homeText(language, 'Saving…', '儲存中…', '保存中…') : homeText(language, 'Water', '澆水', '浇水')}</button>
+                    <button type="button" className="garden-care-button feed" disabled={selectedXp < 20 || !progress.garden.careAvailable || gardenCare.isPending} onClick={() => { gardenCare.reset(); void gardenCare.care('fertilize').catch(() => undefined); }} data-testid="button-garden-fertilize"><Shovel size={16} /> {homeText(language, 'Fertilize', '施肥', '施肥')}</button>
+                  </div>
+                </>}
+              </> : <><p className="garden-member-copy" data-testid="status-garden-membership">{homeText(language, 'Join the garden to nurture a flower with your daily practice.', '加入花園，用每天的練習照料一朵小花。', '加入花园，用每天的练习照料一朵小花。')}</p><Link href="/membership" className="garden-member-link" data-testid="link-garden-membership">{homeText(language, 'Grow your garden', '開始種下花園', '开始种下花园')} <ArrowRight size={15} /></Link></>}
+        </section>
+      </div>
     </main>
   );
 }
@@ -648,7 +677,7 @@ function ParentStagePanel({ l }: { l: Language }) {
             <div className="stage-summary">
               <div><span>{tr(l, 'Selected stage', '目前階段', '当前阶段')}</span><strong data-testid="text-selected-stage">{stageLabel(l, p.selectedStage)} · {pick(l, stageNames[p.selectedStage - 1])}</strong></div>
               <div><span>{tr(l, 'Total XP', '總經驗值', '总经验值')}</span><strong data-testid="text-total-xp">{p.totalXp}</strong></div>
-              <div><span>{tr(l, 'Stages complete', '已完成階段', '已完成阶段')}</span><strong data-testid="text-stages-complete">{p.xpByStage.filter((x) => x >= XP_COMPLETE).length} / 4</strong></div>
+              <div><span>{tr(l, 'Stages complete', '已完成階段', '已完成阶段')}</span><strong data-testid="text-stages-complete">{p.xpByStage.filter((x: number) => x >= XP_COMPLETE).length} / 4</strong></div>
             </div>
             <StagePicker progress={p} l={l} onSelect={m.premium ? (s) => { if (s === p.selectedStage) return; setSelectError(false); stageSelect.select(s, { onError: () => setSelectError(true) }); } : undefined} pendingStage={stageSelect.pendingStage} disabled={!m.premium || stageSelect.isPending} />
             {selectError ? <div className="alert" role="alert">{tr(l, 'The stage could not be changed. Please try again.', '未能切換階段，請再試一次。', '未能切换阶段，请再试一次。')}</div> : null}

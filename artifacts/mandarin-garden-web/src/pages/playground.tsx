@@ -3,7 +3,6 @@ import { ArrowLeft, ArrowRight, BookOpen, LockKeyhole, RotateCcw, Sparkles, Trop
 import { Link } from 'wouter';
 import { GameRound } from '@/components/playground/game-round';
 import { StagePicker } from '@/components/playground/stage-picker';
-import { StoryReader } from '@/components/playground/story-reader';
 import { VocabBoard } from '@/components/playground/vocab-board';
 import { useLearningProgress, useMembership, useSelectStage, XP_COMPLETE, XP_PER_CORRECT, type NormalizedProgress } from '@/hooks/use-learning';
 import type { Language } from '@/lib/garden-data';
@@ -138,10 +137,17 @@ function PlaygroundBody({ uid, progress, l }: { uid: string; progress: Normalize
           </button>
         ))}
       </div>
-      <div className="cur-grid">
-        <GameRound key={`${stage}-${mode}-${l}`} stage={stage} mode={mode} l={l} uid={uid} />
-        <StoryReader stage={stage} l={l} />
-      </div>
+       <div className="cur-grid games-only-grid">
+         <GameRound key={`${stage}-${mode}-${l}`} stage={stage} mode={mode} l={l} uid={uid} />
+       </div>
+       <Link href="/stories" className="panel playground-story-link" data-testid="link-playground-stories">
+         <div>
+           <div className="eyebrow">{tr(l, 'READ & LISTEN', '閱讀與聆聽', '阅读与聆听')}</div>
+           <h2 style={{ margin: '5px 0' }}>{tr(l, 'Stories to share', '一起讀故事', '一起读故事')}</h2>
+           <p className="panel-desc" style={{ margin: 0 }}>{tr(l, 'Open short stories and picture books in their own reading space.', '前往專屬閱讀區，探索短篇故事和親子繪本。', '前往专属阅读区，探索短篇故事和亲子绘本。')}</p>
+         </div>
+         <span className="button-secondary">{tr(l, 'Go to stories', '前往故事天地', '前往故事天地')} <ArrowRight size={14} /></span>
+       </Link>
       <Link
         href="/playground/words"
         className="panel"
