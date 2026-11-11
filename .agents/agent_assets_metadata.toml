@@ -154,3 +154,45 @@ mtime_ms = 1794435969739
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/fa751d97-120a-44a4-a2c6-d8eac0aed065/aee7a43e-8d41-4028-906f-c7d319c43605"
 storage_version_token = "1794436009163069"
 content_type = "image/png"
+
+[[outputs]]
+id = "W_-Becphe_xcT70AmfSuo"
+uri = "file://generated-artifacts/treasure-house-previews/04-chinese-treasure-house-home-en.png"
+type = "image"
+title = "Chinese Treasure House Home · English"
+description = "English-interface screenshot, 1440 × 1100 PNG."
+logical_id = "8b61ad74-acde-4359-ae65-394bbd6cabd6"
+content_hash = "sha256:c4d7e3a935172421c94303beb90b427a7985e410bee2dbe1b8fe395e1d5292c9"
+size = 749418
+mtime_ms = 1794436083254
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/8b61ad74-acde-4359-ae65-394bbd6cabd6/c9d4174e-6bb3-4f6e-940c-bf2aeebbe08d"
+storage_version_token = "1794436156729957"
+content_type = "image/png"
+
+[[outputs]]
+id = "d4bHy8exfymLQl_06nL3G"
+uri = "file://generated-artifacts/treasure-house-previews/05-hsk-graded-practice-en.png"
+type = "image"
+title = "HSK Graded Practice · English"
+description = "English-interface screenshot showing HSK levels 1–9, 1440 × 1100 PNG."
+logical_id = "19b16f43-9b77-4248-af43-20dd591797e7"
+content_hash = "sha256:6a7b15fd8c44e379af2802cc81bf463ac7601010d8db19f0a726693f0fbfa732"
+size = 789027
+mtime_ms = 1794436127183
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/19b16f43-9b77-4248-af43-20dd591797e7/e21d50a5-309e-47c3-b503-7a463c23f321"
+storage_version_token = "1794436157987846"
+content_type = "image/png"
+
+[[outputs]]
+id = "iN-EETYkVL5DNF5gsvV6o"
+uri = "file://generated-artifacts/treasure-house-previews/06-psc-graded-practice-en.png"
+type = "image"
+title = "PSC Graded Practice · English"
+description = "English-interface screenshot showing PSC grades from 3B to 1A, 1440 × 1100 PNG."
+logical_id = "57f7c35d-852d-41ef-acda-6e7bdc1a22e8"
+content_hash = "sha256:7145c7a05d8f2d378ade3f8b68e6c123f8b3bec44a87682aedb2da2800536816"
+size = 790545
+mtime_ms = 1794436132031
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/57f7c35d-852d-41ef-acda-6e7bdc1a22e8/b18f9fb8-697a-4d30-93db-b5dc1bffa4eb"
+storage_version_token = "1794436159219257"
+content_type = "image/png"
