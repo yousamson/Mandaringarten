@@ -196,3 +196,17 @@ mtime_ms = 1794436132031
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/57f7c35d-852d-41ef-acda-6e7bdc1a22e8/b18f9fb8-697a-4d30-93db-b5dc1bffa4eb"
 storage_version_token = "1794436159219257"
 content_type = "image/png"
+
+[[outputs]]
+id = "xT3Er8-BZ2JutycefPS8q"
+uri = "file://-----Mandarin-Garden-Nov-10-06-45-55.mp4"
+type = "video"
+title = "漢語樂園宣傳影片 MP4"
+description = "現有 24 秒宣傳短片，1920 × 1080、H.264，可直接下載。"
+logical_id = "4c8b87ff-d5f9-4f9b-8782-2bb9fd859f8a"
+content_hash = "sha256:77db45040e0cdad5678bde6e2a784382170a03928f9bef84311c991940823c88"
+size = 18806066
+mtime_ms = 1794264615198
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/4c8b87ff-d5f9-4f9b-8782-2bb9fd859f8a/5add9afc-d92c-4b81-9cdf-6af76384cb8c"
+storage_version_token = "1794436384977897"
+content_type = "video/mp4"
