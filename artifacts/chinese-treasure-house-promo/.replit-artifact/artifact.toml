@@ -1,0 +1,29 @@
+kind = "video"
+videoAspectRatio = "16:9"
+previewPath = "/chinese-treasure-house-promo/"
+title = "中文寶庫宣傳短片"
+description = "A standalone 24-second bilingual animated promo introducing Chinese Treasure House, HSK levels 1–9, PSC graded practice, vocabulary games, and listening resources."
+version = "1.0.0"
+id = "artifacts/chinese-treasure-house-promo"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/chinese-treasure-house-promo/" ]
+localPort = 21976
+
+[services.development]
+run = "pnpm --filter @workspace/chinese-treasure-house-promo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/chinese-treasure-house-promo", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/chinese-treasure-house-promo/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21976"
+BASE_PATH = "/chinese-treasure-house-promo/"

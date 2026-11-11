@@ -210,3 +210,25 @@ mtime_ms = 1794264615198
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/4c8b87ff-d5f9-4f9b-8782-2bb9fd859f8a/5add9afc-d92c-4b81-9cdf-6af76384cb8c"
 storage_version_token = "1794436384977897"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "r97oBmtRR2MaPCJ5752uR"
+uri = "file://artifacts/chinese-treasure-house-promo/public/audio/bg_music.mp3"
+type = "audio"
+title = "bg music"
+description = "Generated music: Warm playful orchestral-pop instrumental for a Chinese learning library promo. Plucked pizzicato strings, marimba, guzheng-like plucks, soft hand percussion, gentle bass pulse, 120 B…"
+logical_id = "48813ff8-113b-4a38-900f-2eedc40304d4"
+
+[[outputs]]
+id = "N5wgFXSQraVT6nip7zDZ2"
+uri = "file://generated-artifacts/chinese-treasure-house-video/Chinese-Treasure-House-Promo.mp4"
+type = "video"
+title = "中文寶庫宣傳短片 MP4"
+description = "24 秒中英雙語宣傳片，1920 × 1080，附背景音樂。介紹 HSK 一至九級及 PSC 由三級乙等至一級甲等，檔案約 3.9 MB。"
+logical_id = "23f0ab5f-6726-4b0c-bcc7-24bb15c6661f"
+content_hash = "sha256:11ce7911e8a40a3d2fab8c37f0472f05e444ecf14d70899d3a414c5156adf7ad"
+size = 4054634
+mtime_ms = 1794437596902
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/23f0ab5f-6726-4b0c-bcc7-24bb15c6661f/186cc566-b81d-4fc3-a8d2-51068c878690"
+storage_version_token = "1794437681779004"
+content_type = "video/mp4"
