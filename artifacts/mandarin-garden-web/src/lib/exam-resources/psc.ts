@@ -6,7 +6,7 @@ const w = (id: string, traditional: string, simplified: string, pinyin: string, 
 
 export const pscLevels: ExamLevel[] = [
   {
-    id: '1a', label: '一級甲等', description: '朗讀與表達練習 · 音節清楚、語調自然',
+    id: '1a', label: '一級甲等', description: 'Score: 97 to 100. Standard pronunciation, correct vocabulary and grammar, natural intonation, and fluent expression.',
     words: [
       w('p1a-zhongguo', '中國', '中国', 'Zhōngguó', 'China'),
       w('p1a-renmin', '人民', '人民', 'rénmín', 'people'),
@@ -26,7 +26,7 @@ export const pscLevels: ExamLevel[] = [
     },
   },
   {
-    id: '1b', label: '一級乙等', description: '朗讀與表達練習 · 聲調連讀與短句節奏',
+    id: '1b', label: '一級乙等', description: 'Score: 92 to under 97. Standard pronunciation and natural, fluent speech, with occasional syllable or tone errors.',
     words: [
       w('p1b-siwei', '思維', '思维', 'sīwéi', 'thinking'),
       w('p1b-fazhan', '發展', '发展', 'fāzhǎn', 'development; to develop'),
@@ -46,7 +46,7 @@ export const pscLevels: ExamLevel[] = [
     },
   },
   {
-    id: '2a', label: '二級甲等', description: '朗讀與表達練習 · 多音節詞與連貫語句',
+    id: '2a', label: '二級甲等', description: 'Score: 87 to under 92. Pronunciation is generally accurate and fluent; a few difficult sounds may be mispronounced.',
     words: [
       w('p2a-bixu', '必須', '必须', 'bìxū', 'must; to have to'),
       w('p2a-zhiliang', '質量', '质量', 'zhìliàng', 'quality'),
@@ -66,7 +66,7 @@ export const pscLevels: ExamLevel[] = [
     },
   },
   {
-    id: '2b', label: '二級乙等', description: '朗讀與表達練習 · 清晰表達與準確停連',
+    id: '2b', label: '二級乙等', description: 'Score: 80 to under 87. Some tones or sounds are inaccurate; difficult sounds often cause errors, and dialect forms may appear.',
     words: [
       w('p2b-xingshi', '形勢', '形势', 'xíngshì', 'situation; circumstances'),
       w('p2b-jingyan', '經驗', '经验', 'jīngyàn', 'experience'),
@@ -86,7 +86,7 @@ export const pscLevels: ExamLevel[] = [
     },
   },
   {
-    id: '3a', label: '三級甲等', description: '朗讀與表達練習 · 長句理解與流暢敘述',
+    id: '3a', label: '三級甲等', description: 'Score: 70 to under 80. Many initials/finals errors and inaccurate tones; regional accent is noticeable, with some vocabulary or grammar errors.',
     words: [
       w('p3a-zuoyong', '作用', '作用', 'zuòyòng', 'function; effect'),
       w('p3a-cunzai', '存在', '存在', 'cúnzài', 'to exist; existence'),
@@ -106,7 +106,7 @@ export const pscLevels: ExamLevel[] = [
     },
   },
   {
-    id: '3b', label: '三級乙等', description: '朗讀與表達練習 · 複雜語句與準確語意',
+    id: '3b', label: '三級乙等', description: 'Score: 60 to under 70. Frequent pronunciation errors, strong regional accent, and frequent vocabulary or grammar errors.',
     words: [
       w('p3b-tongchou', '統籌', '统筹', 'tǒngchóu', 'to coordinate; to plan as a whole'),
       w('p3b-jianbie', '鑑別', '鉴别', 'jiànbié', 'to distinguish; to identify'),
