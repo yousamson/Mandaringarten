@@ -27,7 +27,7 @@ export function AccessChecking({ l }: { l: Language }) {
           <div className="alert" role="alert">{tr(l, 'We could not confirm account access in time. Please retry or return to the garden.', '確認帳戶權限逾時，請重試或返回樂園。', '确认账户权限超时，请重试或返回乐园。')}</div>
           <div className="button-row">
             <button className="button-primary" onClick={() => window.location.reload()} data-testid="button-reload-access">{tr(l, 'Try again', '重新載入', '重新加载')}</button>
-            <Link href="/" className="button-secondary" data-testid="link-access-home">{tr(l, 'Return to the garden', '返回樂園', '返回乐园')}</Link>
+            <Link href="/home" className="button-secondary" data-testid="link-access-home">{tr(l, 'Return to the garden', '返回樂園', '返回乐园')}</Link>
           </div>
         </>
       ) : (

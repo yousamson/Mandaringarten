@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('the learning map opens each focused learning area', async ({ page }) => {
   await page.setViewportSize({ width: 402, height: 874 });
-  await page.goto('/');
+  await page.goto('/home');
   await expect(page.getByTestId('garden-map')).toBeVisible();
 
   const destinations = [
@@ -15,9 +15,24 @@ test('the learning map opens each focused learning area', async ({ page }) => {
   ];
 
   for (const destination of destinations) {
-    await page.goto('/');
+    await page.goto('/home');
     await page.getByTestId(destination.link).click();
     await expect(page).toHaveURL(new RegExp(`${destination.path.replaceAll('/', '\\/')}$`));
     await expect(page.locator('main h1').first()).toContainText(destination.heading);
   }
+});
+
+test('the entry page offers Mandarin Garden and the content-in-progress Chinese Treasure House', async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 874 });
+  await page.goto('/');
+  await expect(page.getByTestId('entry-portal')).toBeVisible();
+  await page.getByTestId('link-entry-garden').click();
+  await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByTestId('garden-map')).toBeVisible();
+
+  await page.goto('/');
+  await page.getByTestId('link-entry-treasure').click();
+  await expect(page).toHaveURL(/\/treasure-house$/);
+  await expect(page.locator('main h1')).toHaveText('中文寶庫');
+  await expect(page.getByText(/This space is being prepared|這個空間正在籌備中/)).toBeVisible();
 });

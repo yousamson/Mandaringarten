@@ -4,6 +4,8 @@ const languages = ['zh-Hans', 'zh-Hant'] as const;
 const widths = [320, 375] as const;
 const routes = [
   '/',
+  '/home',
+  '/treasure-house',
   '/learn',
   '/challenge',
   '/playground',

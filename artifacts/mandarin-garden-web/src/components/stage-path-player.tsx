@@ -17,7 +17,7 @@ export function StagePathPlayer({ packIndex, l }: { packIndex: number; l: Langua
   useEffect(() => () => stopSpeech(), []);
   const script = scriptFor(l);
 
-  const back = <Link href="/" className="button-secondary back-chip" data-testid="link-back-home"><ArrowLeft size={14} /> {tr(l, 'Back to the garden', '回到樂園', '回到乐园')}</Link>;
+  const back = <Link href="/home" className="button-secondary back-chip" data-testid="link-back-home"><ArrowLeft size={14} /> {tr(l, 'Back to the garden', '回到樂園', '回到乐园')}</Link>;
   if (packIndex < 1 || packIndex > PACK_COUNT) return <main className="page-shell not-found"><h1>{tr(l, 'That path is not here.', '找不到這條小徑。', '找不到这条小径。')}</h1>{back}</main>;
 
   if (m.checking || (m.premium && progress.isLoading)) {
@@ -49,7 +49,7 @@ export function StagePathPlayer({ packIndex, l }: { packIndex: number; l: Langua
   return (
     <main className="page-shell"><div className="lesson-page">{back}
       <div className="lesson-player" style={{ marginTop: 18 }} data-testid="stage-path-player">
-        <div className="player-head"><span>{title} · {done ? total : index + 1} / {total}</span><Link href="/" className="icon-button" aria-label={tr(l, 'Close', '關閉', '关闭')}><X size={17} /></Link></div>
+        <div className="player-head"><span>{title} · {done ? total : index + 1} / {total}</span><Link href="/home" className="icon-button" aria-label={tr(l, 'Close', '關閉', '关闭')}><X size={17} /></Link></div>
         <div className="player-progress"><span style={{ width: `${done ? 100 : ((index + 1) / total) * 100}%` }} /></div>
         {done ? (
           <div className="complete-panel">

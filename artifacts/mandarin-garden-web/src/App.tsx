@@ -25,6 +25,7 @@ import NotFound from '@/pages/not-found';
 import AuthPage from '@/pages/auth';
 import FreeReadingPage from '@/pages/free-reading';
 import DisclaimerPage from '@/pages/disclaimer';
+import EntryPortalPage from '@/pages/entry-portal';
 import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
@@ -136,6 +137,7 @@ function Garden() {
   const [path] = useLocation();
   const [category, setCategory] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
+  const isEntryArea = path === '/' || path === '/treasure-house';
   const freeLessons = useMemo(() => lessons.filter((lesson) => !lesson.premium), []);
   const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
   const shellClass = `garden-app theme-${preferences.theme}`;
@@ -152,13 +154,20 @@ function Garden() {
             <span className="brand-text"><span>漢語樂園 Mandarin Garden</span><small className="brand-tagline">{tagline[l]}</small></span>
           </Link>
           <nav className={`nav-links ${menuOpen ? 'is-open' : ''}`} aria-label="Main navigation">
-            <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={close}>{t.navHome}</Link>
-            <Link href="/learn" className={`nav-link ${path === '/learn' ? 'active' : ''}`} onClick={close}>{t.navWords}</Link>
-            <Link href="/playground" className={`nav-link ${path === '/playground' || path === '/curriculum' ? 'active' : ''}`} onClick={close} data-testid="link-playground">{playgroundName[l]}</Link>
-            <Link href="/stories" className={`nav-link ${path === '/stories' ? 'active' : ''}`} onClick={close}>{homeText(l, 'Stories', '故事天地', '故事天地')}</Link>
-            <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={close}>{t.navParent}</Link>
-            {access.isSignedIn ? <Link href="/messages" className={`nav-link ${path === '/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-messages">{tr(l, 'Messages', '訊息', '消息')}</Link> : null}
-            {access.isAdmin ? <Link href="/admin/messages" className={`nav-link ${path === '/admin/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin">{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</Link> : null}
+            {isEntryArea ? <>
+              <Link href="/" className={`nav-link ${path === '/' ? 'active' : ''}`} onClick={close}>{homeText(l, 'Choose a destination', '選擇入口', '选择入口')}</Link>
+              <Link href="/home" className="nav-link" onClick={close}>{homeText(l, 'Mandarin Garden', '漢語樂園', '汉语乐园')}</Link>
+              <Link href="/treasure-house" className={`nav-link ${path === '/treasure-house' ? 'active' : ''}`} onClick={close}>{homeText(l, 'Chinese Treasure House', '中文寶庫', '中文宝库')}</Link>
+            </> : <>
+              <Link href="/home" className={`nav-link ${path === '/home' ? 'active' : ''}`} onClick={close}>{t.navHome}</Link>
+              <Link href="/learn" className={`nav-link ${path === '/learn' ? 'active' : ''}`} onClick={close}>{t.navWords}</Link>
+              <Link href="/playground" className={`nav-link ${path === '/playground' || path === '/curriculum' ? 'active' : ''}`} onClick={close} data-testid="link-playground">{playgroundName[l]}</Link>
+              <Link href="/stories" className={`nav-link ${path === '/stories' ? 'active' : ''}`} onClick={close}>{homeText(l, 'Stories', '故事天地', '故事天地')}</Link>
+              <Link href="/parent" className={`nav-link ${path === '/parent' ? 'active' : ''}`} onClick={close}>{t.navParent}</Link>
+              <Link href="/" className="nav-link" onClick={close}>{homeText(l, 'Choose a destination', '選擇入口', '选择入口')}</Link>
+              {access.isSignedIn ? <Link href="/messages" className={`nav-link ${path === '/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-messages">{tr(l, 'Messages', '訊息', '消息')}</Link> : null}
+              {access.isAdmin ? <Link href="/admin/messages" className={`nav-link ${path === '/admin/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin">{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</Link> : null}
+            </>}
           </nav>
           <div className="top-actions">
             <select className="language-select" aria-label="Interface language" value={l} onChange={(event) => preferences.saveLanguage(event.target.value as Language)} data-testid="select-language">
@@ -174,6 +183,8 @@ function Garden() {
           <Route path="/privacy"><PrivacyPage language={l} /></Route>
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
           <Route path="/reading/:age"><FreeReadingPage language={l} /></Route>
+          <Route path="/treasure-house"><EntryPortalPage language={l} view="treasure-house" /></Route>
+          <Route path="/">{<EntryPortalPage language={l} view="choose" />}</Route>
           <Route path="/learn">{guarded(<LearningPage language={l} t={t} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
           <Route path="/challenge">{guarded(<ChallengePage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
           <Route path="/stories">{guarded(<StoriesPage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
@@ -185,7 +196,7 @@ function Garden() {
           <Route path="/messages"><MessagesPage language={l} /></Route>
           <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
           <Route path="/account"><AccountPage language={l} /></Route>
-          <Route path="/">{guarded(<HomePage language={l} t={t} age={preferences.age} />)}</Route>
+          <Route path="/home">{guarded(<HomePage language={l} t={t} age={preferences.age} />)}</Route>
           <Route path="/lesson/:lessonId">{guarded(<LessonPage language={l} t={t} />)}</Route>
           <Route path="/playground/words">{guarded(<WordBankPage language={l} />)}</Route>
           <Route path="/playground">{guarded(<PlaygroundPage language={l} />)}</Route>
@@ -591,11 +602,11 @@ function LessonPage({ language, t }: { language: Language; t: Copy }) {
   const pathMatch = /^stage-path-(\d+)$/.exec(lessonId ?? '');
   if (pathMatch) return <StagePathPlayer packIndex={Number(pathMatch[1])} l={language} />;
   const lesson = lessons.find((item) => item.id === lessonId);
-  if (!lesson) return <main className="page-shell not-found"><h1>{tr(language, 'That path is not here.', '找不到這條小徑。', '找不到这条小径。')}</h1><Link href="/" className="button-primary">{t.back}</Link></main>;
+  if (!lesson) return <main className="page-shell not-found"><h1>{tr(language, 'That path is not here.', '找不到這條小徑。', '找不到这条小径。')}</h1><Link href="/home" className="button-primary">{t.back}</Link></main>;
   if (lesson.premium) {
     return (
       <main className="page-shell"><div className="lesson-page">
-        <Link href="/" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
+        <Link href="/home" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
         <div className="lesson-player locked-panel" style={{ marginTop: 18 }}>
           <div className="complete-mark"><Sprout size={27} /></div>
           <h1 className="locked-title">{tr(language, 'This lesson has moved into the Learning playground', '這堂課已移到學習樂園', '这堂课已移到学习乐园')}</h1>
@@ -618,9 +629,9 @@ function FreeLesson({ lesson, language, t }: { lesson: GardenLesson; language: L
   return (
     <main className="page-shell">
       <div className="lesson-page">
-        <Link href="/" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
+        <Link href="/home" className="button-secondary back-chip"><ArrowLeft size={14} /> {t.back}</Link>
         <div className="lesson-player" style={{ marginTop: 18 }}>
-          <div className="player-head"><span>{lesson.title[language]} · {done ? lesson.words.length : index + 1} / {lesson.words.length}</span><Link href="/" className="icon-button" aria-label={t.back}><X size={17} /></Link></div>
+      <div className="player-head"><span>{lesson.title[language]} · {done ? lesson.words.length : index + 1} / {lesson.words.length}</span><Link href="/home" className="icon-button" aria-label={t.back}><X size={17} /></Link></div>
           <div className="player-progress"><span style={{ width: `${done ? 100 : ((index + 1) / lesson.words.length) * 100}%` }} /></div>
           {done ? (
             <div className="complete-panel">
@@ -628,7 +639,7 @@ function FreeLesson({ lesson, language, t }: { lesson: GardenLesson; language: L
               <h2>{t.complete}</h2><p className="section-sub">{t.completeHint}</p>
               <div className="button-row" style={{ justifyContent: 'center', marginTop: 22 }}>
                 <button className="button-secondary" onClick={() => { setIndex(0); setDone(false); }}><RotateCcw size={15} /> {t.minutes}</button>
-                <Link href="/" className="button-primary">{t.return} <ArrowRight size={15} /></Link>
+                <Link href="/home" className="button-primary">{t.return} <ArrowRight size={15} /></Link>
               </div>
             </div>
           ) : (
