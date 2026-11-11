@@ -24,6 +24,8 @@ test('PSC offers six levels and links its official outline', async ({ page }) =>
   }
   await expect(page.getByTestId('list-graded-practice').locator('a').first()).toHaveAttribute('href', '/treasure-house/psc/3b');
   await expect(page.getByTestId('list-graded-practice').locator('a').last()).toHaveAttribute('href', '/treasure-house/psc/1a');
+  await expect(page.getByTestId('link-level-psc-3b')).toContainText('Score: 60 to under 70');
+  await expect(page.getByTestId('link-level-psc-1a')).toContainText('Score: 97 to 100');
   await expect(page.getByTestId('status-track-notice')).toContainText('PSC assesses spoken Putonghua');
   await expect(page.getByTestId('link-source-psc')).toHaveAttribute('href', /moe\.gov\.cn/);
 });
@@ -41,4 +43,11 @@ test('the Treasure House name follows the selected interface language', async ({
   await expect(page.locator('main h1')).toHaveText('Tesoro del chino');
   await expect(page.getByTestId('link-track-hsk')).toContainText('Biblioteca de recursos HSK');
   await expect(page.getByTestId('link-track-psc')).toContainText('Biblioteca de recursos PSC');
+});
+
+test('PSC score bands and descriptions are translated for Chinese readers', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('mg-language', 'zh-Hant'));
+  await page.goto('/treasure-house/psc');
+  await expect(page.getByTestId('link-level-psc-3b')).toContainText('成績 60 分以上、未滿 70 分');
+  await expect(page.getByTestId('link-level-psc-1a')).toContainText('成績 97 至 100 分');
 });

@@ -17,6 +17,12 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'HSK Resource Library': 'HSK 寶庫',
     'PSC Resource Library': 'PSC 寶庫',
     'Graded Practice': '分級練習',
+    'Score: 97 to 100. Standard pronunciation, correct vocabulary and grammar, natural intonation, and fluent expression.': '成績 97 至 100 分｜語音標準，詞彙、語法正確，語調自然，表達流暢。',
+    'Score: 92 to under 97. Standard pronunciation and natural, fluent speech, with occasional syllable or tone errors.': '成績 92 分以上、未滿 97 分｜語音標準，語調自然、表達流暢，偶有字音或字調失誤。',
+    'Score: 87 to under 92. Pronunciation is generally accurate and fluent; a few difficult sounds may be mispronounced.': '成績 87 分以上、未滿 92 分｜聲韻調大致準確，語調自然、表達流暢，少數難點音偶有失誤。',
+    'Score: 80 to under 87. Some tones or sounds are inaccurate; difficult sounds often cause errors, and dialect forms may appear.': '成績 80 分以上、未滿 87 分｜部分聲調或聲韻母未到位，難點音失誤較多，可能出現方言詞或語法。',
+    'Score: 70 to under 80. Many initials/finals errors and inaccurate tones; regional accent is noticeable, with some vocabulary or grammar errors.': '成績 70 分以上、未滿 80 分｜聲韻母失誤較多、聲調偏誤明顯，方言語調較突出，詞彙或語法亦有失誤。',
+    'Score: 60 to under 70. Frequent pronunciation errors, strong regional accent, and frequent vocabulary or grammar errors.': '成績 60 分以上、未滿 70 分｜聲韻調失誤較多、方音特徵突出，詞彙與語法失誤較多。',
     'Structured Chinese vocabulary, games, and listening for all nine HSK levels.': '依 HSK 一至九級分級的詞語、遊戲練習與聆聽短文。',
     'Vocabulary, games, and listening across three PSC grades and six bands.': '按普通話水平測試三個等級、六個級別安排詞語、遊戲與朗讀練習。',
     'Available': '可開始',
@@ -92,6 +98,12 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'HSK Resource Library': 'HSK 宝库',
     'PSC Resource Library': 'PSC 宝库',
     'Graded Practice': '分级练习',
+    'Score: 97 to 100. Standard pronunciation, correct vocabulary and grammar, natural intonation, and fluent expression.': '成绩 97 至 100 分｜语音标准，词汇、语法正确，语调自然，表达流畅。',
+    'Score: 92 to under 97. Standard pronunciation and natural, fluent speech, with occasional syllable or tone errors.': '成绩 92 分以上、未满 97 分｜语音标准，语调自然、表达流畅，偶有字音或字调失误。',
+    'Score: 87 to under 92. Pronunciation is generally accurate and fluent; a few difficult sounds may be mispronounced.': '成绩 87 分以上、未满 92 分｜声韵调大致准确，语调自然、表达流畅，少数难点音偶有失误。',
+    'Score: 80 to under 87. Some tones or sounds are inaccurate; difficult sounds often cause errors, and dialect forms may appear.': '成绩 80 分以上、未满 87 分｜部分声调或声韵母不到位，难点音失误较多，可能出现方言词或语法。',
+    'Score: 70 to under 80. Many initials/finals errors and inaccurate tones; regional accent is noticeable, with some vocabulary or grammar errors.': '成绩 70 分以上、未满 80 分｜声韵母失误较多、声调偏误明显，方言语调较突出，词汇或语法也有失误。',
+    'Score: 60 to under 70. Frequent pronunciation errors, strong regional accent, and frequent vocabulary or grammar errors.': '成绩 60 分以上、未满 70 分｜声韵调失误较多、方音特征突出，词汇与语法失误较多。',
     'Structured Chinese vocabulary, games, and listening for all nine HSK levels.': '按 HSK 一至九级分级的词语、游戏练习与聆听短文。',
     'Vocabulary, games, and listening across three PSC grades and six bands.': '按普通话水平测试三个等第、六个级别安排词语、游戏与朗读练习。',
     'Available': '可开始',
@@ -458,7 +470,7 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
       <header className="treasure-detail-heading">
         <p className="treasure-eyebrow">{trackName(language, trackId, activeTrack.name)} <span>/</span> {label(language, 'Graded Practice')}</p>
         <h1>{activeLevel.label}</h1>
-        <p>{trackDescription(language, trackId)}</p>
+        <p>{label(language, activeLevel.description)}</p>
         <div className="treasure-detail-tags"><span>{words.length} {label(language, 'words')}</span><span>{label(language, 'Original practice material')}</span></div>
         <div className="treasure-level-progress-summary" data-testid="status-level-progress">
           <div><span>{label(language, 'Level progress')}</span><strong>{currentLevelProgress?.completedCount ?? 0}/4</strong></div>
