@@ -112,3 +112,45 @@ mtime_ms = 1794035966439
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/a0002acb-3dd6-4d27-b433-e5ec72b76543/5a8a2ff2-e1ea-4b79-b13c-c4d7e6f79bbc"
 storage_version_token = "1794036080209025"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "6i9M8jURfMAgvKTacZU9K"
+uri = "file://generated-artifacts/treasure-house-previews/01-chinese-treasure-house-home.png"
+type = "image"
+title = "中文寶庫首頁"
+description = "繁體中文介面截圖，1440 × 1100 PNG。"
+logical_id = "0f48d6b4-a554-41a4-86f8-4ac0c7237a6d"
+content_hash = "sha256:31689c5bdf10f6b1eab10aa8e5244738e2ad24cfeac500aebf819dda51b0b8c6"
+size = 734186
+mtime_ms = 1794435960463
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/0f48d6b4-a554-41a4-86f8-4ac0c7237a6d/28801d87-859f-403f-8a06-3d551819edb7"
+storage_version_token = "1794436006603168"
+content_type = "image/png"
+
+[[outputs]]
+id = "7PIQOFfOXtfETHPz972Bz"
+uri = "file://generated-artifacts/treasure-house-previews/02-hsk-graded-practice.png"
+type = "image"
+title = "HSK 分級練習"
+description = "繁體中文介面截圖，展示 HSK 一至九級，1440 × 1100 PNG。"
+logical_id = "1d57610e-f627-43aa-9c30-59ada03933c6"
+content_hash = "sha256:6a909a0a5347eba0a808ca9f93827f441bfab887340006660d4bdf07c83ecfe8"
+size = 785712
+mtime_ms = 1794435965119
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/1d57610e-f627-43aa-9c30-59ada03933c6/4e5b9687-609c-4571-b939-9a1707cb094d"
+storage_version_token = "1794436007890386"
+content_type = "image/png"
+
+[[outputs]]
+id = "s33KOgLbRO_OcTBO1Zig2"
+uri = "file://generated-artifacts/treasure-house-previews/03-psc-graded-practice.png"
+type = "image"
+title = "PSC 分級練習"
+description = "繁體中文介面截圖，展示 PSC 三級乙等至一級甲等，1440 × 1100 PNG。"
+logical_id = "fa751d97-120a-44a4-a2c6-d8eac0aed065"
+content_hash = "sha256:e0b681a3bc7f405b226e25109b1b1d89e507ee1fe621d2d11e95ec12044b6aa9"
+size = 793946
+mtime_ms = 1794435969739
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/fa751d97-120a-44a4-a2c6-d8eac0aed065/aee7a43e-8d41-4028-906f-c7d319c43605"
+storage_version_token = "1794436009163069"
+content_type = "image/png"
