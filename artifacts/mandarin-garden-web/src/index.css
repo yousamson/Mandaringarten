@@ -557,6 +557,54 @@ a { color: inherit; text-decoration: none; }
   .treasure-not-found { margin: 56px auto; padding: 25px 18px; }
 }
 
+.treasure-path-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin: 4px 0 18px; }
+.treasure-path-card { min-height: 128px; padding: 22px; }
+.treasure-path-card strong { font: 600 24px/1.15 var(--app-font-serif); }
+.treasure-path-card small { max-width: 390px; font-size: 12px; line-height: 1.6; }
+.treasure-track-flow-note { color: #788174; font-size: 12px; line-height: 1.65; margin: 0 0 40px; }
+.treasure-track-heading { padding: 38px 0 25px; }
+.treasure-track-heading h1 { margin: 10px 0; color: #29483e; font: 600 clamp(36px,5vw,56px)/1.05 var(--app-font-serif); }
+.treasure-track-heading > p:last-child { max-width: 640px; margin: 0; color: #727d70; font-size: 14px; line-height: 1.75; }
+.treasure-level-card { text-decoration: none; }
+.treasure-level-card-completed { border-color: #9ab59a; background: #f0f5e9; }
+.treasure-level-card-locked { background: #f7f5ec; }
+.treasure-level-progress-label { color: #73816f; font-size: 10px; padding-top: 12px; }
+.treasure-progress-track { display: block; overflow: hidden; height: 5px; border-radius: 99px; background: #e4e6d9; margin-top: 6px; }
+.treasure-progress-track > span { display: block; height: 100%; border-radius: inherit; background: #588466; transition: width .2s ease; }
+.treasure-level-status { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 99px; color: #707d70; background: #eceee5; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.treasure-level-status.status-available { color: #3e704f; background: #e4efdf; }
+.treasure-level-status.status-completed { color: #315d42; background: #dcebd9; }
+.treasure-gate-message { margin: 18px 0; padding: 16px; border: 1px solid #e5dfd1; border-radius: 14px; background: #fbf8ef; }
+.treasure-gate-message p { margin: 0; color: #717a6d; font-size: 12px; line-height: 1.6; }
+.treasure-gate-message .button-row { margin-top: 12px; }
+.treasure-progress-message { color: #788174; font-size: 12px; }
+.treasure-gate { max-width: 640px; margin: 64px auto; padding: 34px; text-align: center; border: 1px solid #e5dfd1; border-radius: 24px; background: #fbf8ef; }
+.treasure-gate-icon { width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 18px; color: #54755d; background: #e6ecdf; }
+.treasure-gate h1 { color: #29483e; font: 600 38px/1.1 var(--app-font-serif); margin: 9px 0; }
+.treasure-gate > p:not(.treasure-eyebrow) { max-width: 460px; margin: 0 auto 20px; color: #717a6d; font-size: 13px; line-height: 1.65; }
+.treasure-gate .treasure-back-link { margin: 0 auto 18px; }
+.treasure-gate .button-row { justify-content: center; }
+.treasure-level-progress-summary { max-width: 510px; margin-top: 19px; padding: 13px 15px; border: 1px solid #e7e4d8; border-radius: 13px; background: #fbf9f1; }
+.treasure-level-progress-summary > div { display: flex; align-items: center; justify-content: space-between; color: #748070; font-size: 11px; }
+.treasure-level-progress-summary strong { color: #477459; font-size: 12px; }
+.treasure-level-progress-summary .treasure-progress-track { margin-top: 9px; }
+.treasure-level-progress-summary p { margin: 8px 0 0; color: #788174; font-size: 10px; line-height: 1.5; }
+.treasure-activity-complete { display: inline-flex; align-items: center; gap: 5px; margin: 10px 0 0; color: #3d704e; font-size: 10px; font-weight: 700; }
+.treasure-game-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.treasure-game-tabs button svg { color: #4b7b55; }
+.treasure-activity-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 11px; padding: 10px 12px; border-radius: 10px; color: #8b624f; background: #f3e6db; font-size: 10px; }
+.treasure-activity-error button { border: 0; background: transparent; color: #7e533e; text-decoration: underline; font-size: 10px; font-weight: 700; }
+@media (max-width: 620px) {
+  .treasure-path-grid { grid-template-columns: 1fr; gap: 8px; }
+  .treasure-path-card { min-height: 102px; padding: 16px; }
+  .treasure-path-card strong { font-size: 21px; }
+  .treasure-track-flow-note { margin-bottom: 28px; }
+  .treasure-track-heading { padding: 25px 0 19px; }
+  .treasure-level-card { gap: 8px; padding: 14px 11px; }
+  .treasure-level-status { max-width: 82px; padding: 5px 6px; font-size: 8px; }
+  .treasure-gate { margin: 38px auto; padding: 26px 18px; }
+}
+
 /* ---------- Age-responsive garden illustration ---------- */
 .hero-art {
   isolation: isolate;

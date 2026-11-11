@@ -23,7 +23,9 @@ export const examTracks: Record<ExamTrackId, ExamTrack> = {
     notice: 'PSC assesses spoken Putonghua. These original word and reading exercises are level-oriented practice, not official test passages or a vocabulary syllabus.',
     sourceLabel: 'Official PSC outline',
     sourceUrl: 'https://www.moe.gov.cn/jyb_xxgk/gk_gbgg/moe_0/moe_9/moe_40/tnull_117.html',
-    levels: pscLevels,
+    // The official bands descend from 1A (highest) to 3B (lowest).
+    // Present learning progression from the lowest band up to the highest.
+    levels: [...pscLevels].reverse(),
   },
 };
 

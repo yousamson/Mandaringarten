@@ -35,7 +35,10 @@ test('the entry page offers Mandarin Garden and the Chinese Treasure House', asy
   await expect(page).toHaveURL(/\/treasure-house$/);
   await expect(page.locator('main')).toContainText('HSK');
   await expect(page.locator('main')).toContainText('PSC');
-  await expect(page.locator('a[href="/treasure-house/hsk/1"]')).toBeVisible();
-  await page.getByTestId('tab-track-psc').click();
+  await expect(page.getByTestId('link-track-hsk')).toBeVisible();
+  await expect(page.getByTestId('link-track-psc')).toBeVisible();
+  await expect(page.locator('a[href="/treasure-house/hsk/1"]')).toHaveCount(0);
+  await page.getByTestId('link-track-psc').click();
+  await expect(page).toHaveURL(/\/treasure-house\/psc$/);
   await expect(page.locator('a[href="/treasure-house/psc/1a"]')).toBeVisible();
 });

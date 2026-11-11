@@ -197,10 +197,22 @@ function periodEnd(subscription: StripeSubscription | undefined): number | null 
 }
 
 export async function hasPremiumMembership(userId: string): Promise<boolean> {
+  return (await getPremiumMembershipTier(userId)) !== "none";
+}
+
+export type PremiumMembershipTier = "none" | "trial" | "subscribed";
+
+export async function getPremiumMembershipTier(
+  userId: string,
+): Promise<PremiumMembershipTier> {
   const customer = await getCustomer(userId);
-  if (!customer) return false;
+  if (!customer) return "none";
   const subscriptions = await listSubscriptions(customer.stripeCustomerId);
-  return subscriptions.some((item) => item.status === "active" || item.status === "trialing");
+  const entitled = subscriptions.find(
+    (item) => item.status === "active" || item.status === "trialing",
+  );
+  if (!entitled) return "none";
+  return entitled.status === "trialing" ? "trial" : "subscribed";
 }
 
 router.get("/billing/plan", async (req, res): Promise<void> => {

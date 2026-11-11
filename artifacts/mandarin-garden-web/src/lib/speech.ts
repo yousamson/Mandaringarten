@@ -4,7 +4,7 @@ export type Script = 'trad' | 'simp';
 export const scriptFor = (language: Language): Script => (language === 'zh-Hans' ? 'simp' : 'trad');
 
 /** Speak Mandarin, always cancelling anything already being narrated first. */
-export function speakMandarin(text: string, script: Script, onEnd?: () => void): boolean {
+export function speakMandarin(text: string, script: Script, onEnd?: () => void, onError?: () => void): boolean {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -12,8 +12,9 @@ export function speakMandarin(text: string, script: Script, onEnd?: () => void):
   utterance.rate = 0.8;
   if (onEnd) {
     utterance.onend = onEnd;
-    utterance.onerror = onEnd;
   }
+  if (onError) utterance.onerror = onError;
+  else if (onEnd) utterance.onerror = onEnd;
   window.speechSynthesis.speak(utterance);
   return true;
 }

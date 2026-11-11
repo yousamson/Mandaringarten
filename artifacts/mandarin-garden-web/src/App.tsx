@@ -185,6 +185,7 @@ function Garden() {
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
           <Route path="/reading/:age"><FreeReadingPage language={l} /></Route>
           <Route path="/treasure-house/:track/:level"><TreasureHouseRoute language={l} /></Route>
+          <Route path="/treasure-house/:track"><TreasureHouseTrackRoute language={l} /></Route>
           <Route path="/treasure-house"><TreasureHousePage language={l} /></Route>
           <Route path="/"><EntryPortalPage language={l} /></Route>
           <Route path="/learn">{guarded(<LearningPage language={l} t={t} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
@@ -225,6 +226,11 @@ function Garden() {
 function TreasureHouseRoute({ language }: { language: Language }) {
   const params = useParams<{ track: string; level: string }>();
   return <TreasureHousePage language={language} track={params.track} level={params.level} />;
+}
+
+function TreasureHouseTrackRoute({ language }: { language: Language }) {
+  const params = useParams<{ track: string }>();
+  return <TreasureHousePage language={language} track={params.track} />;
 }
 
 /** Recover account-owned browser progress only after membership and consent checks. */

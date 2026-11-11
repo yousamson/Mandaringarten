@@ -115,7 +115,8 @@ router.post("/legal/consent", async (req, res) => {
 
 router.get("/learning/progress", async (req, res) => {
   const userId = getAuth(req).userId!;
-  if (!await hasPremiumMembership(userId) && !await isAdministrator(userId)) {
+  const administrator = await isAdministrator(userId);
+  if (!administrator && !await hasPremiumMembership(userId)) {
     res.status(403).json({ error: "Renew your subscription to access member data.", code: "SUBSCRIPTION_REQUIRED" }); return;
   }
   const progress = await withAccountWrite(userId, async (tx) => {

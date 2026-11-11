@@ -33,6 +33,7 @@ import type {
   BillingRedirectResponse,
   BillingStatus,
   BillingSubscriptionResponse,
+  ExamProgressResponse,
   GardenCareInput,
   HealthStatus,
   LearningAnswerResult,
@@ -44,6 +45,7 @@ import type {
   LegalConsentInput,
   LegalConsentStatus,
   PortalInput,
+  RecordExamActivityInput,
   SupportConversation,
   SupportMessageInput,
   SupportThread,
@@ -1081,6 +1083,183 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordGardenCareMutationOptions(options), queryClient);
+    }
+
+export const getGetExamProgressUrl = () => {
+
+
+
+
+  return `/api/learning/exam/progress`
+}
+
+export const getExamProgress = async ( options?: Parameters<typeof customFetch>[1]): Promise<ExamProgressResponse> => {
+
+  return customFetch<ExamProgressResponse>(getGetExamProgressUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetExamProgressQueryKey = () => {
+    return [
+    `/api/learning/exam/progress`
+    ] as const;
+    }
+
+
+export const getGetExamProgressQueryOptions = <TData = Awaited<ReturnType<typeof getExamProgress>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExamProgressQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExamProgress>>> = ({ signal }) => getExamProgress({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetExamProgressQueryResult = NonNullable<Awaited<ReturnType<typeof getExamProgress>>>
+export type GetExamProgressQueryError = ErrorType<void>
+
+
+export function useGetExamProgress<TData = Awaited<ReturnType<typeof getExamProgress>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExamProgress>>,
+          TError,
+          Awaited<ReturnType<typeof getExamProgress>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExamProgress<TData = Awaited<ReturnType<typeof getExamProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExamProgress>>,
+          TError,
+          Awaited<ReturnType<typeof getExamProgress>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExamProgress<TData = Awaited<ReturnType<typeof getExamProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetExamProgress<TData = Awaited<ReturnType<typeof getExamProgress>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExamProgress>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetExamProgressQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordExamActivityUrl = () => {
+
+
+
+
+  return `/api/learning/exam/activity`
+}
+
+export const recordExamActivity = async (recordExamActivityInput: RecordExamActivityInput, options?: Parameters<typeof customFetch>[1]): Promise<ExamProgressResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ExamProgressResponse>(getRecordExamActivityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recordExamActivityInput)
+  }
+);}
+
+
+
+
+
+export const getRecordExamActivityMutationKey = () => ['recordExamActivity'] as const;
+
+export const getRecordExamActivityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordExamActivity>>, TError,RecordExamActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordExamActivity>>, TError,RecordExamActivityMutationVariables, TContext> => {
+
+const mutationKey = getRecordExamActivityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordExamActivity>>, RecordExamActivityMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordExamActivity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordExamActivityMutationResult = NonNullable<Awaited<ReturnType<typeof recordExamActivity>>>
+    export type RecordExamActivityMutationBody = BodyType<RecordExamActivityInput>
+    export type RecordExamActivityMutationError = ErrorType<void>
+    export type RecordExamActivityMutationVariables = {data: BodyType<RecordExamActivityInput>}
+
+    export const useRecordExamActivity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordExamActivity>>, TError,RecordExamActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordExamActivity>>,
+        TError,
+        RecordExamActivityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordExamActivityMutationOptions(options), queryClient);
     }
 
 export const getGetLegalConsentUrl = () => {

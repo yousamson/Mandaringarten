@@ -224,6 +224,39 @@ paths:
         "403": { description: Membership and legal consent required }
         "409": { description: More XP is needed or the garden was already cared for today }
         "503": { description: Saved progress is temporarily unavailable }
+  /learning/exam/progress:
+    get:
+      operationId: getExamProgress
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Server-confirmed HSK and PSC level access and saved activity progress
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExamProgressResponse" }
+        "401": { description: Authentication required }
+        "503": { description: Exam progress is temporarily unavailable }
+  /learning/exam/activity:
+    post:
+      operationId: recordExamActivity
+      tags: [learning]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecordExamActivityInput" }
+      responses:
+        "200":
+          description: Saved activity completion and updated level access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExamProgressResponse" }
+        "400": { description: Invalid level or activity }
+        "401": { description: Authentication required }
+        "403": { description: "Membership, trial or previous-level requirement not met" }
+        "503": { description: Exam progress is temporarily unavailable }
   /legal/consent:
     get:
       operationId: getLegalConsent
@@ -499,6 +532,43 @@ components:
           minimum: 0
           maximum: 400
           description: Browser-only curriculum snapshot. Repeated and higher snapshots merge without adding the same XP twice; never includes server-awarded rounds.
+    ExamProgressResponse:
+      type: object
+      required: [membershipTier, tracks]
+      properties:
+        membershipTier: { type: string, enum: [none, trial, subscribed, admin] }
+        tracks:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items: { $ref: "#/components/schemas/ExamTrackProgress" }
+    ExamTrackProgress:
+      type: object
+      required: [trackId, levels]
+      properties:
+        trackId: { type: string, enum: [hsk, psc] }
+        levels:
+          type: array
+          items: { $ref: "#/components/schemas/ExamLevelProgress" }
+    ExamLevelProgress:
+      type: object
+      required: [levelId, status, completedActivities, completedCount, requiredCount]
+      properties:
+        levelId: { type: string }
+        status: { type: string, enum: [locked, available, completed] }
+        completedActivities:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [meaning, listening, pinyin, article] }
+        completedCount: { type: integer, minimum: 0, maximum: 4 }
+        requiredCount: { type: integer, minimum: 4, maximum: 4 }
+    RecordExamActivityInput:
+      type: object
+      required: [trackId, levelId, activity]
+      properties:
+        trackId: { type: string, enum: [hsk, psc] }
+        levelId: { type: string, minLength: 1, maxLength: 8 }
+        activity: { type: string, enum: [meaning, listening, pinyin, article] }
     LearningRoundInput:
       type: object
       required: [roundId, questionId, answer]

@@ -39,6 +39,14 @@ export const learningChallengesTable = pgTable("learning_challenges", {
   index("learning_challenges_created_at_idx").on(table.createdAt),
 ]);
 
+export const examLevelProgressTable = pgTable("exam_level_progress", {
+  clerkUserId: text("clerk_user_id").notNull(),
+  trackId: text("track_id").notNull(),
+  levelId: text("level_id").notNull(),
+  completedActivities: jsonb("completed_activities").$type<string[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.clerkUserId, table.trackId, table.levelId] })]);
+
 export const legalConsentsTable = pgTable("legal_consents", {
   clerkUserId: text("clerk_user_id").notNull(),
   policyVersion: text("policy_version").notNull(),

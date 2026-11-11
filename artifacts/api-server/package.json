@@ -12,6 +12,7 @@
     "test:account-deletion": "node --test tests/account-deletion-route.test.mjs",
     "test:billing": "node --test tests/billing-route.test.mjs",
     "test:progress": "node --experimental-strip-types --test tests/learning-progress.test.mjs tests/garden-progression.test.mjs",
+    "test:exam-progress": "node --experimental-strip-types --test tests/exam-progress.test.mjs",
     "test:progress:integration": "NODE_ENV=test node --test tests/learning-progress.integration.test.mjs"
   },
   "dependencies": {

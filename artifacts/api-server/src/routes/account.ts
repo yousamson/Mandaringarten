@@ -4,6 +4,7 @@ import { eq, inArray, desc } from "drizzle-orm";
 import {
   db, accountDeletionsTable, billingAccountsTable, billingCustomersTable, billingCustomerScopesTable,
   learningChallengesTable, learningProgressTable, learningRoundsTable, legalConsentsTable, checkoutConsentsTable,
+  examLevelProgressTable,
   supportThreadsTable, supportMessagesTable,
 } from "@workspace/db";
 import { DeleteAccountBody } from "@workspace/api-zod";
@@ -99,6 +100,7 @@ router.delete("/account", async (req, res) => {
     }
     await tx.delete(learningRoundsTable).where(eq(learningRoundsTable.clerkUserId, userId));
     await tx.delete(learningChallengesTable).where(eq(learningChallengesTable.clerkUserId, userId));
+    await tx.delete(examLevelProgressTable).where(eq(examLevelProgressTable.clerkUserId, userId));
     await tx.delete(learningProgressTable).where(eq(learningProgressTable.clerkUserId, userId));
     await tx.delete(legalConsentsTable).where(eq(legalConsentsTable.clerkUserId, userId));
     await tx.delete(checkoutConsentsTable).where(eq(checkoutConsentsTable.clerkUserId, userId));

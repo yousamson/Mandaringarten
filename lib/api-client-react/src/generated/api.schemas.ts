@@ -163,6 +163,101 @@ export interface LearningProgressInput {
   legacyXpTotal?: number;
 }
 
+export type ExamProgressResponseMembershipTier = typeof ExamProgressResponseMembershipTier[keyof typeof ExamProgressResponseMembershipTier];
+
+
+export const ExamProgressResponseMembershipTier = {
+  none: 'none',
+  trial: 'trial',
+  subscribed: 'subscribed',
+  admin: 'admin',
+} as const;
+
+export type ExamTrackProgressTrackId = typeof ExamTrackProgressTrackId[keyof typeof ExamTrackProgressTrackId];
+
+
+export const ExamTrackProgressTrackId = {
+  hsk: 'hsk',
+  psc: 'psc',
+} as const;
+
+export type ExamLevelProgressStatus = typeof ExamLevelProgressStatus[keyof typeof ExamLevelProgressStatus];
+
+
+export const ExamLevelProgressStatus = {
+  locked: 'locked',
+  available: 'available',
+  completed: 'completed',
+} as const;
+
+export type ExamLevelProgressCompletedActivitiesItem = typeof ExamLevelProgressCompletedActivitiesItem[keyof typeof ExamLevelProgressCompletedActivitiesItem];
+
+
+export const ExamLevelProgressCompletedActivitiesItem = {
+  meaning: 'meaning',
+  listening: 'listening',
+  pinyin: 'pinyin',
+  article: 'article',
+} as const;
+
+export interface ExamLevelProgress {
+  levelId: string;
+  status: ExamLevelProgressStatus;
+  completedActivities: ExamLevelProgressCompletedActivitiesItem[];
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  completedCount: number;
+  /**
+     * @minimum 4
+     * @maximum 4
+     */
+  requiredCount: number;
+}
+
+export interface ExamTrackProgress {
+  trackId: ExamTrackProgressTrackId;
+  levels: ExamLevelProgress[];
+}
+
+export interface ExamProgressResponse {
+  membershipTier: ExamProgressResponseMembershipTier;
+  /**
+     * @minItems 2
+     * @maxItems 2
+     */
+  tracks: ExamTrackProgress[];
+}
+
+export type RecordExamActivityInputTrackId = typeof RecordExamActivityInputTrackId[keyof typeof RecordExamActivityInputTrackId];
+
+
+export const RecordExamActivityInputTrackId = {
+  hsk: 'hsk',
+  psc: 'psc',
+} as const;
+
+export type RecordExamActivityInputActivity = typeof RecordExamActivityInputActivity[keyof typeof RecordExamActivityInputActivity];
+
+
+export const RecordExamActivityInputActivity = {
+  meaning: 'meaning',
+  listening: 'listening',
+  pinyin: 'pinyin',
+  article: 'article',
+} as const;
+
+export interface RecordExamActivityInput {
+  trackId: RecordExamActivityInputTrackId;
+  /**
+     * @minLength 1
+     * @maxLength 8
+     */
+  levelId: string;
+  activity: RecordExamActivityInputActivity;
+}
+
 export interface LearningRoundInput {
   roundId: string;
   questionId: string;

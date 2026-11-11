@@ -20,6 +20,7 @@ export const getGetAccountAccessQueryKey = () => ['account-access'];
 export const getGetSupportConversationQueryKey = (threadId?: string) => ['support-conversation', threadId];
 export const getGetSupportThreadsQueryKey = () => ['support-threads'];
 export const getGetLegalConsentQueryKey = () => ['legal-consent'];
+export const getGetExamProgressQueryKey = () => ['exam-progress'];
 
 export const useGetBillingStatus = () => idleQuery;
 export const useGetBillingPlan = () => idleQuery;
@@ -28,6 +29,7 @@ export const useGetAccountAccess = () => idleQuery;
 export const useGetSupportConversation = () => idleQuery;
 export const useGetSupportThreads = () => ({ ...idleQuery, data: [] });
 export const useGetLegalConsent = () => idleQuery;
+export const useGetExamProgress = () => idleQuery;
 export const useAcceptLegalConsent = () => emptyMutation;
 export const useCreateBillingCheckout = () => emptyMutation;
 export const useCreateBillingPortal = () => emptyMutation;
@@ -38,6 +40,7 @@ export const useUpdateLearningProgress = () => emptyMutation;
 export const issueLearningRound = async () => { throw new Error('Not available in browser layout tests.'); };
 export const recordLearningRound = async () => { throw new Error('Not available in browser layout tests.'); };
 export const recordGardenCare = async () => { throw new Error('Not available in browser layout tests.'); };
+export const recordExamActivity = async () => { throw new Error('Not available in browser layout tests.'); };
 
 export function useDeleteAccount() {
   return {
