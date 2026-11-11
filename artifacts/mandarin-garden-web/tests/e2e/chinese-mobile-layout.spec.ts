@@ -6,6 +6,8 @@ const routes = [
   '/',
   '/home',
   '/treasure-house',
+  '/treasure-house/hsk/1',
+  '/treasure-house/psc/3b',
   '/learn',
   '/challenge',
   '/playground',

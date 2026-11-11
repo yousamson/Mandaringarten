@@ -26,6 +26,7 @@ import AuthPage from '@/pages/auth';
 import FreeReadingPage from '@/pages/free-reading';
 import DisclaimerPage from '@/pages/disclaimer';
 import EntryPortalPage from '@/pages/entry-portal';
+import TreasureHousePage from '@/pages/treasure-house';
 import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
@@ -137,7 +138,7 @@ function Garden() {
   const [path] = useLocation();
   const [category, setCategory] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
-  const isEntryArea = path === '/' || path === '/treasure-house';
+  const isEntryArea = path === '/' || path.startsWith('/treasure-house');
   const freeLessons = useMemo(() => lessons.filter((lesson) => !lesson.premium), []);
   const filterLessons = useMemo(() => category === 'all' ? freeLessons : freeLessons.filter((lesson) => lesson.category === category), [category, freeLessons]);
   const shellClass = `garden-app theme-${preferences.theme}`;
@@ -183,8 +184,9 @@ function Garden() {
           <Route path="/privacy"><PrivacyPage language={l} /></Route>
           <Route path="/disclaimer"><DisclaimerPage language={l} /></Route>
           <Route path="/reading/:age"><FreeReadingPage language={l} /></Route>
-          <Route path="/treasure-house"><EntryPortalPage language={l} view="treasure-house" /></Route>
-          <Route path="/">{<EntryPortalPage language={l} view="choose" />}</Route>
+          <Route path="/treasure-house/:track/:level"><TreasureHouseRoute language={l} /></Route>
+          <Route path="/treasure-house"><TreasureHousePage language={l} /></Route>
+          <Route path="/"><EntryPortalPage language={l} /></Route>
           <Route path="/learn">{guarded(<LearningPage language={l} t={t} lessonsToShow={filterLessons} category={category} setCategory={setCategory} />)}</Route>
           <Route path="/challenge">{guarded(<ChallengePage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
           <Route path="/stories">{guarded(<StoriesPage language={l} age={preferences.age} onAgeChange={preferences.saveAge} />)}</Route>
@@ -218,6 +220,11 @@ function Garden() {
       </div>
     </div>
   );
+}
+
+function TreasureHouseRoute({ language }: { language: Language }) {
+  const params = useParams<{ track: string; level: string }>();
+  return <TreasureHousePage language={language} track={params.track} level={params.level} />;
 }
 
 /** Recover account-owned browser progress only after membership and consent checks. */

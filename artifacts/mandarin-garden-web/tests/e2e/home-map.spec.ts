@@ -22,7 +22,7 @@ test('the learning map opens each focused learning area', async ({ page }) => {
   }
 });
 
-test('the entry page offers Mandarin Garden and the content-in-progress Chinese Treasure House', async ({ page }) => {
+test('the entry page offers Mandarin Garden and the Chinese Treasure House', async ({ page }) => {
   await page.setViewportSize({ width: 402, height: 874 });
   await page.goto('/');
   await expect(page.getByTestId('entry-portal')).toBeVisible();
@@ -33,6 +33,9 @@ test('the entry page offers Mandarin Garden and the content-in-progress Chinese 
   await page.goto('/');
   await page.getByTestId('link-entry-treasure').click();
   await expect(page).toHaveURL(/\/treasure-house$/);
-  await expect(page.locator('main h1')).toHaveText('中文寶庫');
-  await expect(page.getByText(/This space is being prepared|這個空間正在籌備中/)).toBeVisible();
+  await expect(page.locator('main')).toContainText('HSK');
+  await expect(page.locator('main')).toContainText('PSC');
+  await expect(page.locator('a[href="/treasure-house/hsk/1"]')).toBeVisible();
+  await page.getByTestId('tab-track-psc').click();
+  await expect(page.locator('a[href="/treasure-house/psc/1a"]')).toBeVisible();
 });
