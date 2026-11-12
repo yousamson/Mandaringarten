@@ -4,11 +4,13 @@ import {
   buildExamProgress,
   canAccessExamLevel,
   examLevelIds,
+  examProgressVersionMarker,
   isExamLevel,
 } from "../src/exam-progress.ts";
 
 const allActivities = ["meaning", "listening", "pinyin", "sentence", "article"];
-const completedHsk1 = [{ trackId: "hsk", levelId: "1", completedActivities: allActivities }];
+const currentActivities = (activities) => [...activities, examProgressVersionMarker];
+const completedHsk1 = [{ trackId: "hsk", levelId: "1", completedActivities: currentActivities(allActivities) }];
 
 test("a trial can open only the first level of each selected track", () => {
   const progress = buildExamProgress("trial", []);
@@ -37,12 +39,24 @@ test("paid members unlock one level at a time after all five activities", () => 
 });
 
 test("the next level stays locked until games, sentence practice, and the article are complete", () => {
-  const partial = [{ trackId: "hsk", levelId: "1", completedActivities: ["meaning", "listening", "pinyin"] }];
+  const partial = [{ trackId: "hsk", levelId: "1", completedActivities: currentActivities(["meaning", "listening", "pinyin"]) }];
   assert.equal(buildExamProgress("subscribed", partial).tracks[0].levels[1].status, "locked");
   const withArticle = [{ ...partial[0], completedActivities: [...partial[0].completedActivities, "article"] }];
   assert.equal(buildExamProgress("subscribed", withArticle).tracks[0].levels[1].status, "locked");
   const withSentence = [{ ...withArticle[0], completedActivities: [...withArticle[0].completedActivities, "sentence"] }];
   assert.equal(buildExamProgress("subscribed", withSentence).tracks[0].levels[1].status, "available");
+});
+
+test("current four-activity records stay incomplete while legacy four-activity records are preserved", () => {
+  const currentFourActivities = [{
+    trackId: "hsk",
+    levelId: "1",
+    completedActivities: currentActivities(["meaning", "listening", "pinyin", "article"]),
+  }];
+  const currentProgress = buildExamProgress("subscribed", currentFourActivities);
+  assert.equal(currentProgress.tracks[0].levels[0].status, "available");
+  assert.equal(currentProgress.tracks[0].levels[0].completedCount, 4);
+  assert.equal(currentProgress.tracks[0].levels[1].status, "locked");
 });
 
 test("administrators can review every level and unsubscribed accounts cannot open any", () => {
@@ -65,5 +79,6 @@ test("only listed level IDs are accepted and legacy fully completed levels stay 
   assert.equal(isExamLevel("other", "1"), false);
   const legacyCompleted = [{ trackId: "hsk", levelId: "1", completedActivities: ["meaning", "listening", "pinyin", "article"] }];
   assert.equal(buildExamProgress("subscribed", legacyCompleted).tracks[0].levels[0].status, "completed");
+  assert.equal(buildExamProgress("subscribed", legacyCompleted).tracks[0].levels[0].completedCount, 5);
   assert.equal(buildExamProgress("subscribed", legacyCompleted).tracks[0].levels[1].status, "available");
 });

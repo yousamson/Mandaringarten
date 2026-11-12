@@ -11,3 +11,4 @@
 - [Preview proxy caching](preview-proxy-caching.md) — direct route tests and the shared preview origin can differ on conditional responses; verify the full client path.
 - [Free translation provider](translation-provider.md) — use MyMemory only, with clear disclosure of long-term retention and partner sharing before lookup.
 - [Clean video capture origins](video-capture-origins.md) — development-domain previews may inject a banner; use the artifact-routed local preview for downloadable video captures.
+- [Chinese Treasure House levels](chinese-treasure-house-levels.md) — keep ACTFL’s ten-step progression and label TOCFL’s four-by-two practice bands as locally designed, not official.
