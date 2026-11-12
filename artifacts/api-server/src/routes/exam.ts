@@ -10,6 +10,7 @@ import { getPremiumMembershipTier } from "./billing";
 import {
   buildExamProgress,
   canAccessExamLevel,
+  examProgressVersionMarker,
   isExamLevel,
   isExamTrack,
   type ExamMembershipTier,
@@ -47,7 +48,7 @@ router.get("/learning/exam/progress", async (req, res): Promise<void> => {
     const [tier, records] = await Promise.all([membershipTier(userId), progressRecords(userId)]);
     res.json(GetExamProgressResponse.parse(buildExamProgress(tier, records)));
   } catch (error) {
-    req.log.error({ err: error }, "Could not load HSK and PSC progress");
+    req.log.error({ err: error }, "Could not load Chinese Treasure House progress");
     res.status(503).json({ error: "Chinese Treasure House progress is temporarily unavailable." });
   }
 });
@@ -55,12 +56,12 @@ router.get("/learning/exam/progress", async (req, res): Promise<void> => {
 router.post("/learning/exam/activity", async (req, res): Promise<void> => {
   const parsed = RecordExamActivityBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Choose a valid HSK or PSC level and activity." });
+    res.status(400).json({ error: "Choose a valid Chinese Treasure House level and activity." });
     return;
   }
   const { trackId, levelId, activity } = parsed.data;
   if (!isExamTrack(trackId) || !isExamLevel(trackId, levelId)) {
-    res.status(400).json({ error: "Choose a valid HSK or PSC level and activity." });
+    res.status(400).json({ error: "Choose a valid Chinese Treasure House level and activity." });
     return;
   }
 
@@ -96,9 +97,11 @@ router.post("/learning/exam/activity", async (req, res): Promise<void> => {
         eq(examLevelProgressTable.trackId, trackId),
         eq(examLevelProgressTable.levelId, levelId),
       )).for("update");
-      const completedActivities = stored.completedActivities.includes(activity)
-        ? stored.completedActivities
-        : [...stored.completedActivities, activity];
+      const completedActivities = [...new Set([
+        ...stored.completedActivities,
+        examProgressVersionMarker,
+        activity,
+      ])];
       await tx.update(examLevelProgressTable).set({
         completedActivities,
         updatedAt: new Date(),
@@ -121,7 +124,7 @@ router.post("/learning/exam/activity", async (req, res): Promise<void> => {
     }
     res.json(GetExamProgressResponse.parse(buildExamProgress(tier, saved)));
   } catch (error) {
-    req.log.error({ err: error }, "Could not save HSK and PSC activity progress");
+    req.log.error({ err: error }, "Could not save Chinese Treasure House activity progress");
     res.status(503).json({ error: "Chinese Treasure House progress could not be saved. Please retry." });
   }
 });

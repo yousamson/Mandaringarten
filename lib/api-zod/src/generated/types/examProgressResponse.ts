@@ -11,8 +11,8 @@ import type { ExamTrackProgress } from './examTrackProgress';
 export interface ExamProgressResponse {
   membershipTier: ExamProgressResponseMembershipTier;
   /**
-     * @minItems 2
-     * @maxItems 2
+     * @minItems 4
+     * @maxItems 4
      */
   tracks: ExamTrackProgress[];
 }

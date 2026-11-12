@@ -12,4 +12,6 @@ export type ExamTrackProgressTrackId = typeof ExamTrackProgressTrackId[keyof typ
 export const ExamTrackProgressTrackId = {
   hsk: 'hsk',
   psc: 'psc',
+  actfl: 'actfl',
+  tocfl: 'tocfl',
 } as const;

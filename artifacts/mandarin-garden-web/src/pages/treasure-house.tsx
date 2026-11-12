@@ -3,19 +3,22 @@ import { useUser } from '@clerk/react';
 import { ArrowLeft, ArrowRight, BookOpen, Check, Headphones, LockKeyhole, Search, Volume2, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { translateInterface } from '@workspace/learning-content';
-import { examTracks, getExamLevel, type ExamTrackId, type ExamWord } from '@/lib/exam-resources';
+import { examTracks, getExamLevel, type ExamLevel, type ExamTrackId, type ExamWord } from '@/lib/exam-resources';
 import { speakMandarin, stopSpeech } from '@/lib/speech';
 import type { Language } from '@/lib/garden-data';
 import { useExamProgress } from '@/hooks/use-exam-progress';
 
 type Props = { language: Language; track?: string; level?: string };
 type GameMode = 'meaning' | 'listening' | 'pinyin';
+type ActivityId = GameMode | 'sentence' | 'article';
 
 const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
   'zh-Hant': {
     'Chinese Treasure House': '中文寶庫',
     'HSK Resource Library': 'HSK 寶庫',
     'PSC Resource Library': 'PSC 寶庫',
+    'ACTFL Resource Library': 'ACTFL 寶庫',
+    'TOCFL Resource Library': 'TOCFL 寶庫',
     'Graded Practice': '分級練習',
     'Score: 97 to 100. Standard pronunciation, correct vocabulary and grammar, natural intonation, and fluent expression.': '成績 97 至 100 分｜語音標準，詞彙、語法正確，語調自然，表達流暢。',
     'Score: 92 to under 97. Standard pronunciation and natural, fluent speech, with occasional syllable or tone errors.': '成績 92 分以上、未滿 97 分｜語音標準，語調自然、表達流暢，偶有字音或字調失誤。',
@@ -23,24 +26,26 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Score: 80 to under 87. Some tones or sounds are inaccurate; difficult sounds often cause errors, and dialect forms may appear.': '成績 80 分以上、未滿 87 分｜部分聲調或聲韻母未到位，難點音失誤較多，可能出現方言詞或語法。',
     'Score: 70 to under 80. Many initials/finals errors and inaccurate tones; regional accent is noticeable, with some vocabulary or grammar errors.': '成績 70 分以上、未滿 80 分｜聲韻母失誤較多、聲調偏誤明顯，方言語調較突出，詞彙或語法亦有失誤。',
     'Score: 60 to under 70. Frequent pronunciation errors, strong regional accent, and frequent vocabulary or grammar errors.': '成績 60 分以上、未滿 70 分｜聲韻調失誤較多、方音特徵突出，詞彙與語法失誤較多。',
-    'Structured Chinese vocabulary, games, and listening for all nine HSK levels.': '依 HSK 一至九級分級的詞語、遊戲練習與聆聽短文。',
-    'Vocabulary, games, and listening across three PSC grades and six bands.': '按普通話水平測試三個等級、六個級別安排詞語、遊戲與朗讀練習。',
+    'Structured Chinese vocabulary, games, sentence practice, and readings for all nine HSK levels.': '依 HSK 一至九級提供詞語、遊戲、句子練習與分級閱讀。',
+    'Vocabulary, games, sentence practice, and readings across three PSC grades and six bands.': '按普通話水平測試三個等級、六個級別安排詞語、遊戲、句子練習與閱讀。',
+    'ACTFL practice across four proficiency bands and ten steps.': 'ACTFL 練習分為初級、中級、高級、卓越級四組，共十個進度級別。',
+    'TOCFL practice across four site-designed bands and eight steps.': 'TOCFL 練習採用本平台設計的四組級別，共八個進度級別。',
     'Available': '可開始',
     'Completed': '已完成',
     'Locked': '尚未開放',
     'Level progress': '級別進度',
-    'Complete all three games and listen to the article to unlock the next level.': '完成三種遊戲各一輪並聽完短文，才能解鎖下一級。',
+    'Complete all three games, sentence practice, and the reading to unlock the next level.': '完成三種遊戲、句子練習及文章聆聽，才能解鎖下一級。',
     'Trials can access only the first level. Subscribe to unlock more levels.': '試用期間只可進入最低級；訂閱後完成練習即可逐級解鎖。',
     'Complete the previous level before moving on.': '完成上一級後即可進入下一級。',
     'Continue to membership': '前往會員訂閱',
     'Sign in to view your saved level progress.': '登入即可查看已儲存的級別進度。',
     'Progress could not be loaded. Retry.': '無法載入進度，請重試。',
-    'All four activities completed.': '四項練習已全部完成。',
+    'All five activities completed.': '五項練習已全部完成。',
     'Start this level': '開始本級練習',
     'Back to Chinese Treasure House': '返回中文寶庫',
     'No subscription or trial is active.': '目前沒有有效的訂閱或試用期。',
     'Choose a learning path': '選擇學習路徑',
-    'Choose HSK or PSC first. The next page lets you choose a graded practice level.': '先選擇 HSK 或 PSC 寶庫，再選擇分級練習。',
+    'Choose HSK, PSC, ACTFL, or TOCFL first, then choose a graded practice level.': '先選擇 HSK、PSC、ACTFL 或 TOCFL 寶庫，再選擇分級練習。',
     'A practical study room for curious learners. Choose a clear level, listen closely, and practise with original materials.': '為中文學習者準備的實用學習空間。先選擇分級，再聆聽原創短文並開始練習。',
     'Loading saved progress…': '正在載入已儲存的進度…',
     'Start another round': '再練習一輪',
@@ -54,7 +59,8 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Every level is open to explore. Start with the one that feels right today.': '每個級別都可以自由探索，從今天最適合你的地方開始。',
     'Explore levels': '探索級別',
     'Words to know': '詞語練習',
-    'Short reading': '短文聆聽',
+    'Reading and listening': '文章閱讀與聆聽',
+    'characters': '字',
     'Study actions': '開始練習',
     'Search this word bank': '搜尋本級詞語',
     'Search by character, pinyin, or meaning': '以漢字、拼音或意思搜尋',
@@ -66,6 +72,11 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Replay reading': '重新播放',
     'Stop audio': '停止播放',
     'Choose how to practise': '選擇練習方式',
+    'Sentence practice': '句子練習',
+    'Complete the sentence': '完成句子',
+    'Choose a word to complete the sentence.': '選擇合適詞語填入句子。',
+    'Sentence': '句子',
+    'Try again': '再試一次',
     'Meaning match': '詞義選擇',
     'Listening choice': '聆聽辨詞',
     'Pinyin recognition': '拼音辨認',
@@ -97,6 +108,8 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Chinese Treasure House': '中文宝库',
     'HSK Resource Library': 'HSK 宝库',
     'PSC Resource Library': 'PSC 宝库',
+    'ACTFL Resource Library': 'ACTFL 宝库',
+    'TOCFL Resource Library': 'TOCFL 宝库',
     'Graded Practice': '分级练习',
     'Score: 97 to 100. Standard pronunciation, correct vocabulary and grammar, natural intonation, and fluent expression.': '成绩 97 至 100 分｜语音标准，词汇、语法正确，语调自然，表达流畅。',
     'Score: 92 to under 97. Standard pronunciation and natural, fluent speech, with occasional syllable or tone errors.': '成绩 92 分以上、未满 97 分｜语音标准，语调自然、表达流畅，偶有字音或字调失误。',
@@ -104,24 +117,26 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Score: 80 to under 87. Some tones or sounds are inaccurate; difficult sounds often cause errors, and dialect forms may appear.': '成绩 80 分以上、未满 87 分｜部分声调或声韵母不到位，难点音失误较多，可能出现方言词或语法。',
     'Score: 70 to under 80. Many initials/finals errors and inaccurate tones; regional accent is noticeable, with some vocabulary or grammar errors.': '成绩 70 分以上、未满 80 分｜声韵母失误较多、声调偏误明显，方言语调较突出，词汇或语法也有失误。',
     'Score: 60 to under 70. Frequent pronunciation errors, strong regional accent, and frequent vocabulary or grammar errors.': '成绩 60 分以上、未满 70 分｜声韵调失误较多、方音特征突出，词汇与语法失误较多。',
-    'Structured Chinese vocabulary, games, and listening for all nine HSK levels.': '按 HSK 一至九级分级的词语、游戏练习与聆听短文。',
-    'Vocabulary, games, and listening across three PSC grades and six bands.': '按普通话水平测试三个等第、六个级别安排词语、游戏与朗读练习。',
+    'Structured Chinese vocabulary, games, sentence practice, and readings for all nine HSK levels.': '按 HSK 一至九级提供词语、游戏、句子练习与分级阅读。',
+    'Vocabulary, games, sentence practice, and readings across three PSC grades and six bands.': '按普通话水平测试三个等第、六个级别安排词语、游戏、句子练习与阅读。',
+    'ACTFL practice across four proficiency bands and ten steps.': 'ACTFL 练习分为初级、中级、高级、卓越级四组，共十个进度级别。',
+    'TOCFL practice across four site-designed bands and eight steps.': 'TOCFL 练习采用本平台设计的四组级别，共八个进度级别。',
     'Available': '可开始',
     'Completed': '已完成',
     'Locked': '尚未开放',
     'Level progress': '级别进度',
-    'Complete all three games and listen to the article to unlock the next level.': '完成三种游戏各一轮并听完短文，才能解锁下一级。',
+    'Complete all three games, sentence practice, and the reading to unlock the next level.': '完成三种游戏、句子练习及文章聆听，才能解锁下一级。',
     'Trials can access only the first level. Subscribe to unlock more levels.': '试用期间只能进入最低级；订阅后完成练习即可逐级解锁。',
     'Complete the previous level before moving on.': '完成上一级后即可进入下一级。',
     'Continue to membership': '前往会员订阅',
     'Sign in to view your saved level progress.': '登录即可查看已保存的级别进度。',
     'Progress could not be loaded. Retry.': '无法加载进度，请重试。',
-    'All four activities completed.': '四项练习已全部完成。',
+    'All five activities completed.': '五项练习已全部完成。',
     'Start this level': '开始本级练习',
     'Back to Chinese Treasure House': '返回中文宝库',
     'No subscription or trial is active.': '目前没有有效的订阅或试用期。',
     'Choose a learning path': '选择学习路径',
-    'Choose HSK or PSC first. The next page lets you choose a graded practice level.': '先选择 HSK 或 PSC 宝库，再选择分级练习。',
+    'Choose HSK, PSC, ACTFL, or TOCFL first, then choose a graded practice level.': '先选择 HSK、PSC、ACTFL 或 TOCFL 宝库，再选择分级练习。',
     'A practical study room for curious learners. Choose a clear level, listen closely, and practise with original materials.': '为中文学习者准备的实用学习空间。先选择分级，再聆听原创短文并开始练习。',
     'Loading saved progress…': '正在加载已保存的进度…',
     'Start another round': '再练习一轮',
@@ -135,7 +150,8 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Every level is open to explore. Start with the one that feels right today.': '每个级别都可以自由探索，从今天最适合你的地方开始。',
     'Explore levels': '探索级别',
     'Words to know': '词语练习',
-    'Short reading': '短文聆听',
+    'Reading and listening': '文章阅读与聆听',
+    'characters': '字',
     'Study actions': '开始练习',
     'Search this word bank': '搜索本级词语',
     'Search by character, pinyin, or meaning': '按汉字、拼音或意思搜索',
@@ -147,6 +163,11 @@ const localCopy: Record<'zh-Hant' | 'zh-Hans', Record<string, string>> = {
     'Replay reading': '重新播放',
     'Stop audio': '停止播放',
     'Choose how to practise': '选择练习方式',
+    'Sentence practice': '句子练习',
+    'Complete the sentence': '完成句子',
+    'Choose a word to complete the sentence.': '选择合适词语填入句子。',
+    'Sentence': '句子',
+    'Try again': '再试一次',
     'Meaning match': '词义选择',
     'Listening choice': '聆听辨词',
     'Pinyin recognition': '拼音辨认',
@@ -182,13 +203,23 @@ function label(language: Language, english: string) {
 }
 
 function trackName(language: Language, trackId: ExamTrackId, defaultName: string) {
-  return label(language, trackId === 'hsk' ? 'HSK Resource Library' : 'PSC Resource Library') || defaultName;
+  const labels: Record<ExamTrackId, string> = {
+    hsk: 'HSK Resource Library',
+    psc: 'PSC Resource Library',
+    actfl: 'ACTFL Resource Library',
+    tocfl: 'TOCFL Resource Library',
+  };
+  return label(language, labels[trackId]) || defaultName;
 }
 
 function trackDescription(language: Language, trackId: ExamTrackId) {
-  return label(language, trackId === 'hsk'
-    ? 'Structured Chinese vocabulary, games, and listening for all nine HSK levels.'
-    : 'Vocabulary, games, and listening across three PSC grades and six bands.');
+  const descriptions: Record<ExamTrackId, string> = {
+    hsk: 'Structured Chinese vocabulary, games, sentence practice, and readings for all nine HSK levels.',
+    psc: 'Vocabulary, games, sentence practice, and readings across three PSC grades and six bands.',
+    actfl: 'ACTFL practice across four proficiency bands and ten steps.',
+    tocfl: 'TOCFL practice across four site-designed bands and eight steps.',
+  };
+  return label(language, descriptions[trackId]);
 }
 
 function levelProgressFor(
@@ -200,7 +231,65 @@ function levelProgressFor(
 }
 
 function asTrackId(value?: string): ExamTrackId | null {
-  return value === 'hsk' || value === 'psc' ? value : null;
+  return value === 'hsk' || value === 'psc' || value === 'actfl' || value === 'tocfl' ? value : null;
+}
+
+const chineseLevelNames: Record<ExamTrackId, Record<string, [string, string]>> = {
+  hsk: {},
+  psc: {},
+  actfl: {
+    'n-low': ['初級低段', '初学低段'], 'n-mid': ['初級中段', '初学中段'], 'n-high': ['初級高段', '初学高段'],
+    'i-low': ['中級低段', '中级低段'], 'i-mid': ['中級中段', '中级中段'], 'i-high': ['中級高段', '中级高段'],
+    'a-low': ['高級低段', '高级低段'], 'a-mid': ['高級中段', '高级中段'], 'a-high': ['高級高段', '高级高段'],
+    superior: ['卓越級', '卓越级'],
+  },
+  tocfl: {
+    '1': ['入門第 1 級', '入门第 1 级'], '2': ['入門第 2 級', '入门第 2 级'],
+    '3': ['基礎第 1 級', '基础第 1 级'], '4': ['基礎第 2 級', '基础第 2 级'],
+    '5': ['進階第 1 級', '进阶第 1 级'], '6': ['進階第 2 級', '进阶第 2 级'],
+    '7': ['高階第 1 級', '高阶第 1 级'], '8': ['高階第 2 級', '高阶第 2 级'],
+  },
+};
+
+const chineseLevelDescriptions: Record<ExamTrackId, Record<string, [string, string]>> = {
+  hsk: {},
+  psc: {},
+  actfl: {
+    'n-low': ['初級組｜辨認熟悉的名稱與基本課堂詞語。', '初学组｜识别熟悉的名称与基本课堂词语。'],
+    'n-mid': ['初級組｜以熟悉詞語進行簡短對話。', '初学组｜用熟悉词语进行简短对话。'],
+    'n-high': ['初級組｜用簡單句子描述日常生活。', '初学组｜用简单句子描述日常生活。'],
+    'i-low': ['中級組｜以連貫句子敘述熟悉事情。', '中级组｜用连贯句子叙述熟悉的事情。'],
+    'i-mid': ['中級組｜說明經歷、喜好與原因。', '中级组｜说明经历、喜好和原因。'],
+    'i-high': ['中級組｜有細節地敘述並解釋日常事務。', '中级组｜有细节地叙述并解释日常事务。'],
+    'a-low': ['高級組｜討論公共議題並以資料支持觀點。', '高级组｜讨论公共议题并用资料支持观点。'],
+    'a-mid': ['高級組｜組織論點並比較不同觀點。', '高级组｜组织论点并比较不同观点。'],
+    'a-high': ['高級組｜以細緻語言討論複雜議題。', '高级组｜用细致的语言讨论复杂议题。'],
+    superior: ['卓越組｜綜合證據、限定主張並回應不同解讀。', '卓越组｜综合证据、限定主张并回应不同解读。'],
+  },
+  tocfl: {
+    '1': ['入門組｜認識個人資料與常見生活詞語。', '入门组｜认识个人资料与常见生活词语。'],
+    '2': ['入門組｜交流日常作息、地點與喜好。', '入门组｜交流日常作息、地点与喜好。'],
+    '3': ['基礎組｜描述熟悉經歷並說明簡單計畫。', '基础组｜描述熟悉经历并说明简单计划。'],
+    '4': ['基礎組｜連結事件並說明原因與結果。', '基础组｜连接事件并说明原因与结果。'],
+    '5': ['進階組｜整理資訊並比較熟悉情境中的選擇。', '进阶组｜整理信息并比较熟悉情境中的选择。'],
+    '6': ['進階組｜解釋較抽象想法並用例子支持結論。', '进阶组｜解释较抽象的想法并用例子支持结论。'],
+    '7': ['高階組｜討論社會議題並分辨主張與證據。', '高阶组｜讨论社会议题并分辨主张与证据。'],
+    '8': ['高階組｜評估細緻論點並整合多方資料。', '高阶组｜评估细致论点并整合多方资料。'],
+  },
+};
+
+function levelName(language: Language, trackId: ExamTrackId, level: ExamLevel) {
+  if (language === 'zh-Hant' || language === 'zh-Hans') {
+    return chineseLevelNames[trackId][level.id]?.[language === 'zh-Hant' ? 0 : 1] ?? level.label;
+  }
+  return label(language, level.label);
+}
+
+function levelDescription(language: Language, trackId: ExamTrackId, level: ExamLevel) {
+  if (language === 'zh-Hant' || language === 'zh-Hans') {
+    return chineseLevelDescriptions[trackId][level.id]?.[language === 'zh-Hant' ? 0 : 1] ?? label(language, level.description);
+  }
+  return label(language, level.description);
 }
 
 export function TreasureHousePage({ language, track: routeTrack, level: routeLevel }: Props) {
@@ -212,7 +301,10 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
   const [gameMode, setGameMode] = useState<GameMode>('meaning');
   const [questionIndexByMode, setQuestionIndexByMode] = useState<Record<GameMode, number>>({ meaning: 0, listening: 0, pinyin: 0 });
   const [answer, setAnswer] = useState<string | null>(null);
-  const [failedActivity, setFailedActivity] = useState<GameMode | 'article' | null>(null);
+  const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [sentenceAnswer, setSentenceAnswer] = useState<string | null>(null);
+  const [sentenceCorrect, setSentenceCorrect] = useState<boolean | null>(null);
+  const [failedActivity, setFailedActivity] = useState<ActivityId | null>(null);
   useEffect(() => {
     setScript(language === 'zh-Hant' ? 'trad' : 'simp');
   }, [language]);
@@ -231,7 +323,7 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
     const started = speakMandarin(text, script, () => { setSpeechStatus('ready'); onEnd?.(); }, () => setSpeechStatus('unavailable'));
     setSpeechStatus(started ? 'speaking' : 'unavailable');
   };
-  const saveActivity = async (activity: GameMode | 'article') => {
+  const saveActivity = async (activity: ActivityId) => {
     if (!trackId || !routeLevel) return false;
     setFailedActivity(null);
     try {
@@ -259,6 +351,9 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
     setSearch('');
     setAnswer(null);
     setQuestionIndexByMode({ meaning: 0, listening: 0, pinyin: 0 });
+    setSentenceIndex(0);
+    setSentenceAnswer(null);
+    setSentenceCorrect(null);
     setFailedActivity(null);
   }, [routeTrack, routeLevel]);
 
@@ -291,7 +386,7 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
           </div>
         </section>
         <section className="treasure-path-grid" aria-label={label(language, 'Pick a path')}>
-          {(['hsk', 'psc'] as ExamTrackId[]).map((id, index) => (
+          {(Object.keys(examTracks) as ExamTrackId[]).map((id, index) => (
             <Link key={id} href={`/treasure-house/${id}`} className="treasure-path-tab treasure-path-card" data-testid={`link-track-${id}`}>
               <span className="treasure-tab-index">0{index + 1}</span>
               <span>
@@ -302,7 +397,7 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
             </Link>
           ))}
         </section>
-        <p className="treasure-track-flow-note">{label(language, 'Choose HSK or PSC first. The next page lets you choose a graded practice level.')}</p>
+        <p className="treasure-track-flow-note">{label(language, 'Choose HSK, PSC, ACTFL, or TOCFL first, then choose a graded practice level.')}</p>
       </main>
     );
   }
@@ -336,7 +431,7 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
             <div>
               <p className="treasure-eyebrow">{label(language, 'Graded Practice')}</p>
               <h2 id="treasure-level-heading">{label(language, 'Graded Practice')}</h2>
-              <p>{label(language, 'Complete all three games and listen to the article to unlock the next level.')}</p>
+              <p>{label(language, 'Complete all three games, sentence practice, and the reading to unlock the next level.')}</p>
             </div>
             <span className="treasure-count">{activeTrack.levels.length} <small>{label(language, 'levels')}</small></span>
           </div>
@@ -356,10 +451,10 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
                 <Link key={item.id} href={`/treasure-house/${trackId}/${item.id}`} className={`treasure-level-card treasure-level-card-${status}`} data-testid={`link-level-${trackId}-${item.id}`}>
                   <span className="treasure-level-number">{String(index + 1).padStart(2, '0')}</span>
                   <span className="treasure-level-copy">
-                    <strong>{item.label}</strong>
-                    <small>{label(language, item.description)}</small>
-                    <span className="treasure-level-progress-label">{label(language, 'Level progress')} · {completedCount}/4</span>
-                    <span className="treasure-progress-track"><span style={{ width: `${completedCount * 25}%` }} /></span>
+                    <strong>{levelName(language, trackId, item)}</strong>
+                    <small>{levelDescription(language, trackId, item)}</small>
+                    <span className="treasure-level-progress-label">{label(language, 'Level progress')} · {completedCount}/5</span>
+                    <span className="treasure-progress-track"><span style={{ width: `${completedCount * 20}%` }} /></span>
                   </span>
                   <span className={`treasure-level-status status-${status}`}>
                     {status === 'completed' ? <Check size={13} /> : status === 'locked' ? <LockKeyhole size={13} /> : null}
@@ -430,6 +525,19 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
   }
 
   const words = activeLevel.words;
+  const sentenceItems = activeLevel.sentencePractice ?? [];
+  const sentenceTarget = sentenceItems[sentenceIndex % Math.max(sentenceItems.length, 1)];
+  const sentenceCorrectWord = sentenceTarget
+    ? words.find((word) => word.id === sentenceTarget.answerWordId)
+    : undefined;
+  const sentenceDistractors = words.filter((word) => word.id !== sentenceCorrectWord?.id);
+  const sentenceOffset = sentenceDistractors.length ? (sentenceIndex * 3) % sentenceDistractors.length : 0;
+  const rotatedSentenceDistractors = [
+    ...sentenceDistractors.slice(sentenceOffset),
+    ...sentenceDistractors.slice(0, sentenceOffset),
+  ];
+  const sentenceChoices = sentenceCorrectWord ? [sentenceCorrectWord, ...rotatedSentenceDistractors.slice(0, 3)] : [];
+  const articleText = script === 'simp' ? activeLevel.article.simplified : activeLevel.article.traditional;
   const targetIndex = questionIndex % words.length;
   const target = words[targetIndex];
   const distractors = words.filter((word) => word.id !== target.id);
@@ -456,6 +564,23 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
     setAnswer(value);
     if (targetIndex === words.length - 1) void saveActivity(gameMode);
   };
+  const handleSentenceAnswer = (wordId: string) => {
+    if (!sentenceTarget || sentenceAnswer !== null) return;
+    const isCorrect = wordId === sentenceTarget.answerWordId;
+    setSentenceAnswer(wordId);
+    setSentenceCorrect(isCorrect);
+    if (isCorrect && sentenceIndex === sentenceItems.length - 1) void saveActivity('sentence');
+  };
+  const advanceSentence = () => {
+    if (sentenceCorrect !== true || sentenceItems.length === 0) {
+      setSentenceAnswer(null);
+      setSentenceCorrect(null);
+      return;
+    }
+    setSentenceIndex((current) => (current + 1) % sentenceItems.length);
+    setSentenceAnswer(null);
+    setSentenceCorrect(null);
+  };
 
   return (
     <main className="page-shell treasure-page treasure-detail" data-testid="treasure-house">
@@ -469,15 +594,15 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
       </div>
       <header className="treasure-detail-heading">
         <p className="treasure-eyebrow">{trackName(language, trackId, activeTrack.name)} <span>/</span> {label(language, 'Graded Practice')}</p>
-        <h1>{activeLevel.label}</h1>
-        <p>{label(language, activeLevel.description)}</p>
+        <h1>{levelName(language, trackId, activeLevel)}</h1>
+        <p>{levelDescription(language, trackId, activeLevel)}</p>
         <div className="treasure-detail-tags"><span>{words.length} {label(language, 'words')}</span><span>{label(language, 'Original practice material')}</span></div>
         <div className="treasure-level-progress-summary" data-testid="status-level-progress">
-          <div><span>{label(language, 'Level progress')}</span><strong>{currentLevelProgress?.completedCount ?? 0}/4</strong></div>
-          <span className="treasure-progress-track"><span style={{ width: `${(currentLevelProgress?.completedCount ?? 0) * 25}%` }} /></span>
+          <div><span>{label(language, 'Level progress')}</span><strong>{currentLevelProgress?.completedCount ?? 0}/5</strong></div>
+          <span className="treasure-progress-track"><span style={{ width: `${(currentLevelProgress?.completedCount ?? 0) * 20}%` }} /></span>
           <p>{currentLevelProgress?.status === 'completed'
-            ? label(language, 'All four activities completed.')
-            : label(language, 'Complete all three games and listen to the article to unlock the next level.')}</p>
+            ? label(language, 'All five activities completed.')
+            : label(language, 'Complete all three games, sentence practice, and the reading to unlock the next level.')}</p>
         </div>
       </header>
       <div className="treasure-content-grid">
@@ -505,12 +630,13 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
 
         <div className="treasure-side-column">
           <section className="treasure-reading-card" aria-labelledby="treasure-reading-title">
-            <div className="treasure-reading-top"><span className="treasure-reading-icon"><BookOpen size={19} /></span><span>{label(language, 'Short reading')}</span></div>
+            <div className="treasure-reading-top"><span className="treasure-reading-icon"><BookOpen size={19} /></span><span>{label(language, 'Reading and listening')}</span></div>
             <p className="treasure-eyebrow">{label(language, 'Original practice material')}</p>
             <h2 id="treasure-reading-title">{script === 'simp' ? activeLevel.article.titleSimplified ?? activeLevel.article.title : activeLevel.article.title}</h2>
-            <p className="treasure-reading-text" lang={script === 'simp' ? 'zh-Hans' : 'zh-Hant'}>{script === 'simp' ? activeLevel.article.simplified : activeLevel.article.traditional}</p>
+            <p className="treasure-reading-text" lang={script === 'simp' ? 'zh-Hans' : 'zh-Hant'}>{articleText}</p>
+            <p className="treasure-reading-length">{articleText.length} / 1,000 {label(language, 'characters')}</p>
             <div className="treasure-reading-actions">
-              <button type="button" className="treasure-play-button" onClick={() => speak(activeLevel.article.simplified, () => { void saveActivity('article'); })} data-testid="button-play-reading"><Volume2 size={17} />{speechStatus === 'speaking' ? label(language, 'Replay reading') : label(language, 'Play reading')}</button>
+              <button type="button" className="treasure-play-button" onClick={() => speak(articleText, () => { void saveActivity('article'); })} data-testid="button-play-reading"><Volume2 size={17} />{speechStatus === 'speaking' ? label(language, 'Replay reading') : label(language, 'Play reading')}</button>
               <button type="button" className="treasure-stop-button" onClick={stop} data-testid="button-stop-reading"><X size={15} />{label(language, 'Stop audio')}</button>
             </div>
             <p className={`treasure-speech-status ${speechStatus === 'unavailable' ? 'is-error' : ''}`} role={speechStatus === 'unavailable' ? 'alert' : 'status'} data-testid="status-speech">{speechStatus === 'unavailable' ? label(language, 'Speech is unavailable in this browser. You can still read and browse the material.') : label(language, speechStatus === 'speaking' ? 'Speaking…' : speechStatus === 'stopped' ? 'Audio stopped' : 'Ready to listen')}</p>
@@ -549,6 +675,50 @@ export function TreasureHousePage({ language, track: routeTrack, level: routeLev
             </div>}
             {answer !== null && <button type="button" className="treasure-next-question" onClick={completeRound} data-testid="button-next-question">{targetIndex === words.length - 1 ? label(language, 'Start another round') : label(language, 'Check another')}<ArrowRight size={15} /></button>}
             {failedActivity ? <div className="treasure-activity-error" role="alert" data-testid="status-activity-save-error"><span>{label(language, 'Could not save progress. Retry.')}</span><button type="button" onClick={() => void saveActivity(failedActivity)} data-testid="button-retry-activity">{label(language, 'Try again')}</button></div> : null}
+          </section>
+          <section className="treasure-game-card treasure-sentence-card" aria-labelledby="treasure-sentence-title">
+            <div className="treasure-panel-heading">
+              <div><p className="treasure-eyebrow">{label(language, 'Study actions')}</p><h2 id="treasure-sentence-title">{label(language, 'Sentence practice')}</h2></div>
+              <span className="treasure-game-mark"><BookOpen size={19} /></span>
+            </div>
+            {sentenceTarget && sentenceCorrectWord ? (
+              <>
+                <div className="treasure-question">
+                  <span className="treasure-question-count">{label(language, 'Sentence')} {sentenceIndex + 1} {label(language, 'of')} {sentenceItems.length}</span>
+                  <p className="treasure-sentence-prompt" lang={script === 'simp' ? 'zh-Hans' : 'zh-Hant'}>
+                    {script === 'simp' ? sentenceTarget.simplified : sentenceTarget.traditional}
+                  </p>
+                  <p>{label(language, 'Choose a word to complete the sentence.')}</p>
+                </div>
+                <div className="treasure-answer-options">
+                  {sentenceChoices.map((word) => {
+                    const isCorrect = word.id === sentenceTarget.answerWordId;
+                    const stateClass = sentenceAnswer === null ? '' : isCorrect ? 'is-correct' : sentenceAnswer === word.id ? 'is-wrong' : '';
+                    return (
+                      <button type="button" key={word.id} className={`treasure-answer-option ${stateClass}`}
+                        onClick={() => handleSentenceAnswer(word.id)} disabled={sentenceAnswer !== null}
+                        data-testid={`button-sentence-answer-${word.id}`}>
+                        {sentenceAnswer === word.id && isCorrect ? <Check size={15} /> : null}{scriptText(word)}
+                      </button>
+                    );
+                  })}
+                </div>
+                {sentenceAnswer !== null && (
+                  <div className={`treasure-answer-feedback ${sentenceCorrect ? 'is-correct' : 'is-wrong'}`} role="status" data-testid="status-sentence-feedback">
+                    {sentenceCorrect ? label(language, 'Correct') : `${label(language, 'Not quite. The answer is')} ${scriptText(sentenceCorrectWord)}`}
+                  </div>
+                )}
+                {sentenceAnswer !== null && (
+                  <button type="button" className="treasure-next-question" onClick={advanceSentence} data-testid="button-next-sentence">
+                    {sentenceCorrect ? sentenceIndex === sentenceItems.length - 1 ? label(language, 'Start another round') : label(language, 'Check another') : label(language, 'Try again')}
+                    <ArrowRight size={15} />
+                  </button>
+                )}
+                {completedActivities.includes('sentence') ? <p className="treasure-activity-complete" data-testid="status-sentence-complete"><Check size={14} />{label(language, 'Completed')}</p> : null}
+              </>
+            ) : (
+              <p className="treasure-empty" role="status">{label(language, 'Sentence practice is not available for this level.')}</p>
+            )}
           </section>
         </div>
       </div>

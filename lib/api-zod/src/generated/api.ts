@@ -301,24 +301,24 @@ export const RecordGardenCareResponse = zod.object({
 
 
 export const getExamProgressResponseTracksItemLevelsItemCompletedCountMin = 0;
-export const getExamProgressResponseTracksItemLevelsItemCompletedCountMax = 4;
+export const getExamProgressResponseTracksItemLevelsItemCompletedCountMax = 5;
 
-export const getExamProgressResponseTracksItemLevelsItemRequiredCountMin = 4;
-export const getExamProgressResponseTracksItemLevelsItemRequiredCountMax = 4;
+export const getExamProgressResponseTracksItemLevelsItemRequiredCountMin = 5;
+export const getExamProgressResponseTracksItemLevelsItemRequiredCountMax = 5;
 
-export const getExamProgressResponseTracksMin = 2;
-export const getExamProgressResponseTracksMax = 2;
+export const getExamProgressResponseTracksMin = 4;
+export const getExamProgressResponseTracksMax = 4;
 
 
 
 export const GetExamProgressResponse = zod.object({
   "membershipTier": zod.enum(['none', 'trial', 'subscribed', 'admin']),
   "tracks": zod.array(zod.object({
-  "trackId": zod.enum(['hsk', 'psc']),
+  "trackId": zod.enum(['hsk', 'psc', 'actfl', 'tocfl']),
   "levels": zod.array(zod.object({
   "levelId": zod.string(),
   "status": zod.enum(['locked', 'available', 'completed']),
-  "completedActivities": zod.array(zod.enum(['meaning', 'listening', 'pinyin', 'article'])),
+  "completedActivities": zod.array(zod.enum(['meaning', 'listening', 'pinyin', 'sentence', 'article'])),
   "completedCount": zod.int().min(getExamProgressResponseTracksItemLevelsItemCompletedCountMin).max(getExamProgressResponseTracksItemLevelsItemCompletedCountMax),
   "requiredCount": zod.int().min(getExamProgressResponseTracksItemLevelsItemRequiredCountMin).max(getExamProgressResponseTracksItemLevelsItemRequiredCountMax)
 }))
@@ -326,35 +326,35 @@ export const GetExamProgressResponse = zod.object({
 })
 
 
-export const recordExamActivityBodyLevelIdMax = 8;
+export const recordExamActivityBodyLevelIdMax = 16;
 
 
 
 export const RecordExamActivityBody = zod.object({
-  "trackId": zod.enum(['hsk', 'psc']),
+  "trackId": zod.enum(['hsk', 'psc', 'actfl', 'tocfl']),
   "levelId": zod.string().min(1).max(recordExamActivityBodyLevelIdMax),
-  "activity": zod.enum(['meaning', 'listening', 'pinyin', 'article'])
+  "activity": zod.enum(['meaning', 'listening', 'pinyin', 'sentence', 'article'])
 })
 
 export const recordExamActivityResponseTracksItemLevelsItemCompletedCountMin = 0;
-export const recordExamActivityResponseTracksItemLevelsItemCompletedCountMax = 4;
+export const recordExamActivityResponseTracksItemLevelsItemCompletedCountMax = 5;
 
-export const recordExamActivityResponseTracksItemLevelsItemRequiredCountMin = 4;
-export const recordExamActivityResponseTracksItemLevelsItemRequiredCountMax = 4;
+export const recordExamActivityResponseTracksItemLevelsItemRequiredCountMin = 5;
+export const recordExamActivityResponseTracksItemLevelsItemRequiredCountMax = 5;
 
-export const recordExamActivityResponseTracksMin = 2;
-export const recordExamActivityResponseTracksMax = 2;
+export const recordExamActivityResponseTracksMin = 4;
+export const recordExamActivityResponseTracksMax = 4;
 
 
 
 export const RecordExamActivityResponse = zod.object({
   "membershipTier": zod.enum(['none', 'trial', 'subscribed', 'admin']),
   "tracks": zod.array(zod.object({
-  "trackId": zod.enum(['hsk', 'psc']),
+  "trackId": zod.enum(['hsk', 'psc', 'actfl', 'tocfl']),
   "levels": zod.array(zod.object({
   "levelId": zod.string(),
   "status": zod.enum(['locked', 'available', 'completed']),
-  "completedActivities": zod.array(zod.enum(['meaning', 'listening', 'pinyin', 'article'])),
+  "completedActivities": zod.array(zod.enum(['meaning', 'listening', 'pinyin', 'sentence', 'article'])),
   "completedCount": zod.int().min(recordExamActivityResponseTracksItemLevelsItemCompletedCountMin).max(recordExamActivityResponseTracksItemLevelsItemCompletedCountMax),
   "requiredCount": zod.int().min(recordExamActivityResponseTracksItemLevelsItemRequiredCountMin).max(recordExamActivityResponseTracksItemLevelsItemRequiredCountMax)
 }))

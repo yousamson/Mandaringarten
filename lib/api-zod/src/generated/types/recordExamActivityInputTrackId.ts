@@ -12,4 +12,6 @@ export type RecordExamActivityInputTrackId = typeof RecordExamActivityInputTrack
 export const RecordExamActivityInputTrackId = {
   hsk: 'hsk',
   psc: 'psc',
+  actfl: 'actfl',
+  tocfl: 'tocfl',
 } as const;

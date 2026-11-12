@@ -12,7 +12,7 @@ export interface RecordExamActivityInput {
   trackId: RecordExamActivityInputTrackId;
   /**
      * @minLength 1
-     * @maxLength 8
+     * @maxLength 16
      */
   levelId: string;
   activity: RecordExamActivityInputActivity;

@@ -2,9 +2,13 @@ export const examLevelIds = {
   hsk: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
   // PSC grade 1A is the highest band; progression starts at the lowest, 3B.
   psc: ["3b", "3a", "2b", "2a", "1b", "1a"],
+  actfl: ["n-low", "n-mid", "n-high", "i-low", "i-mid", "i-high", "a-low", "a-mid", "a-high", "superior"],
+  tocfl: ["1", "2", "3", "4", "5", "6", "7", "8"],
 } as const;
 
-export const examActivities = ["meaning", "listening", "pinyin", "article"] as const;
+export const examActivities = ["meaning", "listening", "pinyin", "sentence", "article"] as const;
+const legacyExamActivities = ["meaning", "listening", "pinyin", "article"] as const;
+export const examProgressVersionMarker = "__sentence_practice_v1__";
 export type ExamTrackId = keyof typeof examLevelIds;
 export type ExamActivity = typeof examActivities[number];
 export type ExamMembershipTier = "none" | "trial" | "subscribed" | "admin";
@@ -35,7 +39,24 @@ export function isExamLevelComplete(
   levelId: string,
 ): boolean {
   const record = records.find((item) => item.trackId === trackId && item.levelId === levelId);
-  return examActivities.every((activity) => record?.completedActivities.includes(activity));
+  return isRecordComplete(record);
+}
+
+function isRecordComplete(record: ExamProgressRecord | undefined): boolean {
+  if (!record) return false;
+  return examActivities.every((activity) => record.completedActivities.includes(activity))
+    // Preserve fully completed records written before sentence practice was added.
+    || (!record.completedActivities.includes(examProgressVersionMarker)
+      && legacyExamActivities.every((activity) => record.completedActivities.includes(activity)));
+}
+
+function completedActivitiesFor(record: ExamProgressRecord | undefined): string[] {
+  if (!record) return [];
+  if (!record.completedActivities.includes(examProgressVersionMarker)
+    && legacyExamActivities.every((activity) => record.completedActivities.includes(activity))) {
+    return [...new Set([...record.completedActivities, "sentence"])];
+  }
+  return examActivities.filter((activity) => record.completedActivities.includes(activity));
 }
 
 export function canAccessExamLevel(
@@ -63,7 +84,7 @@ export function buildExamProgress(
       trackId,
       levels: examLevelIds[trackId].map((levelId) => {
         const record = records.find((item) => item.trackId === trackId && item.levelId === levelId);
-        const completedActivities = examActivities.filter((activity) => record?.completedActivities.includes(activity));
+        const completedActivities = completedActivitiesFor(record);
         const isComplete = completedActivities.length === requiredActivityCount;
         const available = canAccessExamLevel(membershipTier, records, trackId, levelId);
         return {

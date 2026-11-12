@@ -14,12 +14,12 @@ export interface ExamLevelProgress {
   completedActivities: ExamLevelProgressCompletedActivitiesItem[];
   /**
      * @minimum 0
-     * @maximum 4
+     * @maximum 5
      */
   completedCount: number;
   /**
-     * @minimum 4
-     * @maximum 4
+     * @minimum 5
+     * @maximum 5
      */
   requiredCount: number;
 }

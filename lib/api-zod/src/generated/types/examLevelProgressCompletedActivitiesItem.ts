@@ -13,5 +13,6 @@ export const ExamLevelProgressCompletedActivitiesItem = {
   meaning: 'meaning',
   listening: 'listening',
   pinyin: 'pinyin',
+  sentence: 'sentence',
   article: 'article',
 } as const;

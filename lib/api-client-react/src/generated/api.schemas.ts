@@ -179,6 +179,8 @@ export type ExamTrackProgressTrackId = typeof ExamTrackProgressTrackId[keyof typ
 export const ExamTrackProgressTrackId = {
   hsk: 'hsk',
   psc: 'psc',
+  actfl: 'actfl',
+  tocfl: 'tocfl',
 } as const;
 
 export type ExamLevelProgressStatus = typeof ExamLevelProgressStatus[keyof typeof ExamLevelProgressStatus];
@@ -197,6 +199,7 @@ export const ExamLevelProgressCompletedActivitiesItem = {
   meaning: 'meaning',
   listening: 'listening',
   pinyin: 'pinyin',
+  sentence: 'sentence',
   article: 'article',
 } as const;
 
@@ -206,12 +209,12 @@ export interface ExamLevelProgress {
   completedActivities: ExamLevelProgressCompletedActivitiesItem[];
   /**
      * @minimum 0
-     * @maximum 4
+     * @maximum 5
      */
   completedCount: number;
   /**
-     * @minimum 4
-     * @maximum 4
+     * @minimum 5
+     * @maximum 5
      */
   requiredCount: number;
 }
@@ -224,8 +227,8 @@ export interface ExamTrackProgress {
 export interface ExamProgressResponse {
   membershipTier: ExamProgressResponseMembershipTier;
   /**
-     * @minItems 2
-     * @maxItems 2
+     * @minItems 4
+     * @maxItems 4
      */
   tracks: ExamTrackProgress[];
 }
@@ -236,6 +239,8 @@ export type RecordExamActivityInputTrackId = typeof RecordExamActivityInputTrack
 export const RecordExamActivityInputTrackId = {
   hsk: 'hsk',
   psc: 'psc',
+  actfl: 'actfl',
+  tocfl: 'tocfl',
 } as const;
 
 export type RecordExamActivityInputActivity = typeof RecordExamActivityInputActivity[keyof typeof RecordExamActivityInputActivity];
@@ -245,6 +250,7 @@ export const RecordExamActivityInputActivity = {
   meaning: 'meaning',
   listening: 'listening',
   pinyin: 'pinyin',
+  sentence: 'sentence',
   article: 'article',
 } as const;
 
@@ -252,7 +258,7 @@ export interface RecordExamActivityInput {
   trackId: RecordExamActivityInputTrackId;
   /**
      * @minLength 1
-     * @maxLength 8
+     * @maxLength 16
      */
   levelId: string;
   activity: RecordExamActivityInputActivity;
