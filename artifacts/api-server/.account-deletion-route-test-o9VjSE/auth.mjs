@@ -1,0 +1,1 @@
+export function getAuth(req) { return { userId: req.testUserId ?? null }; }

@@ -420,6 +420,35 @@ export interface AccountAccess {
   access: AccountAccessAccess;
 }
 
+export interface AdminMember {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  name: string | null;
+  createdAt: string;
+}
+
+export interface DailyPageViews {
+  date: string;
+  /** @minimum 0 */
+  pageViews: number;
+}
+
+export interface AdminDashboard {
+  /** @minimum 0 */
+  memberCount: number;
+  members: AdminMember[];
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  nextOffset: number | null;
+  /** @minimum 0 */
+  totalPageViews: number;
+  dailyPageViews: DailyPageViews[];
+}
+
 export type AccountDeletionInputConfirmation = typeof AccountDeletionInputConfirmation[keyof typeof AccountDeletionInputConfirmation];
 
 
@@ -538,4 +567,16 @@ export interface TranslationLookupResponse {
   sourceLanguage: TranslationLookupResponseSourceLanguage;
   targetLanguage: TranslationLookupResponseTargetLanguage;
 }
+
+export type GetAdminDashboardParams = {
+/**
+ * @minimum 0
+ */
+offset?: number;
+/**
+ * @minimum 1
+ * @maximum 50
+ */
+limit?: number;
+};
 

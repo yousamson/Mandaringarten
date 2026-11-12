@@ -295,6 +295,35 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AccountAccess" }
+  /analytics/page-view:
+    post:
+      operationId: recordSitePageView
+      summary: Record an anonymous aggregate website page view
+      responses:
+        "204": { description: Page view counted without storing visitor identity }
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      summary: Get registered users and aggregate website visits for administrators
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 50, default: 25 }
+      responses:
+        "200":
+          description: Paginated member registrations and anonymous daily page-view totals
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminDashboard" }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "503": { description: Dashboard data is temporarily unavailable }
   /account:
     delete:
       operationId: deleteAccount
@@ -654,6 +683,33 @@ components:
         isAdmin: { type: boolean }
         isPremium: { type: boolean }
         access: { type: string, enum: [active, subscription_required, deleting] }
+    AdminDashboard:
+      type: object
+      required: [memberCount, members, nextOffset, totalPageViews, dailyPageViews]
+      properties:
+        memberCount: { type: integer, minimum: 0 }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/AdminMember" }
+        nextOffset: { type: ["integer", "null"], minimum: 0 }
+        totalPageViews: { type: integer, minimum: 0 }
+        dailyPageViews:
+          type: array
+          items: { $ref: "#/components/schemas/DailyPageViews" }
+    AdminMember:
+      type: object
+      required: [id, email, name, createdAt]
+      properties:
+        id: { type: string }
+        email: { type: ["string", "null"] }
+        name: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    DailyPageViews:
+      type: object
+      required: [date, pageViews]
+      properties:
+        date: { type: string, format: date }
+        pageViews: { type: integer, minimum: 0 }
     AccountDeletionInput:
       type: object
       required: [privacyAccepted, disclaimerAccepted, dataDeletionAccepted, noRefundAccepted, subscriptionCancellationAccepted, confirmation, policyVersion]

@@ -33,6 +33,12 @@ Parents contact the management team through platform messages. Only the server-a
 
 **How to apply:** gate administrator UI and inbox APIs using verified server-side administrator identity. Keep conversations private to their parent and authorized management. Do not expose the administrator login email in UI or legal contact details.
 
+Administrator reporting may show member registration details only behind server-side administrator checks. Never return the administrator's own login email in the dashboard. Keep traffic reporting to daily aggregate page-view totals without visitor IDs, account IDs, IP addresses, or page URLs.
+
+**Why:** the user requested an administrator-only registration and traffic view while retaining the rule that the management login email never appears on the website.
+
+**How to apply:** protect every reporting endpoint on the server, not only by hiding navigation; sanitize the designated administrator account before returning a user list; do not add identifying visitor-level tracking.
+
 Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts. Keep the deletion-page acknowledgement aligned with the user's latest wording; do not restore removed exception wording unless requested.
 
 **Why:** the user requested self-service deletion and explicitly requires policy and no-refund acknowledgements before deletion, then specifically asked to remove the legal-refund/error-charge exception from the deletion-page checkbox.

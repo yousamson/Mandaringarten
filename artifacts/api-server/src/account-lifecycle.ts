@@ -31,7 +31,8 @@ export async function withAccountWrite<T>(userId: string, operation: (tx: Transa
 export const accountLifecycleGuard: RequestHandler = async (req, res, next) => {
   try {
     const userId = getAuth(req).userId;
-    if (!userId || (req.path === "/account" && req.method === "DELETE") ||
+    if (!userId || (req.path === "/analytics/page-view" && req.method === "POST") ||
+      (req.path === "/account" && req.method === "DELETE") ||
       (req.path === "/account/access" && req.method === "GET")) {
       next(); return;
     }

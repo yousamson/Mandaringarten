@@ -35,6 +35,7 @@ const stubs = {
     export const learningChallengesTable = defineTable("challenges", ["clerkUserId"]);
     export const learningProgressTable = defineTable("progress", ["clerkUserId"]);
     export const learningRoundsTable = defineTable("rounds", ["clerkUserId"]);
+    export const examLevelProgressTable = defineTable("examProgress", ["clerkUserId"]);
     export const legalConsentsTable = defineTable("legalConsents", ["clerkUserId"]);
     export const checkoutConsentsTable = defineTable("checkoutConsents", ["clerkUserId"]);
     export const supportThreadsTable = defineTable("supportThreads", ["id", "clerkUserId", "lastMessagePreview"]);
@@ -241,7 +242,13 @@ const app = express();
 app.use(express.json());
 app.use((req, _res, next) => {
   req.testUserId = "parent_test_fixture";
-  req.log = { error() {} };
+  req.log = {
+    info() {},
+    error(context) {
+      globalThis.__accountDeletionTestState.routeErrors ??= [];
+      globalThis.__accountDeletionTestState.routeErrors.push(context?.err?.message ?? "unknown route error");
+    },
+  };
   next();
 });
 app.use("/api", accountRouter);
@@ -276,6 +283,7 @@ function resetState({ failOnce = null, identityFailureCount = 0 } = {}) {
       challenges: [{ clerkUserId: "parent_test_fixture" }],
       progress: [{ clerkUserId: "parent_test_fixture" }],
       rounds: [{ clerkUserId: "parent_test_fixture" }],
+      examProgress: [{ clerkUserId: "parent_test_fixture" }],
       legalConsents: [{ clerkUserId: "parent_test_fixture" }],
       checkoutConsents: [{ clerkUserId: "parent_test_fixture" }],
       supportThreads: [],
@@ -327,7 +335,7 @@ async function assertRetryCompletes(state) {
   assert.equal(state.deletedIdentity, "parent_test_fixture");
   for (const table of [
     "billingAccounts", "billingCustomers", "billingScopes", "challenges",
-    "progress", "rounds", "legalConsents", "checkoutConsents",
+    "progress", "rounds", "examProgress", "legalConsents", "checkoutConsents",
   ]) {
     assert.equal(state.rows[table].length, 0, `${table} should be removed`);
   }
@@ -350,10 +358,11 @@ for (const [label, failOnce] of [
 
 test("administrator access stays active without calling billing", async () => {
   const state = resetState();
+  state.routeErrors = [];
   state.isAdmin = true;
   state.failMembershipLookup = true;
   const response = await fetch(`${baseUrl}/api/account/access`);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 200, state.routeErrors.join("; "));
   assert.deepEqual(await response.json(), {
     isAdmin: true,
     isPremium: true,
@@ -364,9 +373,10 @@ test("administrator access stays active without calling billing", async () => {
 
 test("ordinary account access still reflects confirmed membership", async () => {
   const state = resetState();
+  state.routeErrors = [];
   state.isPremium = true;
   const response = await fetch(`${baseUrl}/api/account/access`);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 200, state.routeErrors.join("; "));
   assert.deepEqual(await response.json(), {
     isAdmin: false,
     isPremium: true,

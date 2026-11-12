@@ -21,6 +21,7 @@ export const getGetSupportConversationQueryKey = (threadId?: string) => ['suppor
 export const getGetSupportThreadsQueryKey = () => ['support-threads'];
 export const getGetLegalConsentQueryKey = () => ['legal-consent'];
 export const getGetExamProgressQueryKey = () => ['exam-progress'];
+export const getGetAdminDashboardQueryKey = (params?: { offset?: number; limit?: number }) => ['admin-dashboard', params];
 
 export const useGetBillingStatus = () => idleQuery;
 export const useGetBillingPlan = () => idleQuery;
@@ -30,6 +31,25 @@ export const useGetSupportConversation = () => idleQuery;
 export const useGetSupportThreads = () => ({ ...idleQuery, data: [] });
 export const useGetLegalConsent = () => idleQuery;
 export const useGetExamProgress = () => idleQuery;
+export const useGetAdminDashboard = (params?: { offset?: number }) => ({
+  data: {
+    memberCount: 1,
+    members: params?.offset ? [] : [{
+      id: 'parent-user-1',
+      email: 'parent@example.test',
+      name: 'Parent Example',
+      createdAt: '2026-11-11T08:00:00.000Z',
+    }],
+    nextOffset: null,
+    totalPageViews: 12,
+    dailyPageViews: [{ date: '2026-11-11', pageViews: 12 }],
+  },
+  isLoading: false,
+  isFetching: false,
+  isError: false,
+  refetch: async () => undefined,
+});
+export const recordSitePageView = async () => undefined;
 export const useAcceptLegalConsent = () => emptyMutation;
 export const useCreateBillingCheckout = () => emptyMutation;
 export const useCreateBillingPortal = () => emptyMutation;

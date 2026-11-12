@@ -14,6 +14,7 @@ import { MembershipPanel } from '@/components/membership-panel';
 import { useAccountAccess } from '@/hooks/use-account';
 import AccountPage from '@/pages/account';
 import MessagesPage from '@/pages/messages';
+import AdminPage from '@/pages/admin';
 import { StagePicker } from '@/components/playground/stage-picker';
 import { StagePathCards } from '@/components/stage-path-cards';
 import { StagePathPlayer } from '@/components/stage-path-player';
@@ -31,7 +32,7 @@ import PlaygroundPage, { WordBankPage } from '@/pages/playground';
 import PrivacyPage from '@/pages/privacy';
 import { categories, categoryNames, copy, GardenLesson, Language, lessons, levels } from '@/lib/garden-data';
 import { interfaceLanguageOptions, translateInterface } from '@workspace/learning-content';
-import type { LearningQuestion, LearningRoundInput } from '@workspace/api-client-react';
+import { recordSitePageView, type LearningQuestion, type LearningRoundInput } from '@workspace/api-client-react';
 import { pick, playgroundName, stageLabel, stageNames, tr } from '@/lib/playground-copy';
 import { scriptFor, speakMandarin, stopSpeech } from '@/lib/speech';
 import { ageStages, freeReadings, normalizeAgeStage } from '@/lib/age-stages';
@@ -146,6 +147,13 @@ function Garden() {
   const guarded = (node: ReactNode) => <AccountConsentBoundary language={l}><MemberGate l={l}><LegacySync l={l} />{node}</MemberGate></AccountConsentBoundary>;
   const access = useAccountAccess();
 
+  useEffect(() => {
+    if (!import.meta.env.PROD || path.startsWith('/admin')) return;
+    void recordSitePageView({ skipAuth: true, keepalive: true }).catch(() => {
+      // Visit totals are non-essential and must never interrupt site navigation.
+    });
+  }, [path]);
+
   return (
     <div className={shellClass} lang={l}>
       <div className="page-shell">
@@ -168,6 +176,7 @@ function Garden() {
               <Link href="/" className="nav-link" onClick={close}>{homeText(l, 'Choose a destination', '選擇入口', '选择入口')}</Link>
               {access.isSignedIn ? <Link href="/messages" className={`nav-link ${path === '/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-messages">{tr(l, 'Messages', '訊息', '消息')}</Link> : null}
               {access.isAdmin ? <Link href="/admin/messages" className={`nav-link ${path === '/admin/messages' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin">{tr(l, 'Team inbox', '團隊收件匣', '团队收件箱')}</Link> : null}
+              {access.isAdmin ? <Link href="/admin" className={`nav-link ${path === '/admin' ? 'active' : ''}`} onClick={close} data-testid="link-nav-admin-dashboard">{tr(l, 'Admin overview', '管理總覽', '管理总览')}</Link> : null}
             </>}
           </nav>
           <div className="top-actions">
@@ -197,6 +206,7 @@ function Garden() {
           <Route path="/register/*?"><AuthPage key="register" mode="register" language={l} /></Route>
           <Route path="/membership"><AccountConsentBoundary language={l}><MembershipPage l={l} /></AccountConsentBoundary></Route>
           <Route path="/messages"><MessagesPage language={l} /></Route>
+          <Route path="/admin"><AdminPage language={l} /></Route>
           <Route path="/admin/messages"><MessagesPage language={l} admin /></Route>
           <Route path="/account"><AccountPage language={l} /></Route>
           <Route path="/home">{guarded(<HomePage language={l} t={t} age={preferences.age} />)}</Route>

@@ -9,6 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:admin": "node --experimental-strip-types --test tests/admin.test.mjs",
+    "test:admin-dashboard": "node --experimental-strip-types --test tests/admin-dashboard-data.test.mjs tests/admin-dashboard-route.test.mjs",
     "test:account-deletion": "node --test tests/account-deletion-route.test.mjs",
     "test:billing": "node --test tests/billing-route.test.mjs",
     "test:progress": "node --experimental-strip-types --test tests/learning-progress.test.mjs tests/garden-progression.test.mjs",

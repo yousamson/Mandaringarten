@@ -388,6 +388,55 @@ export const GetAccountAccessResponse = zod.object({
 })
 
 
+/**
+ * @summary Record an anonymous aggregate website page view
+ */
+export const RecordSitePageViewResponse = zod.void()
+
+
+/**
+ * @summary Get registered users and aggregate website visits for administrators
+ */
+export const getAdminDashboardQueryOffsetDefault = 0;
+export const getAdminDashboardQueryOffsetMin = 0;
+
+export const getAdminDashboardQueryLimitDefault = 25;
+export const getAdminDashboardQueryLimitMax = 50;
+
+
+
+export const GetAdminDashboardQueryParams = zod.object({
+  "offset": zod.coerce.number().int().min(getAdminDashboardQueryOffsetMin).default(getAdminDashboardQueryOffsetDefault),
+  "limit": zod.coerce.number().int().min(1).max(getAdminDashboardQueryLimitMax).default(getAdminDashboardQueryLimitDefault)
+})
+
+export const getAdminDashboardResponseMemberCountMin = 0;
+
+export const getAdminDashboardResponseNextOffsetMin = 0;
+
+export const getAdminDashboardResponseTotalPageViewsMin = 0;
+
+export const getAdminDashboardResponseDailyPageViewsItemPageViewsMin = 0;
+
+
+
+export const GetAdminDashboardResponse = zod.object({
+  "memberCount": zod.int().min(getAdminDashboardResponseMemberCountMin),
+  "members": zod.array(zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullable(),
+  "name": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})),
+  "nextOffset": zod.int().min(getAdminDashboardResponseNextOffsetMin).nullable(),
+  "totalPageViews": zod.int().min(getAdminDashboardResponseTotalPageViewsMin),
+  "dailyPageViews": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "pageViews": zod.int().min(getAdminDashboardResponseDailyPageViewsItemPageViewsMin)
+}))
+})
+
+
 export const DeleteAccountBody = zod.object({
   "privacyAccepted": zod.literal(true),
   "disclaimerAccepted": zod.literal(true),

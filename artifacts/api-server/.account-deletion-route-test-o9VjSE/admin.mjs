@@ -1,0 +1,1 @@
+export async function isAdministrator() { return globalThis.__accountDeletionTestState.isAdmin; }

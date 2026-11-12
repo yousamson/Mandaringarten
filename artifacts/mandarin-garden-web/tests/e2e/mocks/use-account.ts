@@ -1,10 +1,11 @@
 export function useAccountAccess() {
+  const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
   return {
     uid: 'browser-test-parent',
     isLoaded: true,
     isSignedIn: true,
-    data: { access: 'active', isAdmin: false },
-    isAdmin: false,
+    data: { access: 'active', isAdmin },
+    isAdmin,
     query: { isLoading: false, isError: false, refetch: async () => undefined },
   };
 }
