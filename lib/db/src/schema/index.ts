@@ -23,3 +23,4 @@ export * from "./billingAccounts";
 export * from "./learning";
 export * from "./support";
 export * from "./site-analytics";
+export * from "./admin-dashboard-security";

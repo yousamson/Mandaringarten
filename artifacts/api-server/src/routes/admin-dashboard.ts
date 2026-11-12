@@ -10,6 +10,7 @@ import {
   GetAdminDashboardResponse,
 } from "@workspace/api-zod";
 import { hasVerifiedAdministratorEmail, isAdministrator } from "../admin";
+import { requireAdminDashboardPasswordSession } from "../admin-dashboard-password";
 import {
   fillDailyPageViews,
   hongKongDate,
@@ -69,6 +70,7 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
       res.status(403).json({ error: "Administrator access required." });
       return;
     }
+    if (!await requireAdminDashboardPasswordSession(userId, req, res)) return;
 
     const parsed = GetAdminDashboardQueryParams.safeParse(req.query);
     if (!parsed.success) {

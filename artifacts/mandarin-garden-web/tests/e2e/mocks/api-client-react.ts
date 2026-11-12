@@ -22,6 +22,7 @@ export const getGetSupportThreadsQueryKey = () => ['support-threads'];
 export const getGetLegalConsentQueryKey = () => ['legal-consent'];
 export const getGetExamProgressQueryKey = () => ['exam-progress'];
 export const getGetAdminDashboardQueryKey = (params?: { offset?: number; limit?: number }) => ['admin-dashboard', params];
+export const getGetAdminDashboardPasswordStatusQueryKey = () => ['admin-dashboard-password-status'];
 
 export const useGetBillingStatus = () => idleQuery;
 export const useGetBillingPlan = () => idleQuery;
@@ -49,7 +50,24 @@ export const useGetAdminDashboard = (params?: { offset?: number }) => ({
   isError: false,
   refetch: async () => undefined,
 });
+export const useGetAdminDashboardPasswordStatus = () => {
+  const mode = new URLSearchParams(window.location.search).get('password');
+  return {
+    data: mode === 'setup'
+      ? { passwordConfigured: false, passwordAuthenticated: false }
+      : mode === 'locked'
+        ? { passwordConfigured: true, passwordAuthenticated: false }
+        : { passwordConfigured: true, passwordAuthenticated: true },
+    isLoading: false,
+    isError: false,
+    refetch: async () => undefined,
+  };
+};
 export const recordSitePageView = async () => undefined;
+export const useSetupAdminDashboardPassword = () => emptyMutation;
+export const useCreateAdminDashboardPasswordSession = () => emptyMutation;
+export const useUpdateAdminDashboardPassword = () => emptyMutation;
+export const useDeleteAdminDashboardPasswordSession = () => emptyMutation;
 export const useAcceptLegalConsent = () => emptyMutation;
 export const useCreateBillingCheckout = () => emptyMutation;
 export const useCreateBillingPortal = () => emptyMutation;

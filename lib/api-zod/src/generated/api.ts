@@ -437,6 +437,85 @@ export const GetAdminDashboardResponse = zod.object({
 })
 
 
+/**
+ * @summary Check whether the administrator dashboard password is set and unlocked
+ */
+export const GetAdminDashboardPasswordStatusResponse = zod.object({
+  "passwordConfigured": zod.boolean(),
+  "passwordAuthenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Set the administrator dashboard password for the first time
+ */
+export const setupAdminDashboardPasswordBodyPasswordMin = 12;
+export const setupAdminDashboardPasswordBodyPasswordMax = 128;
+
+export const setupAdminDashboardPasswordBodyConfirmationMin = 12;
+export const setupAdminDashboardPasswordBodyConfirmationMax = 128;
+
+
+
+export const SetupAdminDashboardPasswordBody = zod.object({
+  "password": zod.string().min(setupAdminDashboardPasswordBodyPasswordMin).max(setupAdminDashboardPasswordBodyPasswordMax),
+  "confirmation": zod.string().min(setupAdminDashboardPasswordBodyConfirmationMin).max(setupAdminDashboardPasswordBodyConfirmationMax)
+})
+
+export const SetupAdminDashboardPasswordResponse = zod.object({
+  "passwordConfigured": zod.boolean(),
+  "passwordAuthenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Change the administrator dashboard password
+ */
+export const updateAdminDashboardPasswordBodyCurrentPasswordMax = 128;
+
+export const updateAdminDashboardPasswordBodyPasswordMin = 12;
+export const updateAdminDashboardPasswordBodyPasswordMax = 128;
+
+export const updateAdminDashboardPasswordBodyConfirmationMin = 12;
+export const updateAdminDashboardPasswordBodyConfirmationMax = 128;
+
+
+
+export const UpdateAdminDashboardPasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(updateAdminDashboardPasswordBodyCurrentPasswordMax),
+  "password": zod.string().min(updateAdminDashboardPasswordBodyPasswordMin).max(updateAdminDashboardPasswordBodyPasswordMax),
+  "confirmation": zod.string().min(updateAdminDashboardPasswordBodyConfirmationMin).max(updateAdminDashboardPasswordBodyConfirmationMax)
+})
+
+export const UpdateAdminDashboardPasswordResponse = zod.object({
+  "passwordConfigured": zod.boolean(),
+  "passwordAuthenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Unlock the administrator dashboard with its password
+ */
+export const createAdminDashboardPasswordSessionBodyPasswordMax = 128;
+
+
+
+export const CreateAdminDashboardPasswordSessionBody = zod.object({
+  "password": zod.string().min(1).max(createAdminDashboardPasswordSessionBodyPasswordMax)
+})
+
+export const CreateAdminDashboardPasswordSessionResponse = zod.object({
+  "passwordConfigured": zod.boolean(),
+  "passwordAuthenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Lock the administrator dashboard
+ */
+export const DeleteAdminDashboardPasswordSessionResponse = zod.void()
+
+
 export const DeleteAccountBody = zod.object({
   "privacyAccepted": zod.literal(true),
   "disclaimerAccepted": zod.literal(true),

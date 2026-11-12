@@ -449,6 +449,50 @@ export interface AdminDashboard {
   dailyPageViews: DailyPageViews[];
 }
 
+export interface AdminDashboardPasswordStatus {
+  passwordConfigured: boolean;
+  passwordAuthenticated: boolean;
+}
+
+export interface AdminDashboardPasswordSetup {
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  password: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  confirmation: string;
+}
+
+export interface AdminDashboardPasswordLogin {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
+export interface AdminDashboardPasswordUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  currentPassword: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  password: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  confirmation: string;
+}
+
 export type AccountDeletionInputConfirmation = typeof AccountDeletionInputConfirmation[keyof typeof AccountDeletionInputConfirmation];
 
 

@@ -1,6 +1,17 @@
-import { useState } from 'react';
-import { useGetAdminDashboard, getGetAdminDashboardQueryKey, type GetAdminDashboardParams } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, ChartNoAxesColumn, RotateCcw, ShieldCheck, Users } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import {
+  getGetAdminDashboardPasswordStatusQueryKey,
+  getGetAdminDashboardQueryKey,
+  type GetAdminDashboardParams,
+  useCreateAdminDashboardPasswordSession,
+  useDeleteAdminDashboardPasswordSession,
+  useGetAdminDashboardPasswordStatus,
+  useGetAdminDashboard,
+  useSetupAdminDashboardPassword,
+  useUpdateAdminDashboardPassword,
+} from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, ChartNoAxesColumn, KeyRound, LockKeyhole, LogOut, RotateCcw, ShieldCheck, Users } from 'lucide-react';
 import { Link } from 'wouter';
 import { useAccountAccess } from '@/hooks/use-account';
 import { AccessChecking, AccessError } from '@/components/access-gate';
@@ -14,15 +25,162 @@ function dateLabel(value: string, language: Language, options: Intl.DateTimeForm
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(language, options).format(date);
 }
 
-function AdminDashboardData({ language: l }: { language: Language }) {
+function passwordErrorCopy(error: unknown, copy: (en: string, hant: string, hans: string) => string) {
+  const status = typeof error === 'object' && error !== null && 'status' in error
+    ? Number((error as { status?: unknown }).status)
+    : 0;
+  if (status === 429) return copy('Too many attempts. Wait 15 minutes and try again.', '嘗試次數過多，請等候 15 分鐘再試。', '尝试次数过多，请等待 15 分钟再试。');
+  if (status === 401) return copy('The password is not correct. Please try again.', '密碼不正確，請再試一次。', '密码不正确，请再试一次。');
+  return copy('The request could not be completed. Please retry.', '未能完成操作，請重試。', '未能完成操作，请重试。');
+}
+
+function AdminDashboardPasswordGate({ language: l, userId }: { language: Language; userId: string }) {
+  const copy = (en: string, hant: string, hans: string) => tr(l, en, hant, hans);
+  const queryClient = useQueryClient();
+  const statusKey = [...getGetAdminDashboardPasswordStatusQueryKey(), userId];
+  const status = useGetAdminDashboardPasswordStatus({
+    query: {
+      queryKey: statusKey,
+      retry: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+    },
+  });
+  const setup = useSetupAdminDashboardPassword();
+  const login = useCreateAdminDashboardPasswordSession();
+  const lock = useDeleteAdminDashboardPasswordSession();
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [error, setError] = useState('');
+  const [lockError, setLockError] = useState('');
+  const [working, setWorking] = useState(false);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setWorking(true);
+    try {
+      if (status.data?.passwordConfigured) {
+        await login.mutateAsync({ data: { password } });
+      } else {
+        if (password !== confirmation) {
+          setError(copy('The passwords do not match.', '兩次輸入的密碼不一致。', '两次输入的密码不一致。'));
+          setWorking(false);
+          return;
+        }
+        await setup.mutateAsync({ data: { password, confirmation } });
+      }
+      setPassword('');
+      setConfirmation('');
+      await queryClient.invalidateQueries({ queryKey: statusKey });
+    } catch (cause) {
+      setError(passwordErrorCopy(cause, copy));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  if (status.isLoading || (!status.data && !status.isError)) {
+    return (
+      <main className="page-shell admin-page" data-testid="status-admin-password-loading">
+        <section className="admin-state-panel"><span className="admin-state-icon"><LockKeyhole size={22} /></span><h1>{copy('Checking dashboard access', '正在確認後台權限', '正在确认后台权限')}</h1></section>
+      </main>
+    );
+  }
+  if (status.isError) {
+    return (
+      <main className="page-shell admin-page" data-testid="status-admin-password-error">
+        <section className="admin-state-panel" role="alert"><span className="admin-state-icon"><LockKeyhole size={22} /></span><h1>{copy('Could not verify dashboard access', '未能確認後台權限', '未能确认后台权限')}</h1><p>{copy('Please retry. Your administrator account is still required.', '請重試；仍須使用管理員帳戶登入。', '请重试；仍须使用管理员账户登录。')}</p><button type="button" className="button-secondary" onClick={() => void status.refetch()}><RotateCcw size={14} /> {copy('Try again', '再試一次', '再试一次')}</button></section>
+      </main>
+    );
+  }
+  if (status.data?.passwordConfigured && status.data.passwordAuthenticated) {
+    return <AdminDashboardData language={l} userId={userId} lockError={lockError} onLock={async () => {
+      setLockError('');
+      try {
+        await lock.mutateAsync();
+        await queryClient.invalidateQueries({ queryKey: statusKey });
+      } catch {
+        setLockError(copy('Could not lock the dashboard. Please retry.', '未能鎖定後台，請重試。', '未能锁定后台，请重试。'));
+      }
+    }} />;
+  }
+
+  const isSetup = !status.data?.passwordConfigured;
+  return (
+    <main className="page-shell admin-page" data-testid={isSetup ? 'page-admin-password-setup' : 'page-admin-password-login'}>
+      <section className="admin-state-panel admin-password-panel">
+        <span className="admin-state-icon">{isSetup ? <KeyRound size={22} /> : <LockKeyhole size={22} />}</span>
+        <h1>{isSetup ? copy('Set a dashboard password', '設定後台密碼', '设置后台密码') : copy('Enter the dashboard password', '輸入後台密碼', '输入后台密码')}</h1>
+        <p>{isSetup
+          ? copy('Create a password of at least 12 characters. It is separate from your administrator account sign-in.', '請設定至少 12 個字元的密碼。此密碼與管理員帳戶登入密碼分開。', '请设置至少 12 个字符的密码。此密码与管理员账户登录密码分开。')
+          : copy('Your administrator account and this password are both required. The dashboard locks after 8 hours.', '須同時通過管理員帳戶及此密碼驗證；後台工作階段會在 8 小時後鎖定。', '须同时通过管理员账户及此密码验证；后台会话将在 8 小时后锁定。')}</p>
+        <form className="admin-password-form" onSubmit={(event) => void submit(event)}>
+          <label htmlFor="admin-dashboard-password">{copy('Dashboard password', '後台密碼', '后台密码')}</label>
+          <input id="admin-dashboard-password" className="admin-password-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isSetup ? 'new-password' : 'current-password'} minLength={isSetup ? 12 : 1} maxLength={128} required data-testid="input-admin-dashboard-password" />
+          {isSetup ? <>
+            <label htmlFor="admin-dashboard-password-confirm">{copy('Confirm password', '再次輸入密碼', '再次输入密码')}</label>
+            <input id="admin-dashboard-password-confirm" className="admin-password-input" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required data-testid="input-admin-dashboard-password-confirm" />
+          </> : null}
+          {error ? <p className="admin-password-error" role="alert" data-testid="error-admin-dashboard-password">{error}</p> : null}
+          <button type="submit" className="button-primary" disabled={working} data-testid="button-admin-dashboard-password-submit">
+            <LockKeyhole size={15} /> {working
+              ? copy('Please wait…', '請稍候…', '请稍候…')
+              : isSetup ? copy('Set password and continue', '設定密碼並繼續', '设置密码并继续') : copy('Unlock dashboard', '解鎖後台', '解锁后台')}
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function AdminDashboardData({ language: l, userId, onLock, lockError }: { language: Language; userId: string; onLock: () => Promise<void>; lockError: string }) {
   const copy = (en: string, hant: string, hans: string) => tr(l, en, hant, hans);
   const [offset, setOffset] = useState(0);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
+  const [passwordFormError, setPasswordFormError] = useState('');
+  const [passwordFormSuccess, setPasswordFormSuccess] = useState('');
+  const changePassword = useUpdateAdminDashboardPassword();
+  const queryClient = useQueryClient();
   const params: GetAdminDashboardParams = { offset, limit: PAGE_SIZE };
   const dashboard = useGetAdminDashboard(params, {
-    query: { enabled: true, queryKey: getGetAdminDashboardQueryKey(params), retry: 1 },
+    query: {
+      enabled: true,
+      queryKey: [...getGetAdminDashboardQueryKey(params), userId],
+      retry: 1,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60_000,
+    },
   });
   const data = dashboard.data;
   const maxViews = Math.max(1, ...(data?.dailyPageViews.map((day) => day.pageViews) ?? []));
+
+  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordFormError('');
+    setPasswordFormSuccess('');
+    if (newPassword !== newPasswordConfirmation) {
+      setPasswordFormError(copy('The new passwords do not match.', '新密碼不一致。', '新密码不一致。'));
+      return;
+    }
+    try {
+      await changePassword.mutateAsync({ data: {
+        currentPassword,
+        password: newPassword,
+        confirmation: newPasswordConfirmation,
+      } });
+      setCurrentPassword('');
+      setNewPassword('');
+      setNewPasswordConfirmation('');
+      setPasswordFormSuccess(copy('Dashboard password changed. Other password sessions were closed.', '後台密碼已更改，其他密碼工作階段已關閉。', '后台密码已更改，其他密码会话已关闭。'));
+      await queryClient.invalidateQueries({ queryKey: getGetAdminDashboardPasswordStatusQueryKey() });
+    } catch (cause) {
+      setPasswordFormError(passwordErrorCopy(cause, copy));
+    }
+  };
 
   return (
     <main className="page-shell admin-page" data-testid="page-admin-dashboard">
@@ -31,9 +189,29 @@ function AdminDashboardData({ language: l }: { language: Language }) {
           <div className="eyebrow"><ShieldCheck size={14} /> Mandarin Garden · {copy('Administration', '管理後台', '管理后台')}</div>
           <h1>{copy('Garden overview', '樂園總覽', '乐园总览')}</h1>
           <p>{copy('Registered accounts and page-view totals. Counts begin after this feature is published.', '查看註冊帳戶與頁面瀏覽總數；數據由此功能發布後開始累計。', '查看注册账户与页面浏览总数；数据从此功能发布后开始累计。')}</p>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-page-button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordFormError(''); setPasswordFormSuccess(''); }} data-testid="button-admin-change-password"><KeyRound size={14} /> {copy('Change password', '更改密碼', '更改密码')}</button>
+            <button type="button" className="admin-page-button" onClick={() => void onLock()} data-testid="button-admin-lock-dashboard"><LogOut size={14} /> {copy('Lock dashboard', '鎖定後台', '锁定后台')}</button>
+          </div>
         </div>
         <span className="admin-secure-note"><ShieldCheck size={15} /> {copy('Private team view', '僅管理團隊可見', '仅管理团队可见')}</span>
       </section>
+      {lockError ? <p className="admin-password-error" role="alert">{lockError}</p> : null}
+
+      {changePasswordOpen ? (
+        <form className="admin-panel admin-password-form admin-password-change" onSubmit={(event) => void submitPasswordChange(event)} data-testid="form-admin-change-password">
+          <h2>{copy('Change dashboard password', '更改後台密碼', '更改后台密码')}</h2>
+          <label htmlFor="admin-current-password">{copy('Current password', '目前密碼', '当前密码')}</label>
+          <input id="admin-current-password" className="admin-password-input" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" maxLength={128} required />
+          <label htmlFor="admin-new-password">{copy('New password', '新密碼', '新密码')}</label>
+          <input id="admin-new-password" className="admin-password-input" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required />
+          <label htmlFor="admin-new-password-confirm">{copy('Confirm new password', '再次輸入新密碼', '再次输入新密码')}</label>
+          <input id="admin-new-password-confirm" className="admin-password-input" type="password" value={newPasswordConfirmation} onChange={(event) => setNewPasswordConfirmation(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required />
+          {passwordFormError ? <p className="admin-password-error" role="alert">{passwordFormError}</p> : null}
+          {passwordFormSuccess ? <p className="admin-password-success" role="status">{passwordFormSuccess}</p> : null}
+          <button type="submit" className="button-primary" disabled={changePassword.isPending}><KeyRound size={15} /> {changePassword.isPending ? copy('Please wait…', '請稍候…', '请稍候…') : copy('Save new password', '儲存新密碼', '保存新密码')}</button>
+        </form>
+      ) : null}
 
       {dashboard.isLoading ? (
         <section className="admin-loading" aria-label="Loading dashboard" data-testid="status-admin-loading">
@@ -162,5 +340,5 @@ export default function AdminPage({ language: l }: { language: Language }) {
       </main>
     );
   }
-  return <AdminDashboardData language={l} />;
+  return <AdminDashboardPasswordGate language={l} userId={access.uid ?? ''} />;
 }

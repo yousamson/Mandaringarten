@@ -39,6 +39,12 @@ Administrator reporting may show member registration details only behind server-
 
 **How to apply:** protect every reporting endpoint on the server, not only by hiding navigation; sanitize the designated administrator account before returning a user list; do not add identifying visitor-level tracking.
 
+The administrator data dashboard requires both the verified Clerk administrator account and a separate administrator-set password. Store only a salted scrypt hash; issue a short-lived HttpOnly password-session cookie tied to the administrator, and revoke sessions when the password changes.
+
+**Why:** the user explicitly chose an additional password rather than replacing the existing administrator account login.
+
+**How to apply:** protect dashboard data APIs server-side with both checks; keep password setup/change restricted to the verified admin, limit repeated failed attempts, and never persist or log the plaintext password.
+
 Parents may permanently delete their account, including when a subscription has expired. Require explicit confirmation of the current Privacy Policy and Disclaimer, irreversible data deletion, subscription cancellation/access ending and non-refundable paid subscription amounts. Keep the deletion-page acknowledgement aligned with the user's latest wording; do not restore removed exception wording unless requested.
 
 **Why:** the user requested self-service deletion and explicitly requires policy and no-refund acknowledgements before deletion, then specifically asked to remove the legal-refund/error-charge exception from the deletion-page checkbox.

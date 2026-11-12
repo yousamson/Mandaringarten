@@ -9,7 +9,14 @@ import { build } from "esbuild";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const packageDir = path.resolve(testDir, "..");
 const tempDir = await mkdtemp(path.join(packageDir, ".admin-dashboard-test-"));
-const state = { isAdmin: false, userListCalls: 0, inserts: 0, errors: [] };
+const state = {
+  isAdmin: false,
+  passwordConfigured: true,
+  passwordAuthenticated: true,
+  userListCalls: 0,
+  inserts: 0,
+  errors: [],
+};
 globalThis.__adminDashboardTestState = state;
 process.env.MANDARIN_ADMIN_EMAILS = "team@example.test";
 
@@ -48,6 +55,20 @@ const stubs = {
     }
     export async function isAdministrator(userId) {
       return globalThis.__adminDashboardTestState.isAdmin && userId === "admin-id";
+    }
+  `,
+  adminPassword: `
+    export async function requireAdminDashboardPasswordSession(_userId, _req, res) {
+      const current = globalThis.__adminDashboardTestState;
+      if (!current.passwordConfigured) {
+        res.status(428).json({ error: "Set password." });
+        return false;
+      }
+      if (!current.passwordAuthenticated) {
+        res.status(423).json({ error: "Unlock dashboard." });
+        return false;
+      }
+      return true;
     }
   `,
   apiZod: `
@@ -110,6 +131,7 @@ await build({
         ["@workspace/db", stubPaths.db],
         ["@workspace/api-zod", stubPaths.apiZod],
         ["../admin", stubPaths.admin],
+        ["../admin-dashboard-password", stubPaths.adminPassword],
       ]);
       buildApi.onResolve({ filter: /.*/ }, (args) => aliases.has(args.path)
         ? { path: aliases.get(args.path), external: true } : undefined);
@@ -145,6 +167,31 @@ test("a signed-in non-admin cannot read member records", async () => {
   });
   assert.equal(response.status, 403);
   assert.equal(state.userListCalls, 0);
+});
+
+test("an administrator without the dashboard password cannot read member records", async () => {
+  state.isAdmin = true;
+  state.passwordConfigured = true;
+  state.passwordAuthenticated = false;
+  const before = state.userListCalls;
+  const response = await fetch(`${baseUrl}/admin/dashboard`, {
+    headers: { "x-test-user": "admin-id" },
+  });
+  assert.equal(response.status, 423);
+  assert.equal(state.userListCalls, before);
+  state.passwordAuthenticated = true;
+});
+
+test("the dashboard requires password setup before returning its data", async () => {
+  state.isAdmin = true;
+  state.passwordConfigured = false;
+  const before = state.userListCalls;
+  const response = await fetch(`${baseUrl}/admin/dashboard`, {
+    headers: { "x-test-user": "admin-id" },
+  });
+  assert.equal(response.status, 428);
+  assert.equal(state.userListCalls, before);
+  state.passwordConfigured = true;
 });
 
 test("administrator dashboard never returns the designated login email", async () => {

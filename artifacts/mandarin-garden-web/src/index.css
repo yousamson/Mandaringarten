@@ -368,6 +368,19 @@ a { color: inherit; text-decoration: none; }
 .admin-empty { display:grid; justify-items:center; padding:27px 15px; }
 .admin-empty h3 { font-size:21px; }
 .admin-empty p { margin-bottom:0; }
+.admin-password-panel { max-width:540px; margin:28px auto 0; }
+.admin-password-form { display:grid; width:min(100%,400px); gap:10px; text-align:left; }
+.admin-password-form label { color:#596a55; font-size:12px; font-weight:700; }
+.admin-password-input { width:100%; min-height:45px; border:1px solid #dedfd3; border-radius:11px; background:#fff; color:#344a39; padding:10px 12px; font:inherit; font-size:14px; }
+.admin-password-input:focus-visible { outline:3px solid #b7c7a9; outline-offset:2px; }
+.admin-password-form .button-primary { display:inline-flex; justify-content:center; align-items:center; gap:8px; min-height:44px; margin-top:5px; }
+.admin-password-error,.admin-password-success { width:100%; margin:2px 0; font-size:12px; line-height:1.55; }
+.admin-password-error { color:#9b5649; }
+.admin-password-success { color:#49744f; }
+.admin-password-change { max-width:620px; width:100%; }
+.admin-password-change h2 { margin:0 0 5px; color:var(--admin-ink); font:600 23px/1.2 var(--app-font-serif); }
+.admin-header-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:15px; }
+.admin-page :is(button,input):focus-visible { outline:3px solid #b7c7a9; outline-offset:2px; }
 .admin-loading { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .admin-skeleton { position:relative; overflow:hidden; border-radius:18px; background:#eceade; }
 .admin-skeleton::after { content:''; position:absolute; inset:0; background:linear-gradient(100deg,transparent 20%,#f8f7ef 45%,transparent 70%); transform:translateX(-100%); animation:admin-shimmer 1.7s ease-in-out infinite; }
@@ -387,6 +400,9 @@ a { color: inherit; text-decoration: none; }
  .admin-table { min-width:590px; }
  .admin-pagination { align-items:flex-start; flex-direction:column; }
  .admin-pagination > div { width:100%; justify-content:space-between; }
+ .admin-header-actions { width:100%; }
+ .admin-header-actions .admin-page-button { flex:1; justify-content:center; }
+ .admin-password-panel { margin-top:15px; padding:30px 17px; }
 }
 
 /* ---------- Chinese Treasure House: a quiet, ink-and-jade study room ---------- */

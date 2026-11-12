@@ -29,6 +29,10 @@ import type {
   AccountDeletionInput,
   AccountDeletionResult,
   AdminDashboard,
+  AdminDashboardPasswordLogin,
+  AdminDashboardPasswordSetup,
+  AdminDashboardPasswordStatus,
+  AdminDashboardPasswordUpdate,
   BillingCheckoutRequest,
   BillingPlanResponse,
   BillingRedirectResponse,
@@ -1717,6 +1721,445 @@ export function useGetAdminDashboard<TData = Awaited<ReturnType<typeof getAdminD
 
 
 
+
+export const getGetAdminDashboardPasswordStatusUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard/password/status`
+}
+
+/**
+ * @summary Check whether the administrator dashboard password is set and unlocked
+ */
+export const getAdminDashboardPasswordStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboardPasswordStatus> => {
+
+  return customFetch<AdminDashboardPasswordStatus>(getGetAdminDashboardPasswordStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminDashboardPasswordStatusQueryKey = () => {
+    return [
+    `/api/admin/dashboard/password/status`
+    ] as const;
+    }
+
+
+export const getGetAdminDashboardPasswordStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminDashboardPasswordStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>> = ({ signal }) => getAdminDashboardPasswordStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAdminDashboardPasswordStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>>
+export type GetAdminDashboardPasswordStatusQueryError = ErrorType<void>
+
+
+export function useGetAdminDashboardPasswordStatus<TData = Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAdminDashboardPasswordStatus<TData = Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAdminDashboardPasswordStatus<TData = Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Check whether the administrator dashboard password is set and unlocked
+ */
+
+export function useGetAdminDashboardPasswordStatus<TData = Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboardPasswordStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAdminDashboardPasswordStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetupAdminDashboardPasswordUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard/password`
+}
+
+/**
+ * @summary Set the administrator dashboard password for the first time
+ */
+export const setupAdminDashboardPassword = async (adminDashboardPasswordSetup: AdminDashboardPasswordSetup, options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboardPasswordStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminDashboardPasswordStatus>(getSetupAdminDashboardPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminDashboardPasswordSetup)
+  }
+);}
+
+
+
+
+
+export const getSetupAdminDashboardPasswordMutationKey = () => ['setupAdminDashboardPassword'] as const;
+
+export const getSetupAdminDashboardPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdminDashboardPassword>>, TError,SetupAdminDashboardPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setupAdminDashboardPassword>>, TError,SetupAdminDashboardPasswordMutationVariables, TContext> => {
+
+const mutationKey = getSetupAdminDashboardPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupAdminDashboardPassword>>, SetupAdminDashboardPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setupAdminDashboardPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetupAdminDashboardPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof setupAdminDashboardPassword>>>
+    export type SetupAdminDashboardPasswordMutationBody = BodyType<AdminDashboardPasswordSetup>
+    export type SetupAdminDashboardPasswordMutationError = ErrorType<void>
+    export type SetupAdminDashboardPasswordMutationVariables = {data: BodyType<AdminDashboardPasswordSetup>}
+
+    /**
+ * @summary Set the administrator dashboard password for the first time
+ */
+export const useSetupAdminDashboardPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdminDashboardPassword>>, TError,SetupAdminDashboardPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setupAdminDashboardPassword>>,
+        TError,
+        SetupAdminDashboardPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetupAdminDashboardPasswordMutationOptions(options), queryClient);
+    }
+
+export const getUpdateAdminDashboardPasswordUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard/password`
+}
+
+/**
+ * @summary Change the administrator dashboard password
+ */
+export const updateAdminDashboardPassword = async (adminDashboardPasswordUpdate: AdminDashboardPasswordUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboardPasswordStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminDashboardPasswordStatus>(getUpdateAdminDashboardPasswordUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminDashboardPasswordUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminDashboardPasswordMutationKey = () => ['updateAdminDashboardPassword'] as const;
+
+export const getUpdateAdminDashboardPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminDashboardPassword>>, TError,UpdateAdminDashboardPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminDashboardPassword>>, TError,UpdateAdminDashboardPasswordMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAdminDashboardPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminDashboardPassword>>, UpdateAdminDashboardPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateAdminDashboardPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminDashboardPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminDashboardPassword>>>
+    export type UpdateAdminDashboardPasswordMutationBody = BodyType<AdminDashboardPasswordUpdate>
+    export type UpdateAdminDashboardPasswordMutationError = ErrorType<void>
+    export type UpdateAdminDashboardPasswordMutationVariables = {data: BodyType<AdminDashboardPasswordUpdate>}
+
+    /**
+ * @summary Change the administrator dashboard password
+ */
+export const useUpdateAdminDashboardPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminDashboardPassword>>, TError,UpdateAdminDashboardPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminDashboardPassword>>,
+        TError,
+        UpdateAdminDashboardPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateAdminDashboardPasswordMutationOptions(options), queryClient);
+    }
+
+export const getCreateAdminDashboardPasswordSessionUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard/password/session`
+}
+
+/**
+ * @summary Unlock the administrator dashboard with its password
+ */
+export const createAdminDashboardPasswordSession = async (adminDashboardPasswordLogin: AdminDashboardPasswordLogin, options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboardPasswordStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminDashboardPasswordStatus>(getCreateAdminDashboardPasswordSessionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminDashboardPasswordLogin)
+  }
+);}
+
+
+
+
+
+export const getCreateAdminDashboardPasswordSessionMutationKey = () => ['createAdminDashboardPasswordSession'] as const;
+
+export const getCreateAdminDashboardPasswordSessionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>, TError,CreateAdminDashboardPasswordSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>, TError,CreateAdminDashboardPasswordSessionMutationVariables, TContext> => {
+
+const mutationKey = getCreateAdminDashboardPasswordSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>, CreateAdminDashboardPasswordSessionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdminDashboardPasswordSession(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminDashboardPasswordSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>>
+    export type CreateAdminDashboardPasswordSessionMutationBody = BodyType<AdminDashboardPasswordLogin>
+    export type CreateAdminDashboardPasswordSessionMutationError = ErrorType<void>
+    export type CreateAdminDashboardPasswordSessionMutationVariables = {data: BodyType<AdminDashboardPasswordLogin>}
+
+    /**
+ * @summary Unlock the administrator dashboard with its password
+ */
+export const useCreateAdminDashboardPasswordSession = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>, TError,CreateAdminDashboardPasswordSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminDashboardPasswordSession>>,
+        TError,
+        CreateAdminDashboardPasswordSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateAdminDashboardPasswordSessionMutationOptions(options), queryClient);
+    }
+
+export const getDeleteAdminDashboardPasswordSessionUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard/password/session`
+}
+
+/**
+ * @summary Lock the administrator dashboard
+ */
+export const deleteAdminDashboardPasswordSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminDashboardPasswordSessionUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminDashboardPasswordSessionMutationKey = () => ['deleteAdminDashboardPasswordSession'] as const;
+
+export const getDeleteAdminDashboardPasswordSessionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>, TError,void, TContext> => {
+
+const mutationKey = getDeleteAdminDashboardPasswordSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>, void> = () => {
+
+
+          return  deleteAdminDashboardPasswordSession(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminDashboardPasswordSessionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>>
+
+    export type DeleteAdminDashboardPasswordSessionMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Lock the administrator dashboard
+ */
+export const useDeleteAdminDashboardPasswordSession = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminDashboardPasswordSession>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteAdminDashboardPasswordSessionMutationOptions(options), queryClient);
+    }
 
 export const getDeleteAccountUrl = () => {
 

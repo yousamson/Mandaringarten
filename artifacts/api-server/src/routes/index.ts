@@ -7,6 +7,7 @@ import accountRouter from "./account";
 import supportRouter from "./support";
 import translationRouter from "./translation";
 import adminDashboardRouter from "./admin-dashboard";
+import adminDashboardPasswordRouter from "./admin-dashboard-password";
 import { accountLifecycleGuard } from "../account-lifecycle";
 
 const router: IRouter = Router();
@@ -19,6 +20,7 @@ router.use(examRouter);
 router.use(accountRouter);
 router.use(supportRouter);
 router.use(translationRouter);
+router.use(adminDashboardPasswordRouter);
 router.use(adminDashboardRouter);
 
 export default router;
