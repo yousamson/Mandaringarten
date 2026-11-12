@@ -301,10 +301,16 @@ paths:
       summary: Record an anonymous aggregate website page view
       responses:
         "204": { description: Page view counted without storing visitor identity }
+  /analytics/app-install-click:
+    post:
+      operationId: recordAppInstallClick
+      summary: Record an aggregate click on a PWA install action
+      responses:
+        "204": { description: App install action click counted without storing visitor identity }
   /admin/dashboard:
     get:
       operationId: getAdminDashboard
-      summary: Get registered users and aggregate website visits for administrators
+      summary: Get registered users, page views, app install clicks and daily registrations
       security: [{ bearerAuth: [] }]
       parameters:
         - name: offset
@@ -317,7 +323,7 @@ paths:
           schema: { type: integer, minimum: 1, maximum: 50, default: 25 }
       responses:
         "200":
-          description: Paginated member registrations and anonymous daily page-view totals
+          description: Paginated members with anonymous page-view, app-install-click and daily registration totals
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminDashboard" }
@@ -769,7 +775,7 @@ components:
         access: { type: string, enum: [active, subscription_required, deleting] }
     AdminDashboard:
       type: object
-      required: [memberCount, members, nextOffset, totalPageViews, dailyPageViews]
+      required: [memberCount, members, nextOffset, totalPageViews, totalAppInstallClicks, dailyPageViews, dailyAppInstallClicks, dailyRegistrations]
       properties:
         memberCount: { type: integer, minimum: 0 }
         members:
@@ -777,9 +783,16 @@ components:
           items: { $ref: "#/components/schemas/AdminMember" }
         nextOffset: { type: ["integer", "null"], minimum: 0 }
         totalPageViews: { type: integer, minimum: 0 }
+        totalAppInstallClicks: { type: integer, minimum: 0 }
         dailyPageViews:
           type: array
           items: { $ref: "#/components/schemas/DailyPageViews" }
+        dailyAppInstallClicks:
+          type: array
+          items: { $ref: "#/components/schemas/DailyAppInstallClicks" }
+        dailyRegistrations:
+          type: array
+          items: { $ref: "#/components/schemas/DailyRegistrations" }
     AdminDashboardPasswordStatus:
       type: object
       required: [passwordConfigured, passwordAuthenticated]
@@ -818,6 +831,18 @@ components:
       properties:
         date: { type: string, format: date }
         pageViews: { type: integer, minimum: 0 }
+    DailyAppInstallClicks:
+      type: object
+      required: [date, appInstallClicks]
+      properties:
+        date: { type: string, format: date }
+        appInstallClicks: { type: integer, minimum: 0 }
+    DailyRegistrations:
+      type: object
+      required: [date, registrations]
+      properties:
+        date: { type: string, format: date }
+        registrations: { type: integer, minimum: 0 }
     AccountDeletionInput:
       type: object
       required: [privacyAccepted, disclaimerAccepted, dataDeletionAccepted, noRefundAccepted, subscriptionCancellationAccepted, confirmation, policyVersion]

@@ -47,6 +47,38 @@ export function fillDailyPageViews(
   return result;
 }
 
+export function fillDailyAppInstallClicks(
+  rows: Array<{ date: string; appInstallClicks: number }>,
+  today: string,
+  firstAllowedDay: string,
+): Array<{ date: string; appInstallClicks: number }> {
+  if (rows.length === 0) return [];
+  const counts = new Map(rows.map((row) => [row.date, row.appInstallClicks]));
+  const firstSavedDay = rows.reduce(
+    (first, row) => row.date < first ? row.date : first,
+    rows[0].date,
+  );
+  const start = firstSavedDay < firstAllowedDay ? firstAllowedDay : firstSavedDay;
+  const result: Array<{ date: string; appInstallClicks: number }> = [];
+  for (let date = start; date <= today; date = shiftCalendarDate(date, 1)) {
+    result.push({ date, appInstallClicks: counts.get(date) ?? 0 });
+  }
+  return result;
+}
+
+export function fillDailyRegistrations(
+  rows: Array<{ date: string; registrations: number }>,
+  today: string,
+  firstDay: string,
+): Array<{ date: string; registrations: number }> {
+  const counts = new Map(rows.map((row) => [row.date, row.registrations]));
+  const result: Array<{ date: string; registrations: number }> = [];
+  for (let date = firstDay; date <= today; date = shiftCalendarDate(date, 1)) {
+    result.push({ date, registrations: counts.get(date) ?? 0 });
+  }
+  return result;
+}
+
 /** Return only the fields the administrator needs; omit Clerk metadata and provider data. */
 export function projectAdminMember(user: ClerkDashboardUser, isAdmin = false) {
   const email = user.emailAddresses.find(

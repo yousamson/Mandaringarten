@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/expo';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { ClerkProvider, useAuth } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -11,6 +12,7 @@ import { LearningProvider } from '@/context/LearningContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { setBaseUrl } from '@workspace/api-client-react';
 import { SubscriptionProvider } from '@/lib/subscriptions';
+import colors from '@/constants/colors';
 
 const apiDomain = process.env.EXPO_PUBLIC_DOMAIN?.trim();
 setBaseUrl(
@@ -49,6 +51,38 @@ function RootLayoutNav() {
   );
 }
 
+function ClerkGate() {
+  const { isLoaded } = useAuth();
+  if (!isLoaded) {
+    return (
+      <View style={styles.loadingScreen} accessibilityRole="progressbar" accessibilityLabel="Loading Mandarin Garden">
+        <Image
+          source={require('../assets/images/icon.png')}
+          style={styles.loadingIcon}
+          resizeMode="contain"
+          accessibilityLabel="Mandarin Garden icon"
+        />
+        <Text style={styles.loadingName}>Mandarin Garden</Text>
+        <ActivityIndicator color={colors.light.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <SubscriptionProvider>
+      <LanguageProvider>
+        <LearningProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <KeyboardProvider>
+              <RootLayoutNav />
+            </KeyboardProvider>
+          </GestureHandlerRootView>
+        </LearningProvider>
+      </LanguageProvider>
+    </SubscriptionProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -59,22 +93,30 @@ export default function RootLayout() {
             tokenCache={tokenCache}
             proxyUrl={clerkProxyUrl}
           >
-            <ClerkLoaded>
-              <SubscriptionProvider>
-                <LanguageProvider>
-                  <LearningProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <KeyboardProvider>
-                        <RootLayoutNav />
-                      </KeyboardProvider>
-                    </GestureHandlerRootView>
-                  </LearningProvider>
-                </LanguageProvider>
-              </SubscriptionProvider>
-            </ClerkLoaded>
+            <ClerkGate />
           </ClerkProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+    backgroundColor: colors.light.background,
+  },
+  loadingIcon: {
+    width: 104,
+    height: 104,
+  },
+  loadingName: {
+    color: colors.light.foreground,
+    fontSize: 21,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+});

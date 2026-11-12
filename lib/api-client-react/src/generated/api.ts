@@ -1614,6 +1614,80 @@ export const useRecordSitePageView = <TError = ErrorType<unknown>,
       return useMutation(getRecordSitePageViewMutationOptions(options), queryClient);
     }
 
+export const getRecordAppInstallClickUrl = () => {
+
+
+
+
+  return `/api/analytics/app-install-click`
+}
+
+/**
+ * @summary Record an aggregate click on a PWA install action
+ */
+export const recordAppInstallClick = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRecordAppInstallClickUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRecordAppInstallClickMutationKey = () => ['recordAppInstallClick'] as const;
+
+export const getRecordAppInstallClickMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAppInstallClick>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAppInstallClick>>, TError,void, TContext> => {
+
+const mutationKey = getRecordAppInstallClickMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAppInstallClick>>, void> = () => {
+
+
+          return  recordAppInstallClick(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAppInstallClickMutationResult = NonNullable<Awaited<ReturnType<typeof recordAppInstallClick>>>
+
+    export type RecordAppInstallClickMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Record an aggregate click on a PWA install action
+ */
+export const useRecordAppInstallClick = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAppInstallClick>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordAppInstallClick>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRecordAppInstallClickMutationOptions(options), queryClient);
+    }
+
 export const getGetAdminDashboardUrl = (params?: GetAdminDashboardParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1630,7 +1704,7 @@ export const getGetAdminDashboardUrl = (params?: GetAdminDashboardParams,) => {
 }
 
 /**
- * @summary Get registered users and aggregate website visits for administrators
+ * @summary Get registered users, page views, app install clicks and daily registrations
  */
 export const getAdminDashboard = async (params?: GetAdminDashboardParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboard> => {
 
@@ -1701,7 +1775,7 @@ export function useGetAdminDashboard<TData = Awaited<ReturnType<typeof getAdminD
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Get registered users and aggregate website visits for administrators
+ * @summary Get registered users, page views, app install clicks and daily registrations
  */
 
 export function useGetAdminDashboard<TData = Awaited<ReturnType<typeof getAdminDashboard>>, TError = ErrorType<void>>(

@@ -11,7 +11,7 @@ import {
   useUpdateAdminDashboardPassword,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, ChartNoAxesColumn, KeyRound, LockKeyhole, LogOut, RotateCcw, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChartNoAxesColumn, Download, KeyRound, LockKeyhole, LogOut, RotateCcw, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { Link } from 'wouter';
 import { useAccountAccess } from '@/hooks/use-account';
 import { AccessChecking, AccessError } from '@/components/access-gate';
@@ -22,7 +22,9 @@ const PAGE_SIZE = 10;
 
 function dateLabel(value: string, language: Language, options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(language, options).format(date);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat(language, { timeZone: 'Asia/Hong_Kong', ...options }).format(date);
 }
 
 function passwordErrorCopy(error: unknown, copy: (en: string, hant: string, hans: string) => string) {
@@ -32,6 +34,49 @@ function passwordErrorCopy(error: unknown, copy: (en: string, hant: string, hans
   if (status === 429) return copy('Too many attempts. Wait 15 minutes and try again.', '嘗試次數過多，請等候 15 分鐘再試。', '尝试次数过多，请等待 15 分钟再试。');
   if (status === 401) return copy('The password is not correct. Please try again.', '密碼不正確，請再試一次。', '密码不正确，请再试一次。');
   return copy('The request could not be completed. Please retry.', '未能完成操作，請重試。', '未能完成操作，请重试。');
+}
+
+type DailyChartPoint = { date: string; value: number };
+
+function DailyActivityPanel({
+  language,
+  title,
+  ariaLabel,
+  emptyText,
+  points,
+  testId,
+  color,
+}: {
+  language: Language;
+  title: string;
+  ariaLabel: string;
+  emptyText: string;
+  points: DailyChartPoint[];
+  testId: string;
+  color: string;
+}) {
+  const maxValue = Math.max(1, ...points.map((point) => point.value));
+  return (
+    <section className="admin-panel admin-activity-panel" aria-label={title} data-testid={testId}>
+      <div className="admin-panel-heading">
+        <div><span className="admin-kicker">{tr(language, 'RECENT ACTIVITY', '近期活動', '近期活动')}</span><h2>{title}</h2></div>
+        {points.length > 0 ? <span className="admin-period">{dateLabel(points[0].date, language)} — {dateLabel(points[points.length - 1].date, language)}</span> : null}
+      </div>
+      {points.length === 0 ? (
+        <div className="admin-empty-inline" data-testid={`${testId}-empty`}>{emptyText}</div>
+      ) : (
+        <div className="admin-chart" role="img" aria-label={ariaLabel}>
+          {points.map((point) => (
+            <div className="admin-chart-column" key={point.date} data-testid={`${testId}-${point.date}`}>
+              <span className="admin-chart-value">{point.value.toLocaleString()}</span>
+              <div className="admin-chart-track"><span style={{ transform: `scaleY(${point.value / maxValue})`, backgroundColor: color }} /></div>
+              <time dateTime={point.date}>{dateLabel(point.date, language)}</time>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function AdminDashboardPasswordGate({ language: l, userId }: { language: Language; userId: string }) {
@@ -156,7 +201,6 @@ function AdminDashboardData({ language: l, userId, onLock, lockError }: { langua
     },
   });
   const data = dashboard.data;
-  const maxViews = Math.max(1, ...(data?.dailyPageViews.map((day) => day.pageViews) ?? []));
 
   const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -188,7 +232,11 @@ function AdminDashboardData({ language: l, userId, onLock, lockError }: { langua
         <div>
           <div className="eyebrow"><ShieldCheck size={14} /> Mandarin Garden · {copy('Administration', '管理後台', '管理后台')}</div>
           <h1>{copy('Garden overview', '樂園總覽', '乐园总览')}</h1>
-          <p>{copy('Registered accounts and page-view totals. Counts begin after this feature is published.', '查看註冊帳戶與頁面瀏覽總數；數據由此功能發布後開始累計。', '查看注册账户与页面浏览总数；数据从此功能发布后开始累计。')}</p>
+          <p>{copy(
+            'Daily counts use Hong Kong time. Page views and install clicks start after this feature is published; registration history covers the recent 30 days.',
+            '每日數據按香港時間統計；頁面瀏覽和安裝點擊由功能發布後開始累計，註冊紀錄顯示最近 30 天。',
+            '每日数据按香港时间统计；页面浏览和安装点击从功能发布后开始累计，注册记录显示最近 30 天。',
+          )}</p>
           <div className="admin-header-actions">
             <button type="button" className="admin-page-button" onClick={() => { setChangePasswordOpen((open) => !open); setPasswordFormError(''); setPasswordFormSuccess(''); }} data-testid="button-admin-change-password"><KeyRound size={14} /> {copy('Change password', '更改密碼', '更改密码')}</button>
             <button type="button" className="admin-page-button" onClick={() => void onLock()} data-testid="button-admin-lock-dashboard"><LogOut size={14} /> {copy('Lock dashboard', '鎖定後台', '锁定后台')}</button>
@@ -217,6 +265,10 @@ function AdminDashboardData({ language: l, userId, onLock, lockError }: { langua
         <section className="admin-loading" aria-label="Loading dashboard" data-testid="status-admin-loading">
           <div className="admin-skeleton admin-skeleton-stat" />
           <div className="admin-skeleton admin-skeleton-stat" />
+          <div className="admin-skeleton admin-skeleton-stat" />
+          <div className="admin-skeleton admin-skeleton-stat" />
+          <div className="admin-skeleton admin-skeleton-chart" />
+          <div className="admin-skeleton admin-skeleton-chart" />
           <div className="admin-skeleton admin-skeleton-chart" />
           <div className="admin-skeleton admin-skeleton-table" />
         </section>
@@ -240,27 +292,45 @@ function AdminDashboardData({ language: l, userId, onLock, lockError }: { langua
               <strong>{data.totalPageViews.toLocaleString()}</strong>
               <small>{copy('Page loads, not unique visitors', '頁面載入次數，並非不重複訪客人數', '页面加载次数，并非独立访客人数')}</small>
             </article>
+            <article className="admin-metric-card" data-testid="metric-app-install-clicks">
+              <span className="admin-metric-label"><Download size={15} /> {copy('App install clicks', 'App 安裝按鈕點擊', 'App 安装按钮点击')}</span>
+              <strong>{data.totalAppInstallClicks.toLocaleString()}</strong>
+              <small>{copy('Clicks, not confirmed installs', '按鈕點擊，不代表已完成安裝', '按钮点击，不代表已完成安装')}</small>
+            </article>
+            <article className="admin-metric-card" data-testid="metric-today-registrations">
+              <span className="admin-metric-label"><UserPlus size={15} /> {copy('New accounts today', '今日新註冊', '今日新注册')}</span>
+              <strong>{(data.dailyRegistrations.at(-1)?.registrations ?? 0).toLocaleString()}</strong>
+              <small>{copy('Hong Kong calendar day', '按香港時間統計', '按香港时间统计')}</small>
+            </article>
           </section>
 
-          <section className="admin-panel admin-activity-panel" aria-labelledby="admin-activity-title" data-testid="section-daily-page-views">
-            <div className="admin-panel-heading">
-              <div><span className="admin-kicker">{copy('RECENT ACTIVITY', '近期活動', '近期活动')}</span><h2 id="admin-activity-title">{copy('Daily page views', '每日頁面瀏覽', '每日页面浏览')}</h2></div>
-              {data.dailyPageViews.length > 0 ? <span className="admin-period">{dateLabel(data.dailyPageViews[0].date, l)} — {dateLabel(data.dailyPageViews[data.dailyPageViews.length - 1].date, l)}</span> : null}
-            </div>
-            {data.dailyPageViews.length === 0 ? (
-                <div className="admin-empty-inline" data-testid="status-no-page-views">{copy('No page views recorded yet.', '暫無頁面瀏覽紀錄。', '暂无页面浏览记录。')}</div>
-            ) : (
-                  <div className="admin-chart" role="img" aria-label={copy('Daily page views chart', '每日頁面瀏覽圖表', '每日页面浏览图表')}>
-                {data.dailyPageViews.map((day) => (
-                  <div className="admin-chart-column" key={day.date} data-testid={`bar-page-views-${day.date}`}>
-                    <span className="admin-chart-value">{day.pageViews.toLocaleString()}</span>
-                    <div className="admin-chart-track"><span style={{ transform: `scaleY(${day.pageViews / maxViews})` }} /></div>
-                    <time dateTime={day.date}>{dateLabel(day.date, l)}</time>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <DailyActivityPanel
+            language={l}
+            title={copy('Daily page views', '每日頁面瀏覽', '每日页面浏览')}
+            ariaLabel={copy('Daily page views chart', '每日頁面瀏覽圖表', '每日页面浏览图表')}
+            emptyText={copy('No page views recorded yet.', '暫無頁面瀏覽紀錄。', '暂无页面浏览记录。')}
+            points={data.dailyPageViews.map((day) => ({ date: day.date, value: day.pageViews }))}
+            testId="section-daily-page-views"
+            color="#73916b"
+          />
+          <DailyActivityPanel
+            language={l}
+            title={copy('Daily app install button clicks', '每日 App 安裝按鈕點擊', '每日 App 安装按钮点击')}
+            ariaLabel={copy('Daily app install button clicks chart', '每日 App 安裝按鈕點擊圖表', '每日 App 安装按钮点击图表')}
+            emptyText={copy('No install button clicks recorded yet.', '暫無安裝按鈕點擊紀錄。', '暂无安装按钮点击记录。')}
+            points={data.dailyAppInstallClicks.map((day) => ({ date: day.date, value: day.appInstallClicks }))}
+            testId="section-daily-app-install-clicks"
+            color="#c08a57"
+          />
+          <DailyActivityPanel
+            language={l}
+            title={copy('Daily new registrations', '每日新註冊人數', '每日新注册人数')}
+            ariaLabel={copy('Daily new registrations chart', '每日新註冊人數圖表', '每日新注册人数图表')}
+            emptyText={copy('No recent registrations recorded.', '近期沒有新註冊紀錄。', '近期没有新注册记录。')}
+            points={data.dailyRegistrations.map((day) => ({ date: day.date, value: day.registrations }))}
+            testId="section-daily-registrations"
+            color="#668f96"
+          />
 
           <section className="admin-panel admin-members-panel" aria-labelledby="admin-members-title" data-testid="section-admin-members">
             <div className="admin-panel-heading">

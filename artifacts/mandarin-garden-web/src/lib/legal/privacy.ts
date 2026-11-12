@@ -17,7 +17,7 @@ const basePrivacyPolicy: Record<'en' | 'zh-Hant' | 'zh-Hans', LegalDoc> = {
         'Learning and preferences: your chosen stage, XP, completed game-round details, and browser settings such as language, theme and age preference.',
         'Messages: the subject and content of messages between you and the Mandarin Garden team, their authorship and timestamps.',
         'Membership: Stripe customer and subscription identifiers, status, renewal and cancellation details, and records of policy and checkout acknowledgements. Stripe handles card details; we do not receive or store full card numbers or security codes.',
-        'Technical: necessary sign-in and security cookies, session tokens, and service logs that may include IP address, browser or device information, pages requested and timestamps. For the administrator dashboard, we also store daily aggregate page-view totals without visitor IDs, account IDs, IP addresses or page URLs.',
+        'Technical: necessary sign-in and security cookies, session tokens, and service logs that may include IP address, browser or device information, pages requested and timestamps. For the administrator dashboard, we also store daily aggregate page-view totals and app-install-button click counts without visitor IDs, account IDs, IP addresses or page URLs.',
       ] },
       { h: '3. How information is used and shared', p: [
         'We use information to provide and secure the service, save progress across devices, manage membership and payments, answer messages, prevent abuse, maintain the website, and meet legal, tax and accounting requirements.',
@@ -58,7 +58,7 @@ const basePrivacyPolicy: Record<'en' | 'zh-Hant' | 'zh-Hans', LegalDoc> = {
         '學習與偏好：您選擇的學習階段、XP、已完成遊戲回合資料，以及您儲存在瀏覽器的語言、主題和年齡設定。',
         '訊息：您與漢語樂園團隊對話的主旨、內容、撰寫者及時間。',
         '會員：與帳戶連結的 Stripe 客戶及訂閱識別碼、訂閱狀態、續訂與取消資料，以及您同意政策和付款前確認事項的紀錄。付款卡資料由 Stripe 處理；我們不會收到或儲存完整卡號或安全碼。',
-        '技術：登入和安全所需的 Cookie、工作階段權杖，以及可能包含 IP 位址、瀏覽器或裝置資料、瀏覽頁面及時間的服務日誌。管理後台亦會保存每日頁面瀏覽總數，不會在這些統計中保存訪客識別碼、帳戶識別碼、IP 位址或頁面網址。',
+        '技術：登入和安全所需的 Cookie、工作階段權杖，以及可能包含 IP 位址、瀏覽器或裝置資料、瀏覽頁面及時間的服務日誌。管理後台亦會保存每日頁面瀏覽總數和 App 安裝按鈕點擊次數，不會在這些統計中保存訪客識別碼、帳戶識別碼、IP 位址或頁面網址。',
       ] },
       { h: '3. 資料用途及分享', p: [
         '我們使用資料提供及保障服務、跨裝置保存學習進度、管理會員及付款、回覆訊息、防止濫用、維持網站運作，以及履行法律、稅務和會計責任。',
@@ -99,7 +99,7 @@ const basePrivacyPolicy: Record<'en' | 'zh-Hant' | 'zh-Hans', LegalDoc> = {
         '学习与偏好：您选择的学习阶段、XP、已完成游戏回合资料，以及保存在浏览器中的语言、主题和年龄设置。',
         '消息：您与汉语乐园团队对话的主题、内容、撰写者和时间。',
         '会员：与账户关联的 Stripe 客户和订阅标识、订阅状态、续订与取消信息，以及您同意政策和付款前确认事项的记录。付款卡资料由 Stripe 处理；我们不会收到或保存完整卡号或安全码。',
-        '技术：登录和安全所需的 Cookie、会话令牌，以及可能包含 IP 地址、浏览器或设备信息、浏览页面及时间的服务日志。管理后台也会保存每日页面浏览总数，这些统计不会保存访客标识、账户标识、IP 地址或页面网址。',
+        '技术：登录和安全所需的 Cookie、会话令牌，以及可能包含 IP 地址、浏览器或设备信息、浏览页面及时间的服务日志。管理后台也会保存每日页面浏览总数和 App 安装按钮点击次数，这些统计不会保存访客标识、账户标识、IP 地址或页面网址。',
       ] },
       { h: '3. 信息用途与分享', p: [
         '我们使用信息提供和保护服务、跨设备保存学习进度、管理会员和付款、回复消息、防止滥用、维护网站，以及履行法律、税务和会计责任。',

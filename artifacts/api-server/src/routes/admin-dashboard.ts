@@ -12,7 +12,9 @@ import {
 import { hasVerifiedAdministratorEmail, isAdministrator } from "../admin";
 import { requireAdminDashboardPasswordSession } from "../admin-dashboard-password";
 import {
+  fillDailyAppInstallClicks,
   fillDailyPageViews,
+  fillDailyRegistrations,
   hongKongDate,
   projectAdminMember,
   shiftCalendarDate,
@@ -57,6 +59,59 @@ router.post("/analytics/page-view", async (req, res): Promise<void> => {
   }
 });
 
+router.post("/analytics/app-install-click", async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store");
+  const origin = req.get("origin");
+  if (!origin || !allowedSiteOrigins().has(origin)) {
+    res.sendStatus(204);
+    return;
+  }
+
+  try {
+    const day = hongKongDate();
+    await db.insert(sitePageViewsTable).values({ day, appInstallClicks: 1 }).onConflictDoUpdate({
+      target: sitePageViewsTable.day,
+      set: { appInstallClicks: sql`${sitePageViewsTable.appInstallClicks} + 1` },
+    });
+    res.sendStatus(204);
+  } catch (error) {
+    req.log.error({ err: error }, "Could not record aggregate app install click");
+    res.sendStatus(204);
+  }
+});
+
+async function recentDailyRegistrations(firstDay: string, today: string) {
+  const startAt = Date.parse(`${firstDay}T00:00:00.000+08:00`);
+  const endAt = Date.parse(`${shiftCalendarDate(today, 1)}T00:00:00.000+08:00`);
+  const counts = new Map<string, number>();
+  let offset = 0;
+  let totalCount = 0;
+
+  do {
+    const page = await clerkClient.users.getUserList({
+      limit: 500,
+      offset,
+      orderBy: "-created_at",
+      createdAtAfter: startAt - 1,
+      createdAtBefore: endAt,
+    });
+    totalCount = page.totalCount;
+    for (const user of page.data) {
+      if (user.createdAt < startAt || user.createdAt >= endAt) continue;
+      const date = hongKongDate(new Date(user.createdAt));
+      counts.set(date, (counts.get(date) ?? 0) + 1);
+    }
+    if (page.data.length === 0) break;
+    offset += page.data.length;
+  } while (offset < totalCount);
+
+  return fillDailyRegistrations(
+    [...counts].map(([date, registrations]) => ({ date, registrations })),
+    today,
+    firstDay,
+  );
+}
+
 router.get("/admin/dashboard", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "private, no-store");
   const userId = getAuth(req).userId;
@@ -81,7 +136,7 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
     const today = hongKongDate();
     const firstDay = shiftCalendarDate(today, -29);
 
-    const [users, viewDays, totals] = await Promise.all([
+    const [users, viewDays, installDays, totals, installTotals, dailyRegistrations] = await Promise.all([
       clerkClient.users.getUserList({ limit, offset, orderBy: "-created_at" }),
       db.select({
         date: sitePageViewsTable.day,
@@ -90,8 +145,18 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
         .where(sql`${sitePageViewsTable.day} >= ${firstDay}`)
         .orderBy(asc(sitePageViewsTable.day)),
       db.select({
-        total: sql<number>`coalesce(sum(${sitePageViewsTable.pageViews}), 0)`,
+        date: sitePageViewsTable.day,
+        appInstallClicks: sitePageViewsTable.appInstallClicks,
+      }).from(sitePageViewsTable)
+        .where(sql`${sitePageViewsTable.day} >= ${firstDay}`)
+        .orderBy(asc(sitePageViewsTable.day)),
+      db.select({
+        totalPageViews: sql<number>`coalesce(sum(${sitePageViewsTable.pageViews}), 0)`,
       }).from(sitePageViewsTable),
+      db.select({
+        totalAppInstallClicks: sql<number>`coalesce(sum(${sitePageViewsTable.appInstallClicks}), 0)`,
+      }).from(sitePageViewsTable),
+      recentDailyRegistrations(firstDay, today),
     ]);
 
     const adminEmails = new Set((process.env.MANDARIN_ADMIN_EMAILS ?? "").split(",")
@@ -105,18 +170,33 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
       memberCount: users.totalCount,
       members,
       nextOffset: offset + members.length < users.totalCount ? offset + members.length : null,
-      totalPageViews: Number(totals[0]?.total ?? 0),
+      totalPageViews: Number(totals[0]?.totalPageViews ?? 0),
+      totalAppInstallClicks: Number(installTotals[0]?.totalAppInstallClicks ?? 0),
       dailyPageViews: fillDailyPageViews(
         viewDays.map((row) => ({ date: row.date, pageViews: row.pageViews })),
         today,
         firstDay,
       ),
+      dailyAppInstallClicks: fillDailyAppInstallClicks(
+        installDays.map((row) => ({ date: row.date, appInstallClicks: row.appInstallClicks })),
+        today,
+        firstDay,
+      ),
+      dailyRegistrations,
     });
     res.json({
       ...dashboard,
       dailyPageViews: dashboard.dailyPageViews.map((row) => ({
         date: row.date.toISOString().slice(0, 10),
         pageViews: row.pageViews,
+      })),
+      dailyAppInstallClicks: dashboard.dailyAppInstallClicks.map((row) => ({
+        date: row.date.toISOString().slice(0, 10),
+        appInstallClicks: row.appInstallClicks,
+      })),
+      dailyRegistrations: dashboard.dailyRegistrations.map((row) => ({
+        date: row.date.toISOString().slice(0, 10),
+        registrations: row.registrations,
       })),
     });
   } catch (error) {

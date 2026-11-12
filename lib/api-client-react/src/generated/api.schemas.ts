@@ -435,6 +435,18 @@ export interface DailyPageViews {
   pageViews: number;
 }
 
+export interface DailyAppInstallClicks {
+  date: string;
+  /** @minimum 0 */
+  appInstallClicks: number;
+}
+
+export interface DailyRegistrations {
+  date: string;
+  /** @minimum 0 */
+  registrations: number;
+}
+
 export interface AdminDashboard {
   /** @minimum 0 */
   memberCount: number;
@@ -446,7 +458,11 @@ export interface AdminDashboard {
   nextOffset: number | null;
   /** @minimum 0 */
   totalPageViews: number;
+  /** @minimum 0 */
+  totalAppInstallClicks: number;
   dailyPageViews: DailyPageViews[];
+  dailyAppInstallClicks: DailyAppInstallClicks[];
+  dailyRegistrations: DailyRegistrations[];
 }
 
 export interface AdminDashboardPasswordStatus {

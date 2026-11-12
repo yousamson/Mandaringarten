@@ -395,7 +395,13 @@ export const RecordSitePageViewResponse = zod.void()
 
 
 /**
- * @summary Get registered users and aggregate website visits for administrators
+ * @summary Record an aggregate click on a PWA install action
+ */
+export const RecordAppInstallClickResponse = zod.void()
+
+
+/**
+ * @summary Get registered users, page views, app install clicks and daily registrations
  */
 export const getAdminDashboardQueryOffsetDefault = 0;
 export const getAdminDashboardQueryOffsetMin = 0;
@@ -416,7 +422,13 @@ export const getAdminDashboardResponseNextOffsetMin = 0;
 
 export const getAdminDashboardResponseTotalPageViewsMin = 0;
 
+export const getAdminDashboardResponseTotalAppInstallClicksMin = 0;
+
 export const getAdminDashboardResponseDailyPageViewsItemPageViewsMin = 0;
+
+export const getAdminDashboardResponseDailyAppInstallClicksItemAppInstallClicksMin = 0;
+
+export const getAdminDashboardResponseDailyRegistrationsItemRegistrationsMin = 0;
 
 
 
@@ -430,9 +442,18 @@ export const GetAdminDashboardResponse = zod.object({
 })),
   "nextOffset": zod.int().min(getAdminDashboardResponseNextOffsetMin).nullable(),
   "totalPageViews": zod.int().min(getAdminDashboardResponseTotalPageViewsMin),
+  "totalAppInstallClicks": zod.int().min(getAdminDashboardResponseTotalAppInstallClicksMin),
   "dailyPageViews": zod.array(zod.object({
   "date": zod.coerce.date(),
   "pageViews": zod.int().min(getAdminDashboardResponseDailyPageViewsItemPageViewsMin)
+})),
+  "dailyAppInstallClicks": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "appInstallClicks": zod.int().min(getAdminDashboardResponseDailyAppInstallClicksItemAppInstallClicksMin)
+})),
+  "dailyRegistrations": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "registrations": zod.int().min(getAdminDashboardResponseDailyRegistrationsItemRegistrationsMin)
 }))
 })
 

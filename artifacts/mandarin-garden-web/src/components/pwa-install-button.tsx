@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { recordAppInstallClick } from '@workspace/api-client-react';
 import type { Language } from '@/lib/garden-data';
 
 type InstallPromptEvent = Event & {
@@ -98,6 +99,11 @@ export function PwaInstallButton({ language, prominent = false }: { language: La
         className={buttonClass}
         type="button"
         onClick={async () => {
+          if (import.meta.env.PROD) {
+            void recordAppInstallClick({ skipAuth: true, keepalive: true }).catch(() => {
+              // Install-intent analytics must not interrupt the install prompt.
+            });
+          }
           await promptEvent.prompt();
           await promptEvent.userChoice;
           setPromptEvent(null);
@@ -112,7 +118,18 @@ export function PwaInstallButton({ language, prominent = false }: { language: La
   if (!prominent && !isIosSafari) return null;
   return (
     <details className="pwa-install-help">
-      <summary className={buttonClass} data-testid={prominent ? 'button-install-app-home' : 'button-install-app'}>
+      <summary
+        className={buttonClass}
+        onClick={(event) => {
+          const details = event.currentTarget.parentElement as HTMLDetailsElement | null;
+          if (!details?.open && import.meta.env.PROD) {
+            void recordAppInstallClick({ skipAuth: true, keepalive: true }).catch(() => {
+              // Install-intent analytics must not interrupt the install instructions.
+            });
+          }
+        }}
+        data-testid={prominent ? 'button-install-app-home' : 'button-install-app'}
+      >
         {prominent ? label : text.ios}
       </summary>
       <p>{isIosSafari ? text.iosInstructions : text.manualInstructions}</p>

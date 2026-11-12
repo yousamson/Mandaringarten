@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminMember } from './adminMember';
+import type { DailyAppInstallClicks } from './dailyAppInstallClicks';
 import type { DailyPageViews } from './dailyPageViews';
+import type { DailyRegistrations } from './dailyRegistrations';
 
 export interface AdminDashboard {
   /** @minimum 0 */
@@ -19,5 +21,9 @@ export interface AdminDashboard {
   nextOffset: number | null;
   /** @minimum 0 */
   totalPageViews: number;
+  /** @minimum 0 */
+  totalAppInstallClicks: number;
   dailyPageViews: DailyPageViews[];
+  dailyAppInstallClicks: DailyAppInstallClicks[];
+  dailyRegistrations: DailyRegistrations[];
 }

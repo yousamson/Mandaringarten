@@ -15,6 +15,7 @@ const state = {
   passwordAuthenticated: true,
   userListCalls: 0,
   inserts: 0,
+  installClickInserts: 0,
   errors: [],
 };
 globalThis.__adminDashboardTestState = state;
@@ -23,8 +24,12 @@ process.env.MANDARIN_ADMIN_EMAILS = "team@example.test";
 const stubs = {
   clerk: `
     export function getAuth(req) { return { userId: req.headers['x-test-user'] ?? null }; }
-    export const clerkClient = { users: { async getUserList() {
+    export const clerkClient = { users: { async getUserList(params = {}) {
       globalThis.__adminDashboardTestState.userListCalls++;
+      if (params.createdAtAfter !== undefined) return {
+        totalCount: 1,
+        data: [{ createdAt: Date.now() }],
+      };
       return {
         totalCount: 2,
         data: [
@@ -79,13 +84,23 @@ const stubs = {
         ? { success: true, data: { offset, limit } } : { success: false };
     } };
     export const GetAdminDashboardResponse = { parse(value) {
-      return { ...value, dailyPageViews: value.dailyPageViews.map((row) => ({ ...row, date: new Date(row.date) })) };
+      const withDates = (rows) => rows.map((row) => ({ ...row, date: new Date(row.date) }));
+      return {
+        ...value,
+        dailyPageViews: withDates(value.dailyPageViews),
+        dailyAppInstallClicks: withDates(value.dailyAppInstallClicks),
+        dailyRegistrations: withDates(value.dailyRegistrations),
+      };
     } };
   `,
   db: `
-    export const sitePageViewsTable = { day: {}, pageViews: {} };
+    export const sitePageViewsTable = { day: {}, pageViews: {}, appInstallClicks: {} };
     export const db = {
-      insert() { return { values() { globalThis.__adminDashboardTestState.inserts++; return { onConflictDoUpdate() { return Promise.resolve(); } }; } }; },
+      insert() { return { values(value) {
+        globalThis.__adminDashboardTestState.inserts++;
+        if (value?.appInstallClicks) globalThis.__adminDashboardTestState.installClickInserts++;
+        return { onConflictDoUpdate() { return Promise.resolve(); } };
+      } }; },
       select(selection) {
         const builder = {
           from() { return this; },
@@ -93,7 +108,9 @@ const stubs = {
           orderBy() { return this; },
           then(resolve, reject) {
             try {
-              resolve(selection?.total ? [{ total: 5 }] : [{ date: "2026-11-10", pageViews: 5 }]);
+              if (selection?.totalPageViews) resolve([{ totalPageViews: 5 }]);
+              else if (selection?.totalAppInstallClicks) resolve([{ totalAppInstallClicks: 7 }]);
+              else resolve([{ date: "2026-11-10", pageViews: 5, appInstallClicks: 2 }]);
             } catch (error) { reject(error); }
           },
         };
@@ -204,6 +221,10 @@ test("administrator dashboard never returns the designated login email", async (
   const body = await response.json();
   assert.equal(body.memberCount, 2);
   assert.equal(body.totalPageViews, 5);
+  assert.equal(body.totalAppInstallClicks, 7);
+  assert.equal(body.dailyAppInstallClicks.find((day) => day.date === "2026-11-10")?.appInstallClicks, 2);
+  assert.equal(body.dailyRegistrations.length, 30);
+  assert.equal(body.dailyRegistrations.at(-1)?.registrations, 1);
   assert.equal(body.members[0].email, null);
   assert.equal(body.members[0].name, "Mandarin Garden team");
   assert.equal(body.members[1].email, "parent@example.test");
@@ -226,4 +247,24 @@ test("an allowed website origin records an aggregate view", async () => {
   });
   assert.equal(response.status, 204);
   assert.equal(state.inserts, 1);
+});
+
+test("app install clicks from an unrecognized origin are ignored", async () => {
+  const before = state.installClickInserts;
+  const response = await fetch(`${baseUrl}/analytics/app-install-click`, {
+    method: "POST",
+    headers: { origin: "https://attacker.example" },
+  });
+  assert.equal(response.status, 204);
+  assert.equal(state.installClickInserts, before);
+});
+
+test("an allowed website origin records an aggregate app install click", async () => {
+  const before = state.installClickInserts;
+  const response = await fetch(`${baseUrl}/analytics/app-install-click`, {
+    method: "POST",
+    headers: { origin: "https://www.mandaringarden.asia" },
+  });
+  assert.equal(response.status, 204);
+  assert.equal(state.installClickInserts, before + 1);
 });

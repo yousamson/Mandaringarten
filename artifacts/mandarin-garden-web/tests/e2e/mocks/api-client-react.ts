@@ -43,7 +43,10 @@ export const useGetAdminDashboard = (params?: { offset?: number }) => ({
     }],
     nextOffset: null,
     totalPageViews: 12,
+    totalAppInstallClicks: 4,
     dailyPageViews: [{ date: '2026-11-11', pageViews: 12 }],
+    dailyAppInstallClicks: [{ date: '2026-11-11', appInstallClicks: 4 }],
+    dailyRegistrations: [{ date: '2026-11-11', registrations: 2 }],
   },
   isLoading: false,
   isFetching: false,
@@ -64,6 +67,7 @@ export const useGetAdminDashboardPasswordStatus = () => {
   };
 };
 export const recordSitePageView = async () => undefined;
+export const recordAppInstallClick = async () => undefined;
 export const useSetupAdminDashboardPassword = () => emptyMutation;
 export const useCreateAdminDashboardPasswordSession = () => emptyMutation;
 export const useUpdateAdminDashboardPassword = () => emptyMutation;

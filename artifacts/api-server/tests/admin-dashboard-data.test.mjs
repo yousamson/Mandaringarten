@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  fillDailyAppInstallClicks,
   fillDailyPageViews,
+  fillDailyRegistrations,
   hongKongDate,
   projectAdminMember,
   shiftCalendarDate,
@@ -23,6 +25,27 @@ test("daily page views fill gaps without inventing pre-launch history", () => {
     { date: "2026-11-12", pageViews: 5 },
   ]);
   assert.deepEqual(fillDailyPageViews([], "2026-11-12", "2026-10-14"), []);
+});
+
+test("daily app install clicks fill gaps without inventing pre-launch history", () => {
+  assert.deepEqual(fillDailyAppInstallClicks([
+    { date: "2026-11-10", appInstallClicks: 2 },
+    { date: "2026-11-12", appInstallClicks: 1 },
+  ], "2026-11-12", "2026-10-14"), [
+    { date: "2026-11-10", appInstallClicks: 2 },
+    { date: "2026-11-11", appInstallClicks: 0 },
+    { date: "2026-11-12", appInstallClicks: 1 },
+  ]);
+});
+
+test("daily registrations include zero-count days in the requested range", () => {
+  assert.deepEqual(fillDailyRegistrations([
+    { date: "2026-11-10", registrations: 3 },
+  ], "2026-11-12", "2026-11-10"), [
+    { date: "2026-11-10", registrations: 3 },
+    { date: "2026-11-11", registrations: 0 },
+    { date: "2026-11-12", registrations: 0 },
+  ]);
 });
 
 test("administrator member projection returns only the required registration details", () => {

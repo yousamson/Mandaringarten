@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "漢語樂園 Mandarin Garden",
+    "name": "Mandarin Garden",
     "description": "漢語樂園 Mandarin Garden｜為 2–12 歲兒童設計的中英雙語學習樂園，涵蓋主題詞語、拼音、短句、小遊戲與四個可自選學習階段。 Mandarin Garden is a bilingual Mandarin learning playground for children ages 2–12, with themed vocabulary, pinyin, sentences, games, and four selectable stages.",
     "slug": "mandarin-garden",
     "version": "1.0.0",
@@ -9,6 +9,9 @@
     "scheme": "mandarin-garden",
     "userInterfaceStyle": "automatic",
     "splash": {
+      "image": "./assets/images/icon.png",
+      "imageWidth": 112,
+      "resizeMode": "contain",
       "backgroundColor": "#FFF9ED"
     },
     "ios": {

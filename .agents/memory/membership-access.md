@@ -33,11 +33,11 @@ Parents contact the management team through platform messages. Only the server-a
 
 **How to apply:** gate administrator UI and inbox APIs using verified server-side administrator identity. Keep conversations private to their parent and authorized management. Do not expose the administrator login email in UI or legal contact details.
 
-Administrator reporting may show member registration details only behind server-side administrator checks. Never return the administrator's own login email in the dashboard. Keep traffic reporting to daily aggregate page-view totals without visitor IDs, account IDs, IP addresses, or page URLs.
+Administrator reporting may show member registration details only behind server-side administrator checks. Never return the administrator's own login email in the dashboard. Report daily registration counts, aggregate page-view totals (not unique visitors), and app-install-button clicks; do not store visitor IDs, account IDs, IP addresses, or page URLs in these dashboard metrics.
 
-**Why:** the user requested an administrator-only registration and traffic view while retaining the rule that the management login email never appears on the website.
+**Why:** the user requested administrator-only registration and traffic reports, chose page loads rather than unique visitors, and chose install-button clicks rather than confirmed PWA installations, while retaining the rule that the management login email never appears on the website.
 
-**How to apply:** protect every reporting endpoint on the server, not only by hiding navigation; sanitize the designated administrator account before returning a user list; do not add identifying visitor-level tracking.
+**How to apply:** protect every reporting endpoint on the server, not only by hiding navigation; sanitize the designated administrator account before returning a user list; count events by Hong Kong calendar day; do not add identifying visitor-level tracking.
 
 The administrator data dashboard requires both the verified Clerk administrator account and a separate administrator-set password. Store only a salted scrypt hash; issue a short-lived HttpOnly password-session cookie tied to the administrator, and revoke sessions when the password changes.
 
