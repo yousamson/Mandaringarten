@@ -790,8 +790,8 @@ components:
       type: object
       required: [password, confirmation]
       properties:
-        password: { type: string, minLength: 12, maxLength: 128 }
-        confirmation: { type: string, minLength: 12, maxLength: 128 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        confirmation: { type: string, minLength: 8, maxLength: 128 }
     AdminDashboardPasswordLogin:
       type: object
       required: [password]
@@ -802,8 +802,8 @@ components:
       required: [currentPassword, password, confirmation]
       properties:
         currentPassword: { type: string, minLength: 1, maxLength: 128 }
-        password: { type: string, minLength: 12, maxLength: 128 }
-        confirmation: { type: string, minLength: 12, maxLength: 128 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        confirmation: { type: string, minLength: 8, maxLength: 128 }
     AdminMember:
       type: object
       required: [id, email, name, createdAt]

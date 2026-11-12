@@ -449,10 +449,10 @@ export const GetAdminDashboardPasswordStatusResponse = zod.object({
 /**
  * @summary Set the administrator dashboard password for the first time
  */
-export const setupAdminDashboardPasswordBodyPasswordMin = 12;
+export const setupAdminDashboardPasswordBodyPasswordMin = 8;
 export const setupAdminDashboardPasswordBodyPasswordMax = 128;
 
-export const setupAdminDashboardPasswordBodyConfirmationMin = 12;
+export const setupAdminDashboardPasswordBodyConfirmationMin = 8;
 export const setupAdminDashboardPasswordBodyConfirmationMax = 128;
 
 
@@ -473,10 +473,10 @@ export const SetupAdminDashboardPasswordResponse = zod.object({
  */
 export const updateAdminDashboardPasswordBodyCurrentPasswordMax = 128;
 
-export const updateAdminDashboardPasswordBodyPasswordMin = 12;
+export const updateAdminDashboardPasswordBodyPasswordMin = 8;
 export const updateAdminDashboardPasswordBodyPasswordMax = 128;
 
-export const updateAdminDashboardPasswordBodyConfirmationMin = 12;
+export const updateAdminDashboardPasswordBodyConfirmationMin = 8;
 export const updateAdminDashboardPasswordBodyConfirmationMax = 128;
 
 

@@ -113,14 +113,14 @@ function AdminDashboardPasswordGate({ language: l, userId }: { language: Languag
         <span className="admin-state-icon">{isSetup ? <KeyRound size={22} /> : <LockKeyhole size={22} />}</span>
         <h1>{isSetup ? copy('Set a dashboard password', '設定後台密碼', '设置后台密码') : copy('Enter the dashboard password', '輸入後台密碼', '输入后台密码')}</h1>
         <p>{isSetup
-          ? copy('Create a password of at least 12 characters. It is separate from your administrator account sign-in.', '請設定至少 12 個字元的密碼。此密碼與管理員帳戶登入密碼分開。', '请设置至少 12 个字符的密码。此密码与管理员账户登录密码分开。')
+          ? copy('Create a password of at least 8 characters. It is separate from your administrator account sign-in.', '請設定至少 8 個字元的密碼。此密碼與管理員帳戶登入密碼分開。', '请设置至少 8 个字符的密码。此密码与管理员账户登录密码分开。')
           : copy('Your administrator account and this password are both required. The dashboard locks after 8 hours.', '須同時通過管理員帳戶及此密碼驗證；後台工作階段會在 8 小時後鎖定。', '须同时通过管理员账户及此密码验证；后台会话将在 8 小时后锁定。')}</p>
         <form className="admin-password-form" onSubmit={(event) => void submit(event)}>
           <label htmlFor="admin-dashboard-password">{copy('Dashboard password', '後台密碼', '后台密码')}</label>
-          <input id="admin-dashboard-password" className="admin-password-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isSetup ? 'new-password' : 'current-password'} minLength={isSetup ? 12 : 1} maxLength={128} required data-testid="input-admin-dashboard-password" />
+          <input id="admin-dashboard-password" className="admin-password-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isSetup ? 'new-password' : 'current-password'} minLength={isSetup ? 8 : 1} maxLength={128} required data-testid="input-admin-dashboard-password" />
           {isSetup ? <>
             <label htmlFor="admin-dashboard-password-confirm">{copy('Confirm password', '再次輸入密碼', '再次输入密码')}</label>
-            <input id="admin-dashboard-password-confirm" className="admin-password-input" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required data-testid="input-admin-dashboard-password-confirm" />
+            <input id="admin-dashboard-password-confirm" className="admin-password-input" type="password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" minLength={8} maxLength={128} required data-testid="input-admin-dashboard-password-confirm" />
           </> : null}
           {error ? <p className="admin-password-error" role="alert" data-testid="error-admin-dashboard-password">{error}</p> : null}
           <button type="submit" className="button-primary" disabled={working} data-testid="button-admin-dashboard-password-submit">
@@ -204,9 +204,9 @@ function AdminDashboardData({ language: l, userId, onLock, lockError }: { langua
           <label htmlFor="admin-current-password">{copy('Current password', '目前密碼', '当前密码')}</label>
           <input id="admin-current-password" className="admin-password-input" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" maxLength={128} required />
           <label htmlFor="admin-new-password">{copy('New password', '新密碼', '新密码')}</label>
-          <input id="admin-new-password" className="admin-password-input" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required />
+          <input id="admin-new-password" className="admin-password-input" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" minLength={8} maxLength={128} required />
           <label htmlFor="admin-new-password-confirm">{copy('Confirm new password', '再次輸入新密碼', '再次输入新密码')}</label>
-          <input id="admin-new-password-confirm" className="admin-password-input" type="password" value={newPasswordConfirmation} onChange={(event) => setNewPasswordConfirmation(event.target.value)} autoComplete="new-password" minLength={12} maxLength={128} required />
+          <input id="admin-new-password-confirm" className="admin-password-input" type="password" value={newPasswordConfirmation} onChange={(event) => setNewPasswordConfirmation(event.target.value)} autoComplete="new-password" minLength={8} maxLength={128} required />
           {passwordFormError ? <p className="admin-password-error" role="alert">{passwordFormError}</p> : null}
           {passwordFormSuccess ? <p className="admin-password-success" role="status">{passwordFormSuccess}</p> : null}
           <button type="submit" className="button-primary" disabled={changePassword.isPending}><KeyRound size={15} /> {changePassword.isPending ? copy('Please wait…', '請稍候…', '请稍候…') : copy('Save new password', '儲存新密碼', '保存新密码')}</button>

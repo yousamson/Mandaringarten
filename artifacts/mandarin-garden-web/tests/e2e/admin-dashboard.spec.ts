@@ -23,7 +23,7 @@ test('administrator must set a second password before dashboard access', async (
   await page.goto('/tests/e2e/admin.html?admin=1&language=zh-Hant&password=setup');
 
   await expect(page.getByTestId('page-admin-password-setup')).toBeVisible();
-  await expect(page.getByTestId('input-admin-dashboard-password')).toHaveAttribute('minlength', '12');
+  await expect(page.getByTestId('input-admin-dashboard-password')).toHaveAttribute('minlength', '8');
   await expect(page.getByTestId('button-admin-dashboard-password-submit')).toContainText('設定密碼並繼續');
   await expect(page.getByTestId('metric-member-count')).toHaveCount(0);
 });
@@ -42,5 +42,5 @@ test('administrator can open the password change form after unlocking', async ({
   await page.getByTestId('button-admin-change-password').click();
   await expect(page.getByTestId('form-admin-change-password')).toBeVisible();
   await expect(page.getByLabel('目前密碼')).toHaveAttribute('autocomplete', 'current-password');
-  await expect(page.getByLabel('新密碼', { exact: true })).toHaveAttribute('minlength', '12');
+  await expect(page.getByLabel('新密碼', { exact: true })).toHaveAttribute('minlength', '8');
 });

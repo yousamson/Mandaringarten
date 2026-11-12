@@ -25,7 +25,7 @@ import {
 import { hashAdminDashboardPassword, verifyAdminDashboardPassword } from "../admin-dashboard-password-crypto";
 
 const router: IRouter = Router();
-const ALLOWED_PASSWORD = /^[\s\S]{12,128}$/;
+const ALLOWED_PASSWORD = /^[\s\S]{8,128}$/;
 
 function siteOriginAllowed(origin: string | undefined): boolean {
   if (!origin) return false;
@@ -85,7 +85,7 @@ router.post("/admin/dashboard/password", async (req, res): Promise<void> => {
     const parsed = SetupAdminDashboardPasswordBody.safeParse(req.body);
     if (!parsed.success || !ALLOWED_PASSWORD.test(parsed.data.password) ||
       parsed.data.password !== parsed.data.confirmation) {
-      res.status(400).json({ error: "Use at least 12 characters and enter the same password twice." });
+      res.status(400).json({ error: "Use at least 8 characters and enter the same password twice." });
       return;
     }
     const existing = await getAdminDashboardCredential();
@@ -175,7 +175,7 @@ router.patch("/admin/dashboard/password", async (req, res): Promise<void> => {
     const parsed = UpdateAdminDashboardPasswordBody.safeParse(req.body);
     if (!parsed.success || !ALLOWED_PASSWORD.test(parsed.data.password) ||
       parsed.data.password !== parsed.data.confirmation) {
-      res.status(400).json({ error: "Use at least 12 characters and enter the same password twice." });
+      res.status(400).json({ error: "Use at least 8 characters and enter the same password twice." });
       return;
     }
     const credential = await getAdminDashboardCredential();

@@ -8,12 +8,12 @@
 
 export interface AdminDashboardPasswordSetup {
   /**
-     * @minLength 12
+     * @minLength 8
      * @maxLength 128
      */
   password: string;
   /**
-     * @minLength 12
+     * @minLength 8
      * @maxLength 128
      */
   confirmation: string;

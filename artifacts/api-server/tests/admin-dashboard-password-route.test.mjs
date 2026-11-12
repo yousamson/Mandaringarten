@@ -78,8 +78,8 @@ const stubs = {
     export const UpdateAdminDashboardPasswordResponse = status;
     export const SetupAdminDashboardPasswordBody = { safeParse(value) {
       const body = obj(value);
-      return typeof body.password === "string" && body.password.length >= 12 && body.password.length <= 128 &&
-        typeof body.confirmation === "string" && body.confirmation.length >= 12 && body.confirmation.length <= 128
+      return typeof body.password === "string" && body.password.length >= 8 && body.password.length <= 128 &&
+        typeof body.confirmation === "string" && body.confirmation.length >= 8 && body.confirmation.length <= 128
         ? { success: true, data: body } : { success: false };
     } };
     export const CreateAdminDashboardPasswordSessionBody = { safeParse(value) {
@@ -90,8 +90,8 @@ const stubs = {
     export const UpdateAdminDashboardPasswordBody = { safeParse(value) {
       const body = obj(value);
       return typeof body.currentPassword === "string" && body.currentPassword.length > 0 &&
-        typeof body.password === "string" && body.password.length >= 12 && body.password.length <= 128 &&
-        typeof body.confirmation === "string" && body.confirmation.length >= 12 && body.confirmation.length <= 128
+        typeof body.password === "string" && body.password.length >= 8 && body.password.length <= 128 &&
+        typeof body.confirmation === "string" && body.confirmation.length >= 8 && body.confirmation.length <= 128
         ? { success: true, data: body } : { success: false };
     } };
   `,
@@ -227,6 +227,12 @@ test("password status and setup remain limited to the verified administrator", a
 
 test("administrator initializes once, stores only a hash, and receives a private session", async () => {
   reset();
+  const tooShort = await fetch(baseUrl, {
+    method: "POST", headers: adminHeaders,
+    body: JSON.stringify({ password: "short7!", confirmation: "short7!" }),
+  });
+  assert.equal(tooShort.status, 400);
+
   const mismatch = await fetch(baseUrl, {
     method: "POST", headers: adminHeaders,
     body: JSON.stringify({ password: "long-admin-password", confirmation: "different-password" }),
@@ -235,11 +241,11 @@ test("administrator initializes once, stores only a hash, and receives a private
 
   const response = await fetch(baseUrl, {
     method: "POST", headers: adminHeaders,
-    body: JSON.stringify({ password: "long-admin-password", confirmation: "long-admin-password" }),
+    body: JSON.stringify({ password: "eight888", confirmation: "eight888" }),
   });
   assert.equal(response.status, 200);
-  assert.equal(state.credential.passwordHash, "hash:long-admin-password");
-  assert.notEqual(state.credential.passwordHash, "long-admin-password");
+  assert.equal(state.credential.passwordHash, "hash:eight888");
+  assert.notEqual(state.credential.passwordHash, "eight888");
   assert.match(response.headers.get("set-cookie"), /HttpOnly/);
   assert.deepEqual(await response.json(), { passwordConfigured: true, passwordAuthenticated: true });
 
