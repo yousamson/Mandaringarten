@@ -26,6 +26,10 @@ test('the entry page offers Mandarin Garden and the Chinese Treasure House', asy
   await page.setViewportSize({ width: 402, height: 874 });
   await page.goto('/');
   await expect(page.getByTestId('entry-portal')).toBeVisible();
+  const installButton = page.getByTestId('button-install-app-home');
+  await expect(installButton).toBeVisible();
+  await installButton.click();
+  await expect(page.getByText(/On Android, open this page in Chrome/)).toBeVisible();
   await page.getByTestId('link-entry-garden').click();
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.getByTestId('garden-map')).toBeVisible();

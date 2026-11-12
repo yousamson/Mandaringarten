@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpen, Sprout } from 'lucide-react';
 import { Link } from 'wouter';
 import type { Language } from '@/lib/garden-data';
+import { PwaInstallButton } from '@/components/pwa-install-button';
 
 type PortalCopy = {
   eyebrow: string;
@@ -116,6 +117,9 @@ export default function EntryPortalPage({ language }: { language: Language }) {
         <h1>{text.heading}</h1>
         <p>{text.intro}</p>
       </header>
+      <div className="entry-install-action">
+        <PwaInstallButton language={language} prominent />
+      </div>
       <section className="entry-choice-grid" aria-label={text.heading}>
         <Link href="/home" className="entry-choice-card garden-choice" data-testid="link-entry-garden">
           <span className="entry-choice-icon"><Sprout size={28} /></span>
