@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mandarin-garden-shell-v1';
+const CACHE_NAME = 'mandarin-garden-shell-v2';
 const SHELL_URLS = ['/', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {

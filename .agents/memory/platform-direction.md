@@ -9,8 +9,8 @@ The user wants the Mandarin Garden website and Expo app to present the same lear
 
 **How to apply:** Keep the web and Expo experiences on the same source of learning content and account progress. Use Stripe for subscriptions across the product. Treat the website PWA as the preferred installable mobile distribution channel; do not prepare Apple or Google store builds unless the user changes this direction.
 
-Keep the Expo app's bootstrap/loading screen language-neutral: show the English “Mandarin Garden” name and the existing app icon while Clerk initializes, then preserve the user's selected localized interface after loading.
+Keep the installed app's display name and bootstrap/loading screen language-neutral: use the English “Mandarin Garden” label and existing app icon while Clerk initializes, then preserve the user's selected localized interface after loading.
 
-**Why:** the user asked for the app's waiting screen to show only the English brand name and icon, without Chinese text, while other screens remain localized.
+**Why:** the user asked for the installed app and its waiting screen to use only the English brand name, without Chinese text, while other screens remain localized.
 
-**How to apply:** update the app's Expo display name and loading gate only; do not replace Chinese translations in the loaded app.
+**How to apply:** update Expo and PWA installed-app labels plus the loading gate; do not replace Chinese translations in the loaded app.

@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "漢語樂園 Mandarin Garden",
-  "short_name": "漢語樂園",
+  "name": "Mandarin Garden",
+  "short_name": "Mandarin Garden",
   "description": "A bilingual Mandarin learning playground for children ages 2–12.",
   "lang": "zh-Hant",
   "start_url": "/",
