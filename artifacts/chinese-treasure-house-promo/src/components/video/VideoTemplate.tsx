@@ -13,10 +13,10 @@ import { PscScene } from './scenes/PscScene';
 import { FinaleScene } from './scenes/FinaleScene';
 
 export const SCENE_DURATIONS: Record<string, number> = {
-  opening: 4000,
+  opening: 3500,
   paths: 5000,
-  hsk: 4000,
-  psc: 5000,
+  hsk: 5000,
+  psc: 4500,
   finale: 6000,
 };
 

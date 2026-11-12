@@ -18,10 +18,13 @@ export function OpeningScene() {
           ))}
         </h1>
         <motion.h2 className="op-en" initial={{ clipPath: 'inset(0 100% 0 0)' }} animate={{ clipPath: 'inset(0 0% 0 0)' }} transition={{ delay: 1.05, duration: 0.6, ease: [0.7, 0, 0.2, 1] }}>Chinese Treasure House</motion.h2>
-        <motion.p className="op-sub" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.8, duration: 0.4 }}>
-          <span>A quiet place to grow your Chinese.</span>
-          <span lang="zh-Hant">讓中文慢慢長進心裡。</span>
+        <motion.p className="op-sub" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.4 }}>
+          <span>Four pathways. One place to practise.</span>
+          <span lang="zh-Hant">四條學習路徑，一處循序練習。</span>
         </motion.p>
+        <motion.div className="op-free" initial={{ opacity: 0, scale: .82, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 1.9, type: 'spring', stiffness: 280, damping: 20 }}>
+          <b>FREE APP / PWA DOWNLOAD</b><span lang="zh-Hant">免費下載應用程式／漸進式網頁應用</span>
+        </motion.div>
       </div>
     </SceneFrame>
   );
