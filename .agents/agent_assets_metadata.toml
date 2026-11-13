@@ -232,3 +232,17 @@ mtime_ms = 1794524798102
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/23f0ab5f-6726-4b0c-bcc7-24bb15c6661f/f011e210-53cb-4820-af05-5b1e0f555a59"
 storage_version_token = "1794538266132269"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "Ckod-qzWzFy8b50qp__81"
+uri = "file://generated-artifacts/database-exports/development-db-2026-11-13.dump"
+type = "unspecified"
+title = "開發資料庫匯出（PostgreSQL）"
+description = "PostgreSQL 自訂格式備份；請妥善保管，可能包含會員或帳戶資料。"
+logical_id = "46375f77-c971-4629-b7d9-04264f708c34"
+content_hash = "sha256:46069a3d75668724dbaa2fa619e8f00358d00d5aa5d06fff25b1e9108b27b02c"
+size = 30484
+mtime_ms = 1794538569748
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:635edfcc-a532-4399-ad19-148806ee5131/46375f77-c971-4629-b7d9-04264f708c34/79d9c78d-6584-4243-95da-6f4ea1a20724"
+storage_version_token = "1794549600516495"
+content_type = "application/octet-stream"
